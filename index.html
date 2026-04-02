@@ -259,6 +259,7 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
       <div class="mode-tabs">
         <button class="mode-tab active" onclick="switchMode('archetype',this)">🃏 Par Archétype</button>
         <button class="mode-tab" onclick="switchMode('custom',this)">✨ 5 Cartes Personnalisées</button>
+        <button class="mode-tab" onclick="switchMode('import',this)">📥 Importer un Code</button>
       </div>
 
       <!-- MODE ARCHÉTYPE -->
@@ -396,6 +397,46 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
           ✨ Compléter à 30 cartes avec synergies
         </button>
       </div><!-- /mode-custom -->
+
+      <!-- MODE IMPORT -->
+      <div class="mode-section" id="mode-import">
+        <div class="arc-section-title">Collez votre code de deck Hearthstone</div>
+
+        <div style="background:var(--d3);border:1px solid rgba(74,173,122,.3);border-radius:4px;padding:12px 14px;margin-bottom:12px;font-size:.82em;color:var(--dim);line-height:1.85">
+          <span style="font-family:'Cinzel',serif;font-size:.68em;color:var(--grn);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px">🎮 Comment copier votre deck depuis Hearthstone</span>
+          1. Ouvrez <strong style="color:var(--txt)">Hearthstone</strong> → <strong style="color:var(--txt)">Collection → Mes Decks</strong><br>
+          2. Cliquez sur votre deck → bouton <strong style="color:var(--txt)">"Copier"</strong> (ou Partager)<br>
+          3. Revenez ici et collez le code dans le champ ci-dessous (Ctrl+V)
+        </div>
+
+        <div style="position:relative;margin-bottom:12px">
+          <textarea id="import-input" placeholder="Collez ici votre code de deck Hearthstone...
+Exemple :
+### Mon Deck
+# Class: Mage
+# Format: Standard
+#
+AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
+            width:100%;min-height:110px;background:var(--dark);border:1px solid var(--brd);
+            color:var(--txt);padding:10px 12px;border-radius:4px;font-family:monospace;
+            font-size:.8em;outline:none;resize:vertical;line-height:1.6;transition:border-color .2s"
+            oninput="onImportInput(this.value)" onfocus="this.style.borderColor='var(--grn)'" onblur="this.style.borderColor='var(--brd)'"></textarea>
+          <button onclick="pasteFromClipboard()" style="
+            position:absolute;top:8px;right:8px;background:var(--d3);border:1px solid var(--brd);
+            color:var(--dim);font-family:'Cinzel',serif;font-size:.6em;font-weight:700;
+            letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .2s"
+            onmouseover="this.style.borderColor='var(--grn)';this.style.color='var(--grn)'"
+            onmouseout="this.style.borderColor='var(--brd)';this.style.color='var(--dim)'">📋 Coller</button>
+        </div>
+
+        <div id="import-preview" style="display:none;background:var(--d3);border:1px solid var(--brd-l);border-radius:4px;padding:10px 14px;margin-bottom:12px;font-size:.82em">
+          <div id="import-preview-content"></div>
+        </div>
+
+        <button class="btn-gen" id="import-btn" onclick="loadImportedDeck()" disabled>
+          📥 Charger ce Deck dans la Collection
+        </button>
+      </div><!-- /mode-import -->
 
       <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
       <div class="prog-txt" id="prog-txt"></div>
@@ -2199,6 +2240,113 @@ const HEROES = {
   DEMONHUNTER:56550, DEATHKNIGHT:78065
 };
 
+// ─── IMPORT DECK ─────────────────────────────────────────────────────────────
+let importedDeckData = null;
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const el = document.getElementById('import-input');
+    el.value = text;
+    onImportInput(text);
+  } catch(e) {
+    alert('Impossible de lire le presse-papier. Collez manuellement avec Ctrl+V.');
+  }
+}
+
+function onImportInput(val) {
+  const preview = document.getElementById('import-preview');
+  const previewContent = document.getElementById('import-preview-content');
+  const btn = document.getElementById('import-btn');
+  importedDeckData = null;
+  btn.disabled = true;
+
+  if (!val.trim()) { preview.style.display = 'none'; return; }
+
+  // Chercher le nom, la classe, le format, et le code base64
+  const lines = val.trim().split('\n');
+  let deckName = '', deckClass = '', deckFormat = '', deckCode = '';
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (t.startsWith('###')) deckName = t.replace(/^#+\s*/, '').trim();
+    else if (t.startsWith('# Class:')) deckClass = t.replace('# Class:', '').trim();
+    else if (t.startsWith('# Format:')) deckFormat = t.replace('# Format:', '').trim();
+    else if (t.length > 20 && !t.startsWith('#') && /^[A-Za-z0-9+/=]+$/.test(t)) deckCode = t;
+  }
+
+  if (!deckCode) {
+    previewContent.innerHTML = '<span style="color:var(--red)">⚠ Aucun code de deck valide détecté. Assurez-vous d\'avoir copié le texte complet depuis Hearthstone.</span>';
+    preview.style.display = 'block';
+    return;
+  }
+
+  // Extraire les cartes du nom si le format texte contient des lignes comme "2x Fireball"
+  const cardLines = lines.filter(l => /^\d+x/.test(l.trim()));
+  let parsedCards = [];
+  if (cardLines.length > 0) {
+    parsedCards = cardLines.map(l => {
+      const m = l.trim().match(/^(\d+)x\s+(.+?)(?:\s+\(\d+\))?$/);
+      return m ? { name: m[2].trim(), cnt: parseInt(m[1]) } : null;
+    }).filter(Boolean);
+  }
+
+  importedDeckData = { name: deckName, class: deckClass, format: deckFormat, code: deckCode, cards: parsedCards };
+
+  const classMap = {
+    'Mage':'MAGE','Warrior':'WARRIOR','Hunter':'HUNTER','Paladin':'PALADIN','Rogue':'ROGUE',
+    'Priest':'PRIEST','Shaman':'SHAMAN','Warlock':'WARLOCK','Druid':'DRUID',
+    'Demon Hunter':'DEMONHUNTER','Death Knight':'DEATHKNIGHT'
+  };
+  importedDeckData.classKey = classMap[deckClass] || deckClass.toUpperCase();
+
+  previewContent.innerHTML = `
+    <div style="font-family:'Cinzel',serif;font-size:.7em;color:var(--gold);letter-spacing:.1em;margin-bottom:8px">✅ Deck détecté</div>
+    <div style="line-height:2;color:var(--txt)">
+      ${deckName ? `<span style="color:var(--dim)">Nom :</span> <strong>${deckName}</strong><br>` : ''}
+      ${deckClass ? `<span style="color:var(--dim)">Classe :</span> <strong>${deckClass}</strong><br>` : ''}
+      ${deckFormat ? `<span style="color:var(--dim)">Format :</span> <strong>${deckFormat}</strong><br>` : ''}
+      ${parsedCards.length ? `<span style="color:var(--dim)">Cartes lues :</span> <strong>${parsedCards.length} types · ${parsedCards.reduce((s,c)=>s+c.cnt,0)} cartes</strong><br>` : `<span style="color:var(--gold)">⚠ Noms de cartes non lisibles dans ce format — le deck sera chargé via le code</span><br>`}
+    </div>`;
+  preview.style.display = 'block';
+  btn.disabled = false;
+}
+
+async function loadImportedDeck() {
+  if (!importedDeckData || isRunning) return;
+  isRunning = true;
+
+  const { name, classKey, format, cards } = importedDeckData;
+  const fmtNum = (format || '').toLowerCase().includes('wild') ? 1 : 2;
+  const dn = name || 'Deck Importé';
+  const cls = classKey || 'MAGE';
+  const fmtName = fmtNum === 2 ? 'Standard' : 'Wild';
+
+  document.getElementById('import-btn').disabled = true;
+  document.getElementById('import-btn').textContent = '⏳ Chargement...';
+  document.getElementById('out-panel').style.display = 'block';
+
+  let parsedCards = cards;
+
+  // Si pas de cartes parsées depuis le texte, on charge via HearthstoneJSON et le code
+  if (!parsedCards || parsedCards.length === 0) {
+    // On affiche le code brut quand même
+    parsedCards = [{ name: '(Deck chargé via code — noms non disponibles dans ce format)', cnt: 30 }];
+  }
+
+  await resolveAndDisplay(parsedCards, [], cls, fmtNum, dn, `${dn} · ${cls} ${fmtName} · Importé`);
+
+  // Remplacer le code dans la boîte par le code original importé
+  const cbox = document.getElementById('cbox');
+  cbox.className = 'code-wrap';
+  cbox.innerHTML = `<span style="color:var(--dim)">### ${dn}<br># Class: ${importedDeckData.class} Format: ${fmtName}<br>#</span><br><span id="tc">${importedDeckData.code}</span>`;
+  document.getElementById('cpb').disabled = false;
+
+  isRunning = false;
+  document.getElementById('import-btn').disabled = false;
+  document.getElementById('import-btn').textContent = '📥 Charger ce Deck dans la Collection';
+}
+
 // ─── MODE SWITCHING ──────────────────────────────────────────────────────────
 function switchMode(mode, tab) {
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
@@ -2206,6 +2354,7 @@ function switchMode(mode, tab) {
   tab.classList.add('active');
   document.getElementById('mode-' + mode).classList.add('active');
   currentMode = mode;
+  if (mode === 'archetype') updateGenBtn();
 }
 
 // ─── CUSTOM CARD PICKER ──────────────────────────────────────────────────────
