@@ -134,12 +134,38 @@ select:focus,input[type=text]:focus{border-color:var(--gold);}
 .pick-btn.sel{background:var(--pc,var(--pur));border-color:var(--pc,var(--pur));}
 .pick-check{position:absolute;top:2px;right:3px;font-size:.8em;color:#fff;opacity:0;transition:opacity .15s;}
 .pick-btn.sel .pick-check{opacity:1;}
+/* ─── CHAT IA ─────────────────────────────────────────────────────────────── */
+.chat-mode-btn{flex:1;padding:6px 4px;border-radius:5px;border:1px solid rgba(150,80,255,.2);
+  background:rgba(20,8,40,.5);color:rgba(180,140,255,.45);cursor:pointer;font-size:.58em;
+  font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;text-align:center;transition:all .15s;line-height:1.3;}
+.chat-mode-btn:hover{border-color:rgba(180,100,255,.4);color:rgba(200,160,255,.7);}
+.chat-mode-btn.sel{background:rgba(80,20,160,.5);border-color:rgba(180,100,255,.55);color:#d8b0ff;}
+.cmb-icon{display:block;font-size:1.4em;margin-bottom:2px;}
+.cm-user{align-self:flex-end;background:linear-gradient(135deg,#152a6a,#0a1840);
+  border:1px solid rgba(80,120,220,.35);border-radius:10px 10px 2px 10px;
+  padding:7px 11px;max-width:88%;font-size:.77em;color:#b8cef8;line-height:1.5;}
+.cm-bot{align-self:flex-start;background:linear-gradient(135deg,#200840,#100320);
+  border:1px solid rgba(150,80,255,.25);border-radius:10px 10px 10px 2px;
+  padding:8px 12px;max-width:94%;font-size:.77em;color:#d0b0ff;line-height:1.55;}
+.cm-actions{margin-top:7px;display:flex;flex-direction:column;gap:3px;}
+.cm-action-item{padding:4px 8px;background:rgba(100,50,180,.18);
+  border-left:2px solid rgba(150,100,255,.45);border-radius:3px;
+  font-size:.86em;color:#b890e8;font-style:italic;}
+.cm-action-item.add{border-left-color:rgba(80,200,120,.5);color:#80d8a0;}
+.cm-action-item.remove{border-left-color:rgba(220,80,80,.5);color:#e89090;}
+.cm-action-item.replace{border-left-color:rgba(220,160,40,.5);color:#e8c870;}
+.cm-action-item.newdeck{border-left-color:rgba(80,140,220,.5);color:#90b8f0;}
+.cm-thinking{align-self:flex-start;color:rgba(180,140,255,.45);font-size:.72em;font-style:italic;padding:4px 8px;}
+.cm-thinking span{animation:pulse 1.4s infinite;}
+.cm-thinking span:nth-child(2){animation-delay:.2s;}
+.cm-thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
 </style>
 
 <div id="app">
 <div class="hdr">
   <h1>HS Deck <em>Forge</em></h1>
-  <p>Un seul type par deck · Filtres stricts · 12 races · 8 écoles</p>
+  <p>Standard 🏆 ou Wild 🌀 · Un seul type par deck · 12 races · 8 écoles</p>
 </div>
 <div class="main">
 
@@ -262,9 +288,20 @@ select:focus,input[type=text]:focus{border-color:var(--gold);}
     <div class="coll-hint" id="coll-hint">Mode "Ma Collection" actif — deck filtré à vos cartes</div>
 
     <div class="sec-title">Format du deck</div>
-    <div class="fmt-toggle">
-      <button class="fmt-btn active std" id="fs" onclick="setFmt(2,this)">Standard<span class="fmt-sub">Core · Emerald Dream · Un'Goro · Timeways · Cataclysm</span></button>
-      <button class="fmt-btn wld" id="fw" onclick="setFmt(1,this)">Wild<span class="fmt-sub">Toutes les extensions</span></button>
+    <div class="fmt-toggle" id="fmt-toggle">
+      <button class="fmt-btn active std" id="fs" onclick="setFmt(2,this)">
+        <span style="font-size:1.1em;display:block;margin-bottom:2px;">🏆</span>
+        Standard
+        <span class="fmt-sub">Core · Emerald Dream · Timeways · Lost City · Cataclysm</span>
+      </button>
+      <button class="fmt-btn wld" id="fw" onclick="setFmt(1,this)">
+        <span style="font-size:1.1em;display:block;margin-bottom:2px;">🌀</span>
+        Wild
+        <span class="fmt-sub">Toutes les extensions</span>
+      </button>
+    </div>
+    <div id="fmt-hint" style="padding:5px 10px;border-radius:4px;margin-bottom:8px;font-size:.74em;font-style:italic;background:rgba(0,0,0,.2);border-left:3px solid #1a4090;color:#90c0ff;">
+      🏆 Standard — Year of the Raptor (2025) + Year of the Scarab (2026)
     </div>
     <div class="row" style="margin-top:4px;">
       <div class="fld"><label>Classe</label>
@@ -329,6 +366,7 @@ select:focus,input[type=text]:focus{border-color:var(--gold);}
       <div class="stat" style="border-color:rgba(192,128,255,.35);"><span class="n" id="s-spell" style="color:#c080ff;">0</span> sorts</div>
       <div class="stat" style="border-color:rgba(74,173,122,.35);"><span class="n" id="s-tribes" style="color:var(--grn);">0</span> tribus</div>
       <div class="stat" id="s-type-badge" style="border-color:rgba(90,127,192,.5);"><span class="n" id="s-fmt" style="color:var(--blu);">—</span></div>
+      <div class="stat" id="s-fmt-badge" style="font-weight:700;font-size:.76em;padding:3px 10px;background:rgba(10,32,80,.6);border-color:rgba(26,64,144,.5);color:#90c0ff;">🏆 Standard</div>
       <div class="stat"><span class="n" id="s-dbf">0</span> DBF IDs</div>
     </div>
     <div class="syn-box" id="out-syn"><div class="syn-h">Stratégie &amp; synergies</div><div id="out-syn-txt"></div></div>
@@ -387,6 +425,63 @@ select:focus,input[type=text]:focus{border-color:var(--gold);}
 </div>
 
 </div>
+
+<!-- ═══════════ FORGE ASSISTANT — CHAT IA INTÉGRÉ ════════════════════════ -->
+<div style="max-width:960px;margin:0 auto;padding:0 12px 40px;">
+  <div id="chat-wrapper" style="border:1px solid rgba(150,80,255,.35);border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#0c0420 0%,#060212 100%);box-shadow:0 4px 30px rgba(100,30,200,.3);">
+
+    <!-- En-tête cliquable pour réduire/agrandir -->
+    <div id="chat-hdr" onclick="toggleChat()" style="padding:12px 18px;background:linear-gradient(90deg,rgba(80,20,160,.8),rgba(40,10,80,.7));cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;">
+      <span style="font-size:1.4em;">🧙‍♂️</span>
+      <div style="flex:1;">
+        <div style="font-family:'Cinzel',serif;font-size:.72em;color:#d0a0ff;letter-spacing:.1em;text-transform:uppercase;font-weight:700;">Forge Assistant — IA</div>
+        <div style="font-size:.62em;color:rgba(180,140,255,.6);font-style:italic;margin-top:1px;">Modifie ou crée un deck en langage naturel · Propulsé par Claude</div>
+      </div>
+      <span id="chat-toggle-icon" style="color:rgba(200,160,255,.6);font-size:.85em;transition:transform .2s;">▼</span>
+    </div>
+
+    <!-- Corps du chat (collapsible) -->
+    <div id="chat-body" style="display:flex;flex-direction:column;">
+
+      <!-- Sélecteur de mode -->
+      <div style="display:flex;gap:5px;padding:10px 14px 0;">
+        <button class="chat-mode-btn sel" id="cmode-modify" onclick="setChatMode('modify',this)" style="flex:1;">
+          <span class="cmb-icon">✏️</span>Modifier<span style="display:block;font-size:.82em;opacity:.65;text-transform:none;font-style:italic;font-family:'Crimson Pro',serif;margin-top:1px;">deck actuel</span>
+        </button>
+        <button class="chat-mode-btn" id="cmode-new" onclick="setChatMode('new',this)" style="flex:1;">
+          <span class="cmb-icon">✨</span>Nouveau<span style="display:block;font-size:.82em;opacity:.65;text-transform:none;font-style:italic;font-family:'Crimson Pro',serif;margin-top:1px;">from scratch</span>
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div id="chat-msgs" style="min-height:140px;max-height:340px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+        <div class="cm-bot">Salut! 👋 Je suis <strong style="color:#d8b0ff;">Forge Assistant</strong>. Dis-moi ce que tu veux faire avec ton deck :<br><br>
+          <span style="color:#c8a0f0;font-weight:600;">Modifier le deck actif :</span><br>
+          • <em>"Remplace les dragons par des élémentaux"</em><br>
+          • <em>"Enlève les cartes de plus de 7 mana et ajoute des cartes 1-2"</em><br>
+          • <em>"Ajoute 2x Fireball, retire Blizzard"</em><br><br>
+          <span style="color:#c8a0f0;font-weight:600;">Créer un nouveau deck :</span><br>
+          • <em>"Crée un deck Pirate Warrior Wild Aggro"</em><br>
+          • <em>"Fais-moi un deck Murloc Paladin Standard"</em>
+        </div>
+      </div>
+
+      <!-- Zone de saisie -->
+      <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(150,80,255,.15);">
+        <textarea id="chat-inp" rows="2"
+          placeholder="Ex: remplace les sorts coûteux par des cartes 1-3 mana..."
+          onkeydown="onChatKey(event)"
+          style="flex:1;background:#080218;border:1px solid rgba(150,80,255,.3);border-radius:7px;color:#d0b8ff;padding:9px 12px;font-size:.82em;outline:none;font-family:inherit;resize:none;line-height:1.45;min-height:54px;"></textarea>
+        <button id="chat-send" onclick="sendChat()"
+          style="padding:10px 18px;background:linear-gradient(135deg,#5a1aaa,#380880);border:1px solid rgba(150,80,255,.45);border-radius:7px;color:#d8b0ff;font-family:'Cinzel',serif;font-size:.66em;font-weight:700;text-transform:uppercase;cursor:pointer;white-space:nowrap;letter-spacing:.07em;align-self:flex-end;transition:all .15s;">
+          ⚡ Envoyer
+        </button>
+      </div>
+
+    </div><!-- /chat-body -->
+  </div><!-- /chat-wrapper -->
+</div>
+
 </div>
 
 <script>
@@ -507,7 +602,25 @@ function showSyn(){
 }
 function setSrc(s,btn){ST.src=s;document.querySelectorAll('#src-all,#src-my').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('coll-hint').style.display=s==='my'?'block':'none';}
 function setCSrc(s,btn){ST.csrc=s;document.querySelectorAll('#csrc-all,#csrc-my').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('coll-mode-lbl').style.display=s==='my'?'inline':'none';document.getElementById('csearch').value='';document.getElementById('ac-box').classList.remove('open');}
-function setFmt(f,btn){ST.fmt=f;document.querySelectorAll('#fs,#fw').forEach(b=>b.classList.remove('active','std','wld'));btn.classList.add('active',f===2?'std':'wld');}
+function setFmt(f,btn){
+  ST.fmt=f;
+  document.querySelectorAll('#fs,#fw').forEach(b=>b.classList.remove('active','std','wld'));
+  btn.classList.add('active',f===2?'std':'wld');
+  // Mettre à jour le hint
+  var hint=document.getElementById('fmt-hint');
+  if(hint){
+    if(f===2){
+      hint.textContent='🏆 Standard — Year of the Raptor 2025 + Year of the Scarab 2026 (Whizbang\'s / Perils / Great Dark = Wild)';
+      hint.style.borderLeftColor='#1a4090';hint.style.color='#90c0ff';
+    }else{
+      hint.textContent='🌀 Wild — toutes les extensions sans restriction';
+      hint.style.borderLeftColor='#6a00c0';hint.style.color='#c890ff';
+    }
+  }
+  // Synchroniser le select du mode custom
+  var hf2=document.getElementById('hf2');
+  if(hf2)hf2.value=f;
+}
 
 // ─── SÉLECTION MODE + RACE + ÉCOLE ───────────────────────────────────────────
 function setMode(mode, btn){
@@ -664,48 +777,71 @@ function openCodeWindow(){
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── SETS STANDARD 2026 (Year of the Scarab) ─────────────────────────────────
-// Basé sur la rotation Blizzard officielle + HearthstoneJSON standardSet field
-var STD_SETS_2026=new Set([
-  'CORE','LEGACY',
-  // Year of the Scarab (2026) — CATACLYSM set
-  'CATACLYSM',
-  // Year of the Pegasus (2025) — encore légaux en 2026
-  'EMERALD_DREAM','ISLAND_VACATION','WHIZBANGS_WORKSHOP',
-  // Year of the Wolf / Pegasus sets
-  'TITANS','FESTIVAL_OF_LEGENDS',
-  'RETURN_OF_THE_LICH_KING',
-  // Stormwind / Barrens encore en rotation
-  'REVENDRETH','STORMWIND','THE_BARRENS',
-  // Across the Timeways mini-set
-  'TIMEWAYS',
-  // Emerald Dream / Firestorm
-  'FIR',
-  // Demon Hunter Initiate toujours Core
-  'DEMON_HUNTER_INITIATE',
-  // Prefixes de sets récents dans le JSON
-  'EDR','TLC','DINO','END',
+// ─── SETS STANDARD 2026 — Year of the Scarab ─────────────────────────────────
+// Standard = Core 2026 + Year of the Scarab (2026) + Year of the Raptor (2025)
+// Roté en Wild depuis mars 2026 : Whizbang's Workshop, Perils in Paradise,
+//   The Great Dark Beyond (Year of the Pegasus 2024) et tout ce qui précède.
+//
+// Year of the Raptor (2025) — ENCORE LÉGAUX en Standard :
+//   - Into the Emerald Dream    → préfixe EDR_
+//   - Across the Timeways       → préfixe TLC_
+//   - Lost City of Un'Goro      → préfixe LOSTCITY_ ou UNG2_ (à confirmer)
+//   - Mini-sets Raptor          → préfixes FIR_, DINO_
+//
+// Year of the Scarab (2026) — LÉGAUX :
+//   - CATACLYSM                 → préfixe CATA_
+//   - Sets à venir 2026
+//
+// Roté en Wild depuis mars 2026 (Year of the Pegasus 2024) :
+//   WHIZBANGS_WORKSHOP (WHI_/WW_), PERILS_IN_PARADISE (PIP_/POP_),
+//   THE_GREAT_DARK_BEYOND (GDB_/SPACE_), Heroes of StarCraft (STARCRAFT_)
+
+var STD_PREFIXES_OK  = new Set(['CATA','EDR','TLC','FIR','DINO','LOSTCITY','TIME','SCARAB']);
+var STD_PREFIXES_WILD= new Set([
+  // Year of the Pegasus (2024) — roté
+  'WW','WHI','PIP','POP','GDB','SPACE','STARCRAFT','HEROES',
+  // Années précédentes — toutes Wild
+  'TITANS','WONDERS','BADLANDS','WILD_WEST',
+  'REVENDRETH','SUNKEN','VOYAGE','MINIS','MURDER',
+  'STORMWIND','WAILING','ALTERAC',
+  'DARKMOON','SCHOLOMANCE','ASHES',
+  'DEMONS','DRAGONS','GALAKROND',
+  'DALARAN','SAVIORS','BAD',
+  'RASTAKHANS','BOOMDAY','GILNEAS','LOOTAPALOOZA',
+  'ICECROWN','UNG','GANGS','KARAZHAN','WOG',
+  'TGT','LOE','BRM','NAX','GVG','VANILLA',
 ]);
 
-// Vérification stricte via standardSet (champ natif HearthstoneJSON)
 function isStandardCard(card){
-  // Priorité 1 : champ natif standardSet du JSON
-  if(card.standardSet===true)return true;
-  if(card.standardSet===false)return false;
-  // Priorité 2 : ensemble connu
-  var s=(card.set||'').toUpperCase();
-  if(!s||s==='CORE'||s==='LEGACY')return true;
-  // Vérifier les préfixes des IDs de cartes (ex: CATA_131, EDR_800, TLC_100)
+  // Priorité 1 : champ natif standardSet du JSON HearthstoneJSON (le plus fiable)
+  if(card.standardSet===true)  return true;
+  if(card.standardSet===false) return false;
+
+  var s = (card.set||'').toUpperCase();
+
+  // Core et Legacy = toujours Standard
+  if(!s || s==='CORE' || s==='LEGACY') return true;
+
+  // Priorité 2 : préfixe de l'ID de carte (ex: CATA_131, EDR_800, TLC_100)
   if(card.id){
-    var prefix=card.id.split('_')[0].toUpperCase();
-    if(['CATA','EDR','TLC','FIR','DINO','END','TIME'].includes(prefix))return true;
-    if(['GVG','NAX','BRM','LOE','TGT','WOG','KARAZHAN','MSG','UNG',
-        'ICECROWN','LOOTAPALOOZA','GILNEAS','BOOMDAY','RASTAKHANS',
-        'DALARAN','SAVIORS','DEMONS','DRAGONS','GALAKROND','ASHES',
-        'BAD','SCHOLOMANCE','DARKMOON','STORMWINDS','ALTERAC','SUNKEN',
-        'REVENDRETH','MINIS','VOYAGE','MURDER','TITANS','WHIZBANGS',
-        'EMERALD','ISLAND','PERILS'].includes(prefix))return false;
+    var prefix = card.id.split('_')[0].toUpperCase();
+    if(STD_PREFIXES_OK.has(prefix))   return true;
+    if(STD_PREFIXES_WILD.has(prefix)) return false;
   }
-  return STD_SETS_2026.has(s);
+
+  // Priorité 3 : nom du set
+  // Sets Year of the Raptor (2025) — légaux
+  if(['EMERALD_DREAM','ACROSS_THE_TIMEWAYS','TIMEWAYS','LOST_CITY','LOSTCITY',
+      'INTO_THE_EMERALD_DREAM','FIRESTORM','DINOSAUR'].includes(s)) return true;
+  // Sets Year of the Scarab (2026) — légaux
+  if(['CATACLYSM','SCARAB'].includes(s)) return true;
+
+  // Sets Year of the Pegasus (2024) — Wild depuis mars 2026
+  if(['WHIZBANGS_WORKSHOP','PERILS_IN_PARADISE','THE_GREAT_DARK_BEYOND',
+      'GREAT_DARK_BEYOND','HEROES_OF_STARCRAFT'].includes(s)) return false;
+
+  // Tout le reste (sets plus anciens) = Wild
+  return false;
 }
 
 // ─── PATTERNS MÉTA — extraits de metastats.net / hsreplay.net avril 2026 ─────
@@ -1324,7 +1460,7 @@ function genDeck(){
 function genCustom(){
   if(!ST.seeds.length)return;
   var cls=document.getElementById('hc2').value;
-  var fmt=parseInt(document.getElementById('hf2').value)||2;
+  var fmt=ST.fmt; // Utiliser ST.fmt (boutons Standard/Wild) plutôt que le select caché
   var dn=document.getElementById('dn2').value.trim()||('Custom '+CLS[cls]);
   ST.lastP={mode:'custom',cls,fmt,dn};
   var deck=ST.seeds.map(s=>{var r=normRar(s.rar);return{n:s.name,q:r==='L'?1:2,d:s.dbf||0,c:s.cost,r:r};});
@@ -1416,6 +1552,16 @@ function showDeck(cards,synText,cls,fmt,dn){
   document.getElementById('s-leg').textContent=legCount;
   var se=document.getElementById('s-spell');if(se)se.textContent=spellCount;
   var te=document.getElementById('s-tribes');if(te)te.textContent=tribeSet.size;
+
+  // Badge format Standard/Wild visible dans les stats
+  var fmtBadgeEl=document.getElementById('s-fmt-badge');
+  if(fmtBadgeEl){
+    fmtBadgeEl.textContent=(fmt===2?'🏆 Standard':'🌀 Wild');
+    fmtBadgeEl.style.background=fmt===2?'rgba(10,32,80,.6)':'rgba(42,0,96,.6)';
+    fmtBadgeEl.style.color=fmt===2?'#90c0ff':'#c890ff';
+    fmtBadgeEl.style.borderColor=fmt===2?'rgba(26,64,144,.5)':'rgba(106,0,192,.5)';
+  }
+
   // Badge type dominant
   var typeBadge='';
   var typeBadgeEl=document.getElementById('s-type-badge');
@@ -1526,8 +1672,9 @@ function showDeck(cards,synText,cls,fmt,dn){
     ta.value='⚠ Aucun DBF ID — Cliquez "Précharger cartes" puis régénérez.';
   }
 
+  var fmtIcon=fmt===2?'🏆':'🌀';
+  document.getElementById('deck-lbl').textContent=fmtIcon+' '+fmtName+' · '+clsName+' · '+tot+'/30'+(tribeSet.size?' · '+tribeSet.size+' tribu'+(tribeSet.size>1?'s':''):'');
   var tribeList=Array.from(tribeSet).map(r=>RACE_LABELS[r]||r).join(' · ');
-  document.getElementById('deck-lbl').textContent=clsName+' · '+fmtName+' · '+tot+'/30'+(tribeSet.size?' · '+tribeSet.size+' tribu'+(tribeSet.size>1?'s':''):'');
   var missingDbf=tot-pairs.length;
   var sbarMsg=tot+'/30 cartes · ★ '+legCount+' légendaire(s) · ✦ '+spellCount+' sort(s)';
   if(tribeList)sbarMsg+=' · '+tribeList;
@@ -1678,4 +1825,548 @@ function loadImport(){
   showDeck(deck,'Deck importé depuis Hearthstone',cls,fmt,importData.name);
 }
 document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))document.getElementById('ac-box').classList.remove('open');});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FORGE ASSISTANT — Chat IA pour modifier/créer des decks en langage naturel
+// ═══════════════════════════════════════════════════════════════════════════
+
+var CHAT_MODE = 'modify';
+var CHAT_BUSY = false;
+var CHAT_OPEN = true; // visible par défaut
+
+function toggleChat(){
+  CHAT_OPEN = !CHAT_OPEN;
+  var body = document.getElementById('chat-body');
+  var icon = document.getElementById('chat-toggle-icon');
+  if(body) body.style.display = CHAT_OPEN ? 'flex' : 'none';
+  if(icon) icon.style.transform = CHAT_OPEN ? '' : 'rotate(-90deg)';
+}
+
+function setChatMode(mode, btn){
+  CHAT_MODE = mode;
+  document.querySelectorAll('.chat-mode-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function onChatKey(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); }
+}
+
+function chatAppend(html, cls){
+  var msgs = document.getElementById('chat-msgs');
+  var el = document.createElement('div');
+  el.className = cls || 'cm-bot';
+  el.innerHTML = html;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+  return el;
+}
+
+function chatRemove(el){ if(el && el.parentNode) el.parentNode.removeChild(el); }
+
+// Sérialiser le deck actuel en texte lisible pour le contexte IA
+function serializeDeck(){
+  var out = document.getElementById('deck-out');
+  if(!out || !out.classList.contains('on')) return null;
+  var grid = document.getElementById('deck-grid');
+  if(!grid) return null;
+  var cards = [];
+  grid.querySelectorAll('.dc').forEach(item => {
+    var cost = item.querySelector('.mc')?.textContent?.trim() || '0';
+    var name = item.querySelector('.cn')?.textContent?.trim().replace('★ ','') || '';
+    var qty  = item.querySelector('.cq')?.textContent?.trim().replace('x','') || '1';
+    if(name) cards.push({ n:name, c:parseInt(cost)||0, q:parseInt(qty)||1 });
+  });
+  if(!cards.length) return null;
+  var cls = ST.lastP?.cls || 'MAGE';
+  var arc = ST.lastP?.arc || '';
+  var fmt = ST.lastP?.fmt===2?'Standard':'Wild';
+
+  // Identité du deck — race et/ou école active
+  var SCH_NAMES = {ARCANE:'Arcane',FEL:'Fel',FIRE:'Fire',FROST:'Frost',HOLY:'Holy',NATURE:'Nature',SHADOW:'Shadow',NONE:'No-school'};
+  var RACE_NAMES = {BEAST:'Beast',DEMON:'Demon',DRAGON:'Dragon',ELEMENTAL:'Elemental',MECH:'Mech',MURLOC:'Murloc',NAGA:'Naga',PIRATE:'Pirate',QUILBOAR:'Quilboar',TOTEM:'Totem',UNDEAD:'Undead',DRAENEI:'Draenei'};
+  var identityParts = [];
+  var deckType = ST.deckType || 'BOTH';
+  if(ST.selectedRace) identityParts.push('minion tribe: '+( RACE_NAMES[ST.selectedRace]||ST.selectedRace));
+  if(ST.selectedSchool) identityParts.push('spell school: '+(SCH_NAMES[ST.selectedSchool]||ST.selectedSchool));
+  if(!identityParts.length){
+    if(deckType==='MINION') identityParts.push('minion-focused (no tribe locked)');
+    else if(deckType==='SPELL') identityParts.push('spell-focused');
+    else identityParts.push('mixed minions + spells');
+  }
+  var identity = identityParts.join(', ');
+
+  return { cls, arc, fmt, identity, cards };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PARSER LOCAL — Interprète les commandes en langage naturel sans API externe
+// ═══════════════════════════════════════════════════════════════════════════
+
+function parseNaturalCommand(msg, mode) {
+  var m = msg.toLowerCase().trim();
+  var actions = [];
+  var message = '';
+
+  // ── Patterns d'ajout ────────────────────────────────────────────────────
+  // "ajoute 2x Fireball", "ajoute Fireball", "add 2 Fireball"
+  var addPat = /(?:ajoute[rz]?|add|inclus?|mets?|rajoute[rz]?)\s+(?:(\d+)x?\s+)?([A-ZÀ-Ÿa-zà-ÿ''\-,. ]{2,40}?)(?:\s*(?:et|,|$))/gi;
+  var match;
+  while((match = addPat.exec(msg)) !== null) {
+    var qty = parseInt(match[1]||'1') || 1;
+    var cardName = match[2].trim().replace(/[.,]+$/, '');
+    if(cardName.length > 1) {
+      actions.push({ type:'ADD_CARD', card: cardName, qty: Math.min(qty, 2) });
+    }
+  }
+
+  // ── Patterns de retrait ─────────────────────────────────────────────────
+  // "enlève Fireball", "retire 2x Blizzard", "remove", "supprime"
+  var removePat = /(?:enlève[rz]?|retire[rz]?|supprime[rz]?|remove|vire[rz]?|efface[rz]?|kick)\s+(?:(\d+)x?\s+)?(?:les?\s+)?([A-ZÀ-Ÿa-zà-ÿ''\-,. ]{2,40}?)(?:\s*(?:et|,|$))/gi;
+  while((match = removePat.exec(msg)) !== null) {
+    var qty2 = parseInt(match[1]||'0') || 'all';
+    var cn = match[2].trim().replace(/[.,]+$/, '');
+    if(cn.length > 1 && !cn.match(/^(les?|des?|un|une|toutes?|tous)$/i)) {
+      actions.push({ type:'REMOVE_CARD', card: cn, qty: qty2 });
+    }
+  }
+
+  // ── Patterns de remplacement ─────────────────────────────────────────────
+  // "remplace X par Y", "change X en Y", "swap X pour Y"
+  var replacePat = /(?:remplace[rz]?|change[rz]?|swap|échange[rz]?|substitue[rz]?)\s+(?:les?\s+)?([A-ZÀ-Ÿa-zà-ÿ''\-,. ]{2,40}?)\s+(?:par|en|avec|pour|by|with)\s+(?:les?\s+)?([A-ZÀ-Ÿa-zà-ÿ''\-,. ]{2,40}?)(?:\s*(?:et|,|$))/gi;
+  while((match = replacePat.exec(msg)) !== null) {
+    var oldC = match[1].trim().replace(/[.,]+$/, '');
+    var newC = match[2].trim().replace(/[.,]+$/, '');
+    if(oldC.length > 1 && newC.length > 1) {
+      actions.push({ type:'REPLACE_CARD', old: oldC, new: newC, qty:2 });
+    }
+  }
+
+  // ── Commandes spéciales basées sur la collection ─────────────────────────
+  // Toutes les variantes de "remplace les cartes que je n'ai pas"
+  var collMatch = /remplace|retire|enlève|swap|change/i.test(m) &&
+    (/j[e']?\s*(n'?|n\s+)?(ai|a|avais|avez)\s+pas/i.test(m) ||
+     /pas\s+(dans|en|de)\s*(ma\s*)?collection/i.test(m) ||
+     /manquantes?/i.test(m) ||
+     /que\s+j['e]\s*ai\s+pas/i.test(m) ||
+     /pas\s+dans\s+ma\s+collection/i.test(m) ||
+     /hors\s+(de\s+ma\s*)?collection/i.test(m));
+
+  if(!collMatch) collMatch = /garde\s+(seulement|que)\s+(mes|les)\s+cartes/i.test(m) ||
+    /filtrer?\s*(par\s+)?ma\s+collection/i.test(m) ||
+    /utilise?\s+(seulement\s+)?ma\s+collection/i.test(m);
+
+  if(collMatch){
+    if(MY_COLL.size > 0 && window.CURRENT_DECK && window.CURRENT_DECK.length){
+      var missing = window.CURRENT_DECK.filter(c => !inColl(c.n));
+      if(missing.length > 0){
+        missing.forEach(c => {
+          var alt = findCollectionAlternative(c);
+          if(alt) actions.push({ type:'REPLACE_CARD', old:c.n, new:alt, qty:c.q });
+          else actions.push({ type:'REMOVE_CARD', card:c.n, qty:'all' });
+        });
+        message = missing.length + ' carte(s) absente(s) de ta collection remplacée(s) par des alternatives.';
+      } else {
+        message = '✅ Toutes les cartes du deck sont déjà dans ta collection !';
+      }
+    } else if(MY_COLL.size === 0){
+      message = '⚠ Importe ta collection dans le panneau "Ma Collection" en haut à gauche d\'abord.';
+    } else {
+      message = '⚠ Génère d\'abord un deck avant de le modifier.';
+    }
+  }
+
+  // ── Commandes de coût/filtre ─────────────────────────────────────────────
+  var costFilter = m.match(/(?:enlève|retire|supprime|remove|vire)\s+.*?(?:cartes?|cards?|trucs?).*?(?:plus de|de plus de|au[-\s]dessus de|coûtant? plus de|>\s*)(\d+)\s*mana/i) ||
+                   m.match(/(?:cartes?|cards?).*?(?:plus de|de plus de|coûtant? plus de|>\s*)(\d+)\s*mana.*?(?:enlève|retire|supprime)/i);
+  if(costFilter && window.CURRENT_DECK){
+    var maxCost = parseInt(costFilter[1]);
+    window.CURRENT_DECK.forEach(c=>{
+      if((c.c||0) > maxCost) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'});
+    });
+    if(actions.length) message = 'Cartes de +'+ maxCost +' mana retirées du deck.';
+  }
+
+  var costFilterMin = m.match(/(?:enlève|retire|supprime|vire).*?(?:cartes?).*?(?:moins de|en[-\s]dessous de|<\s*)(\d+)\s*mana/i);
+  if(costFilterMin && window.CURRENT_DECK){
+    var minCost = parseInt(costFilterMin[1]);
+    window.CURRENT_DECK.forEach(c=>{
+      if((c.c||0) < minCost) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'});
+    });
+    if(actions.length) message = 'Cartes de -'+ minCost +' mana retirées du deck.';
+  }
+
+  // ── Nouveau deck ─────────────────────────────────────────────────────────
+  // "crée un deck Dragon Warrior Standard"
+  if(mode === 'new' || /(?:crée[rz]?|create|génère[rz]?|fais?(-moi)?|make|nouveau deck|new deck)/i.test(m)) {
+    var clsMatch = m.match(/\b(mage|warrior|hunter|paladin|rogue|priest|shaman|warlock|druid|demon hunter|death knight|chasseur|guerrier|prêtre|chaman|démoniste|druide)\b/i);
+    var arcMatch = m.match(/\b(aggro|midrange|control|combo|tempo|ramp|zoo|otk|big|token)\b/i);
+    var fmtMatch = m.match(/\b(standard|wild|sauvage)\b/i);
+    var raceMatch = m.match(/\b(dragon|beast|bête|murloc|pirate|mech|méca|élémentaire|elemental|demon|démon|undead|mort.vivant|naga|quilboar|totem)\b/i);
+
+    var clsMap = {'mage':'MAGE','warrior':'WARRIOR','guerrier':'WARRIOR','hunter':'HUNTER','chasseur':'HUNTER','paladin':'PALADIN','rogue':'ROGUE','priest':'PRIEST','prêtre':'PRIEST','shaman':'SHAMAN','chaman':'SHAMAN','warlock':'WARLOCK','démoniste':'WARLOCK','druid':'DRUID','druide':'DRUID','demon hunter':'DEMONHUNTER','death knight':'DEATHKNIGHT'};
+    var raceMap = {'dragon':'DRAGON','beast':'BEAST','bête':'BEAST','murloc':'MURLOC','pirate':'PIRATE','mech':'MECH','méca':'MECH','elemental':'ELEMENTAL','élémentaire':'ELEMENTAL','demon':'DEMON','démon':'DEMON','undead':'UNDEAD','mort-vivant':'UNDEAD','naga':'NAGA','quilboar':'QUILBOAR','totem':'TOTEM'};
+
+    if(clsMatch || arcMatch || raceMatch) {
+      var newCls = clsMap[(clsMatch?.[1]||'').toLowerCase()] || (ST.lastP?.cls) || 'MAGE';
+      var newArc = (arcMatch?.[1]) ? arcMatch[1].charAt(0).toUpperCase()+arcMatch[1].slice(1) : (ST.lastP?.arc||'Midrange');
+      var newFmt = fmtMatch ? (fmtMatch[1].toLowerCase()==='wild'||fmtMatch[1].toLowerCase()==='sauvage'?1:2) : (ST.lastP?.fmt||2);
+      var newRace = raceMatch ? raceMap[(raceMatch[1]||'').toLowerCase()] : null;
+
+      // Configurer ST et lancer genDeck
+      ST.arc = newArc;
+      ST.fmt = newFmt;
+      ST.deckType = newRace ? 'MINION' : 'BOTH';
+      ST.selectedRace = newRace || null;
+      ST.selectedSchool = null;
+      ST.lastP = { mode:'arc', cls:newCls, fmt:newFmt, arc:newArc, dn:'' };
+
+      // Mettre à jour le select classe
+      var hcEl = document.getElementById('hc');
+      if(hcEl) hcEl.value = newCls;
+
+      // Lancer la génération
+      genDeck();
+
+      var raceLabel = newRace ? (' · '+(RACE_LABELS?.[newRace]||newRace)) : '';
+      message = '✨ Génération du deck '+ newArc +' '+ (CLS[newCls]||newCls) + raceLabel + (newFmt===2?' (Standard)':' (Wild)') + '...';
+      return { message, actions: [] }; // genDeck gère tout
+    }
+  }
+
+  // ── Fallback — message d'aide ────────────────────────────────────────────
+  if(actions.length === 0 && !message) {
+    message = 'Je n\'ai pas compris cette commande. Essaie :<br>• <em>ajoute 2x Fireball</em><br>• <em>enlève les cartes de plus de 7 mana</em><br>• <em>remplace Blizzard par Frostbolt</em><br>• <em>crée un deck Dragon Warrior Standard</em><br>• <em>remplace les cartes que je n\'ai pas</em>';
+  }
+
+  if(!message && actions.length > 0) {
+    message = actions.length + ' modification(s) appliquée(s).';
+  }
+
+  return { message, actions };
+}
+
+// Trouver une alternative dans la collection pour une carte manquante
+function findCollectionAlternative(card) {
+  if(!ST.hsDb || MY_COLL.size === 0) return null;
+  var cType = (card.t||'MINION').toUpperCase();
+  var cCost = card.c || 0;
+  var cRace = (card.race||'').toUpperCase();
+  var cls = ST.lastP?.cls || 'MAGE';
+
+  // Chercher une carte de la collection du même type, coût similaire, même race si possible
+  var candidates = Object.values(ST.hsDb).filter(c => {
+    if(!inColl(c.name)) return false;
+    if((c.type||'MINION').toUpperCase() !== cType) return false;
+    if(Math.abs((c.cost||0) - cCost) > 2) return false;
+    var cc = (c.cardClass||c.classes?.[0]||'NEUTRAL').toUpperCase();
+    return cc === cls || cc === 'NEUTRAL';
+  });
+
+  // Préférer même race
+  var sameRace = cRace ? candidates.filter(c=>(c.race||c.races?.[0]||'').toUpperCase()===cRace) : [];
+  var pool = sameRace.length > 0 ? sameRace : candidates;
+  // Exclure les cartes déjà dans le deck
+  var deckNames = new Set((window.CURRENT_DECK||[]).map(c=>c.n.toLowerCase()));
+  pool = pool.filter(c => !deckNames.has(c.name.toLowerCase()));
+
+  return pool.length > 0 ? pool[Math.floor(Math.random()*pool.length)].name : null;
+}
+
+function sendChat(){
+  if(CHAT_BUSY) return;
+  var inp = document.getElementById('chat-inp');
+  var msg = inp.value.trim();
+  if(!msg) return;
+  inp.value = '';
+  CHAT_BUSY = true;
+  var sb = document.getElementById('chat-send');
+  if(sb){sb.disabled=true;sb.style.opacity='.4';sb.style.cursor='not-allowed';}
+  chatAppend(msg.replace(/</g,'&lt;'),'cm-user');
+  var thinking = chatAppend('<span>●</span><span>●</span><span>●</span>','cm-thinking');
+
+  // ── Construire le contexte complet du deck ───────────────────────────────
+  var deckInfo = '';
+  if(CHAT_MODE==='modify'){
+    var d = serializeDeck();
+    if(d){
+      // Distribution mana
+      var manaDist={};
+      d.cards.forEach(c=>{var k=c.c>=7?'7+':String(c.c);manaDist[k]=(manaDist[k]||0)+c.q;});
+      var manaStr=Object.entries(manaDist).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(e=>e[0]+'m×'+e[1]).join(', ');
+      // Nb légendaires
+      var legCount=(window.CURRENT_DECK||[]).filter(c=>c.r==='L').length;
+      var spellCount=(window.CURRENT_DECK||[]).filter(c=>(c.t||'').toUpperCase()==='SPELL').reduce((a,c)=>a+c.q,0);
+      var minionCount=(window.CURRENT_DECK||[]).filter(c=>(c.t||'').toUpperCase()==='MINION').reduce((a,c)=>a+c.q,0);
+
+      deckInfo = `
+DECK ACTUEL:
+- Classe: ${d.cls}  Archétype: ${d.arc}  Format: ${d.fmt}
+- Identité/Type: ${d.identity}
+- Total cartes: ${d.cards.reduce((a,c)=>a+c.q,0)}/30  Légendaires: ${legCount}  Sorts: ${spellCount}  Serviteurs: ${minionCount}
+- Courbe de mana: ${manaStr}
+
+LISTE DES CARTES:
+${d.cards.map(c=>c.q+'x ('+c.c+') '+c.n).join('\n')}
+
+IMPORTANT: Ce deck a une identité "${d.identity}". Toute carte ajoutée DOIT respecter ce type.`;
+    } else {
+      deckInfo = '\n\n(Mode modifier — aucun deck généré. Dis à l\'utilisateur de générer un deck d\'abord.)';
+    }
+  }
+
+  // DB chargée ?
+  var dbNote = ST.hsDb
+    ? `\n\nBase de données: ${Object.keys(ST.hsDb).length} cartes Hearthstone disponibles. Tu connais toutes les cartes HS.`
+    : '\n\nBase de données: non chargée. Utilise tes connaissances générales des cartes HS.';
+
+  // ── Prompt système riche ─────────────────────────────────────────────────
+  var sys = `Tu es Forge Assistant, un expert Hearthstone qui aide les joueurs à construire et modifier des decks.
+Tu es intégré dans HS Deck Forge, un générateur de decks avancé.
+
+RÉPONSE: JSON uniquement, sans backticks, sans texte avant/après.
+
+FORMAT JSON:
+{
+  "message": "réponse en français, max 2 phrases, explique ce que tu fais",
+  "actions": [
+    { "type": "ADD_CARD", "card": "Nom exact anglais", "qty": 2 },
+    { "type": "REMOVE_CARD", "card": "Nom exact anglais", "qty": "all" },
+    { "type": "REPLACE_CARD", "old": "Carte retirée", "new": "Carte ajoutée", "qty": 2 },
+    { "type": "NEW_DECK", "cards": [{"n":"Nom anglais","q":2,"c":3}], "cls":"MAGE", "arc":"Aggro", "fmt":2 }
+  ]
+}
+
+ACTIONS DISPONIBLES:
+- ADD_CARD: ajouter une carte existante (qty 1 ou 2)
+- REMOVE_CARD: retirer une carte (qty = nombre ou "all")
+- REPLACE_CARD: échanger une carte contre une autre
+- NEW_DECK: créer un deck entier (fmt: 2=Standard, 1=Wild)
+
+RÈGLES STRICTES:
+1. Noms de cartes en ANGLAIS exact (ex: "Fireball" pas "Boule de feu")
+2. RESPECTE le type/identité du deck — ne mélange JAMAIS les races ou écoles
+3. Deck Dragon → seulement Dragons + cartes synergiques Dragons
+4. Deck Fire spells → seulement sorts Fire + serviteurs amplificateurs de sorts
+5. Max 30 cartes, max 2x par carte (1x légendaires)
+6. Quand tu REPLACE plusieurs cartes, liste chaque remplacement séparément
+7. Si l'utilisateur veut "optimiser", "améliorer", "adapter" → propose plusieurs REPLACE_CARD pertinents
+8. NEW_DECK seulement si création complète demandée
+9. actions:[] si rien à faire ou si impossible`;
+
+  var userContent = msg + deckInfo + dbNote;
+
+  // ── Appel API avec Sonnet pour meilleure compréhension ───────────────────
+  fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 2000,
+      system: sys,
+      messages:[{role:'user', content: userContent}]
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    chatRemove(thinking);
+    if(data.error){
+      var parsed = parseNaturalCommand(msg, CHAT_MODE);
+      if(!parsed.actions || parsed.actions.length === 0){
+        parsed.message = (parsed.message||'') + '<br><small style="opacity:.4;font-size:.85em;">⚙️ Mode local (API: '+(data.error.message||'erreur').slice(0,50)+')</small>';
+      }
+      deliver(parsed, '⚙️');
+      return;
+    }
+    var raw = (data.content||[]).map(b=>b.text||'').join('').trim()
+      .replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    var parsed2;
+    try{ parsed2 = JSON.parse(raw); }
+    catch(e){
+      deliver(parseNaturalCommand(msg,CHAT_MODE),'⚙️');
+      return;
+    }
+    deliver(parsed2, '🤖');
+  })
+  .catch(err => {
+    chatRemove(thinking);
+    // CORS/réseau → fallback local transparent
+    var parsed = parseNaturalCommand(msg, CHAT_MODE);
+    // Ajouter note discrète si pas de résultat clair
+    if(!parsed.actions || parsed.actions.length === 0){
+      parsed.message = (parsed.message||'') + '<br><small style="opacity:.4;font-size:.85em;">⚙️ Mode local — API indisponible dans cet environnement</small>';
+    }
+    deliver(parsed, '⚙️');
+  });
+}
+
+function fallback(msg){
+  deliver(parseNaturalCommand(msg, CHAT_MODE), '⚙️ Local');
+}
+
+function deliver(parsed, src){
+  // botMsg: le message du bot peut contenir du HTML (br, em, strong) — ne pas échapper
+  var botMsg = parsed.message || '';
+  var actions = parsed.actions||[];
+  var actHtml = '';
+  if(actions.length){
+    actHtml = '<div class="cm-actions">';
+    applyDeckActions(actions).forEach(a=>{
+      actHtml += '<div class="cm-action-item '+a.cls+'">'+a.label+'</div>';
+    });
+    actHtml += '</div>';
+  }
+  var srcBadge = '<span style="font-size:.62em;opacity:.38;float:right;padding-left:6px;font-family:monospace;">'+src+'</span>';
+  chatAppend(srcBadge+(botMsg||'Voilà!')+actHtml,'cm-bot');
+  CHAT_BUSY=false;
+  var sb=document.getElementById('chat-send');
+  if(sb){sb.disabled=false;sb.style.opacity='';sb.style.cursor='';}
+  var el=document.getElementById('chat-inp');
+  if(el)el.focus();
+}
+
+function applyDeckActions(actions){
+  var results = [];
+  var deckOut = document.getElementById('deck-out');
+  var hasActiveDeck = deckOut && deckOut.classList.contains('on');
+
+  for(var act of actions){
+    var type = act.type;
+
+    if(type === 'NEW_DECK' && act.cards && act.cards.length){
+      // Générer un nouveau deck complet
+      var cls = act.cls || (ST.lastP?.cls) || 'MAGE';
+      var arc = act.arc || (ST.lastP?.arc) || 'Midrange';
+      var fmt = act.fmt !== undefined ? act.fmt : (ST.lastP?.fmt || 2);
+      var deck = act.cards.map(c=>({
+        n:c.n||c.name||'', c:c.c||c.cost||0,
+        q:c.q||c.qty||1, r:normRar(c.r||'C'), d:c.d||0,
+        t:c.t||'MINION', race:'', spellSchool:''
+      })).filter(c=>c.n);
+      // Enrichir depuis la DB si disponible
+      if(ST.hsDb) deck = deck.map(c=>{
+        var h=ST.hsDb[c.n.toLowerCase()];
+        if(h) return{...c,d:h.dbfId||c.d,t:h.type||c.t,race:(h.race||h.races?.[0]||'').toUpperCase()};
+        return c;
+      });
+      showDeck(deck, '🧙 Deck créé par Forge Assistant — <em>'+arc+' '+CLS[cls]+'</em>', cls, fmt, arc+' '+CLS[cls]);
+      results.push({ cls:'newdeck', label:'✨ Nouveau deck créé : '+deck.length+' cartes' });
+      ST.lastP = { mode:'arc', cls, fmt, arc, dn:'' };
+      continue;
+    }
+
+    if(!hasActiveDeck && type !== 'NEW_DECK'){
+      results.push({ cls:'', label:'⚠ Aucun deck actif à modifier — génère d\'abord un deck' });
+      break;
+    }
+
+    // Lire le deck actuel depuis l'état interne (CURRENT_DECK)
+    if(!window.CURRENT_DECK || !window.CURRENT_DECK.length){
+      results.push({ cls:'', label:'⚠ Deck introuvable en mémoire — régénère le deck' });
+      break;
+    }
+
+    var deck = window.CURRENT_DECK.map(c=>({...c})); // clone
+    var deckModified = false;
+
+    if(type === 'ADD_CARD' && act.card){
+      var nm = act.card;
+      var qty = Math.min(parseInt(act.qty)||1, 2);
+      // Vérifier que la carte respecte le type du deck
+      var h = ST.hsDb ? ST.hsDb[nm.toLowerCase()] : null;
+      var typeWarn = h ? checkCardFitsIdentity(h) : null;
+      if(typeWarn){
+        results.push({cls:'', label:'⚠ '+nm+' — '+typeWarn});
+      } else {
+        var existing = deck.find(c=>c.n.toLowerCase()===nm.toLowerCase());
+        if(existing){
+          var isLeg = existing.r==='L';
+          var maxQ = isLeg?1:2;
+          var add = Math.min(qty, maxQ-existing.q);
+          if(add>0){ existing.q+=add; results.push({cls:'add',label:'+ '+add+'x '+nm}); deckModified=true; }
+          else results.push({cls:'',label:'⚠ '+nm+' déjà au max'});
+        } else {
+          var newCard = h
+            ? {n:h.name,c:h.cost||0,q:Math.min(qty,h.rarity==='LEGENDARY'?1:2),r:normRar(h.rarity),d:h.dbfId,t:h.type||'MINION',race:(h.race||h.races?.[0]||'').toUpperCase(),spellSchool:(h.spellSchool||'').toUpperCase(),set:h.set||''}
+            : {n:nm,c:0,q:Math.min(qty,1),r:'C',d:0,t:'MINION',race:'',spellSchool:''};
+          deck.push(newCard);
+          results.push({cls:'add',label:'+ '+newCard.q+'x '+nm});
+          deckModified=true;
+        }
+      }
+    }
+
+    else if(type === 'REMOVE_CARD' && act.card){
+      var nm2 = act.card;
+      var rmQty = act.qty==='all'?99:parseInt(act.qty)||1;
+      var idx2 = deck.findIndex(c=>c.n.toLowerCase()===nm2.toLowerCase());
+      if(idx2>=0){
+        var c2 = deck[idx2];
+        if(rmQty >= c2.q || act.qty==='all'){ deck.splice(idx2,1); results.push({cls:'remove',label:'− '+nm2+' (retirée)'}); }
+        else { c2.q-=rmQty; results.push({cls:'remove',label:'− '+rmQty+'x '+nm2}); }
+        deckModified=true;
+      } else results.push({cls:'',label:'⚠ Carte introuvable : '+nm2});
+    }
+
+    else if(type === 'REPLACE_CARD' && act.old && act.new){
+      var h2 = ST.hsDb ? ST.hsDb[act.new.toLowerCase()] : null;
+      var typeWarn2 = h2 ? checkCardFitsIdentity(h2) : null;
+      if(typeWarn2){
+        results.push({cls:'', label:'⚠ '+act.new+' — '+typeWarn2});
+      } else {
+        var idx3 = deck.findIndex(c=>c.n.toLowerCase()===act.old.toLowerCase());
+        if(idx3>=0){
+          var oldCard = deck[idx3];
+          var newC = h2
+            ? {n:h2.name,c:h2.cost||0,q:oldCard.q,r:normRar(h2.rarity),d:h2.dbfId,t:h2.type||'MINION',race:(h2.race||h2.races?.[0]||'').toUpperCase(),spellSchool:(h2.spellSchool||'').toUpperCase()}
+            : {n:act.new,c:0,q:oldCard.q,r:'C',d:0,t:'MINION',race:'',spellSchool:''};
+          deck[idx3] = newC;
+          results.push({cls:'replace',label:'↔ '+act.old+' → '+act.new});
+          deckModified=true;
+        } else results.push({cls:'',label:'⚠ Carte à remplacer introuvable : '+act.old});
+      }
+    }
+
+    if(deckModified){
+      window.CURRENT_DECK = deck;
+      var synHtml = document.getElementById('out-syn-txt')?.innerHTML || '';
+      showDeck(deck, synHtml, ST.lastP?.cls||'MAGE', ST.lastP?.fmt||2, ST.lastP?.dn||'Deck');
+    }
+  }
+
+  return results;
+}
+
+// Vérifie si une carte respecte l'identité du deck actif
+// Retourne null si ok, ou un message d'erreur si incompatible
+function checkCardFitsIdentity(card){
+  var mode = ST.deckType || 'BOTH';
+  var fRace = ST.selectedRace;
+  var fSchool = ST.selectedSchool;
+  var cRace = (card.race||card.races?.[0]||'').toUpperCase();
+  var cType = (card.type||'MINION').toUpperCase();
+  var RACE_NAMES = {BEAST:'Bête',DEMON:'Démon',DRAGON:'Dragon',ELEMENTAL:'Élémentaire',MECH:'Méca',MURLOC:'Murloc',NAGA:'Naga',PIRATE:'Pirate',QUILBOAR:'Quilboar',TOTEM:'Totem',UNDEAD:'Mort-vivant',DRAENEI:'Draeneï'};
+
+  if(mode === 'MINION' && fRace){
+    if(cType === 'MINION' && cRace && cRace !== fRace && TRIBE_SYNERGY_MAP[cRace]){
+      return 'hors-type (deck '+(RACE_NAMES[fRace]||fRace)+', cette carte est '+(RACE_NAMES[cRace]||cRace)+')';
+    }
+  }
+  if(mode === 'SPELL' && fSchool && fSchool !== 'NONE'){
+    if(cType === 'SPELL'){
+      var cs = (card.spellSchool||'').toUpperCase();
+      if(cs && cs !== fSchool){
+        return 'mauvaise école de sort (deck '+fSchool+', cette carte est '+cs+')';
+      }
+    }
+  }
+  return null;
+}
+
+// Sauvegarder le deck courant à chaque showDeck pour que le chat puisse le modifier
+var _origShowDeck = showDeck;
+showDeck = function(cards, synText, cls, fmt, dn){
+  window.CURRENT_DECK = cards.map(c=>({...c}));
+  _origShowDeck(cards, synText, cls, fmt, dn);
+};
 </script>
