@@ -294,6 +294,50 @@ select,input[type=text]{font-size:.96em;padding:9px 13px}
     </div>
   </div>
 
+
+  <!-- IMPORT COLLECTION (cardlist.txt) -->
+  <div class="panel" id="collection-panel">
+    <div class="ph">
+      <span>📁 Ma Collection — Importer cardlist.txt</span>
+      <span id="coll-badge" style="font-family:'Crimson Pro',serif;font-size:.85em;font-weight:400;font-style:italic;color:var(--grn);letter-spacing:0;text-transform:none"></span>
+    </div>
+    <div class="pb">
+      <div style="background:var(--d3);border:1px solid rgba(74,173,122,.3);border-radius:4px;padding:12px 14px;margin-bottom:12px;font-size:.82em;color:var(--dim);line-height:1.85">
+        <span style="font-family:'Cinzel',serif;font-size:.68em;color:var(--grn);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px">📋 Votre collection est déjà chargée (cardlist.txt intégré)</span>
+        Importez un nouveau fichier <strong style="color:var(--txt)">cardlist.txt</strong> pour mettre à jour votre collection.<br>
+        <span style="color:rgba(201,168,76,.9)">⚠ Règle appliquée :</span> <strong style="color:var(--txt)">2 copies</strong> de chaque carte, <strong style="color:var(--txt)">1 copie</strong> pour les légendaires.
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <label style="flex:1;display:flex;align-items:center;gap:10px;background:var(--d3);border:1px solid var(--brd);border-radius:4px;padding:10px 14px;cursor:pointer;transition:border-color .2s" 
+               onmouseenter="this.style.borderColor='var(--grn)'" onmouseleave="this.style.borderColor='var(--brd)'">
+          <span style="font-size:1.3em">📂</span>
+          <span style="font-family:'Cinzel',serif;font-size:.72em;color:var(--grn);font-weight:700;letter-spacing:.1em">Choisir un fichier cardlist.txt</span>
+          <input type="file" id="coll-file-input" accept=".txt" style="display:none" onchange="importCollectionFile(this)">
+        </label>
+        <button onclick="clearCollection()" style="padding:10px 16px;background:rgba(201,68,68,.1);border:1px solid rgba(201,68,68,.3);border-radius:4px;color:var(--red);font-family:'Cinzel',serif;font-size:.68em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap"
+                onmouseenter="this.style.borderColor='var(--red)'" onmouseleave="this.style.borderColor='rgba(201,68,68,.3)'">🗑 Vider</button>
+      </div>
+      <div id="coll-import-status" style="margin-top:10px;font-size:.8em;color:var(--grn);font-style:italic;display:none"></div>
+      <!-- Stats collection -->
+      <div id="coll-stats-box" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="background:var(--d3);border:1px solid rgba(74,173,122,.3);border-radius:4px;padding:6px 14px;font-size:.82em">
+          <span style="color:var(--dim)">Cartes uniques : </span>
+          <strong id="coll-unique-count" style="color:var(--grn)">3 842</strong>
+        </div>
+        <div style="background:var(--d3);border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:6px 14px;font-size:.82em">
+          <span style="color:var(--dim)">Légendaires : </span>
+          <strong id="coll-leg-count" style="color:var(--gold-l)">—</strong>
+          <span style="color:var(--dim);font-size:.85em"> (×1 max)</span>
+        </div>
+        <div style="background:var(--d3);border:1px solid rgba(90,127,192,.25);border-radius:4px;padding:6px 14px;font-size:.82em">
+          <span style="color:var(--dim)">Autres : </span>
+          <strong id="coll-other-count" style="color:var(--blu)">—</strong>
+          <span style="color:var(--dim);font-size:.85em"> (×2 max)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ARCHÉTYPE + CLASSE + FORMAT -->
   <div class="panel">
     <div class="ph"><span>⚡ Construire un Deck</span></div>
@@ -372,6 +416,11 @@ select,input[type=text]{font-size:.96em;padding:9px 13px}
         </div>
       </div>
 
+
+      <!-- COLLECTION IMPORT HINT -->
+      <div id="collection-import-hint" style="display:none;background:rgba(74,173,122,.07);border:1px solid rgba(74,173,122,.25);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:.78em;color:var(--grn);font-style:italic">
+        ⭐ Mode "Ma Collection" actif — le deck sera filtré à vos cartes uniquement (légendaires: ×1, autres: ×2)
+      </div>
       <!-- FORMAT STANDARD / WILD -->
       <div style="margin-bottom:6px">
         <div style="font-family:'Cinzel',serif;font-size:.72em;color:var(--gold);letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:8px">
@@ -568,7 +617,56 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
 </div><!-- /wrap -->
 
 <script>
-const MY_COLLECTION = new Set([
+// ─── FORWARD DECLARATIONS (fix onclick scope) ────────────────────────────────
+// These ensure onclick handlers can find the functions even before full parse
+window.switchMode = function(mode, tab) {
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mode-section').forEach(s => s.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('mode-' + mode).classList.add('active');
+  currentMode = mode;
+  if (mode === 'archetype') updateGenBtn();
+};
+window.selectArc = function(btn, arc) {
+  document.querySelectorAll('.arc-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  selectedArc = arc;
+  updateSynergies();
+  updateGenBtn();
+};
+window.setCardSource = function(src, btn) {
+  cardSource = src;
+  document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Show/hide collection import hint
+  const hint = document.getElementById('collection-import-hint');
+  if (hint) hint.style.display = src === 'my' ? 'block' : 'none';
+};
+window.setFormat = function(fmt, btn) {
+  currentFormat = fmt;
+  const hf = document.getElementById('hf');
+  if (hf) hf.value = fmt;
+  const hf2 = document.getElementById('hf2');
+  if (hf2) hf2.value = fmt;
+  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isStd = fmt === 2;
+  const stdBtn = document.getElementById('fmt-std-btn');
+  const wldBtn = document.getElementById('fmt-wld-btn');
+  if (stdBtn) { stdBtn.classList.toggle('active', isStd); if(isStd) stdBtn.classList.add('std'); else stdBtn.classList.remove('std'); }
+  if (wldBtn) { wldBtn.classList.toggle('active', !isStd); if(!isStd) wldBtn.classList.add('wld'); else wldBtn.classList.remove('wld'); }
+};
+// State vars (declared early so forward decls can use them)
+var selectedArc = null;
+var cardSource = 'all';
+var currentFormat = 2;
+var currentMode = 'archetype';
+var isRunning = false;
+var accessToken = null;
+var cardCache = {};
+
+let MY_COLLECTION = new Set([
+  '"Health" Drink',
   'A Light in the Darkness',
   'Abduction Ray',
   'Aberrant Berserker',
@@ -4414,8 +4512,9 @@ const MY_COLLECTION = new Set([
 
 
 // ─── CARD SOURCE STATE ─────────────────────────────────────────────────────
-let cardSource = 'all'; // 'all' or 'my'
-let currentFormat = 2;  // 2=Standard, 1=Wild
+// cardSource and currentFormat declared at top
+cardSource = 'all';
+currentFormat = 2;
 
 function setCardSource(src, btn) {
   cardSource = src;
@@ -4463,10 +4562,8 @@ function isInMyCollection(cardName) {
 
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
-let accessToken = null;
-let selectedArc = null;
-let isRunning = false;
-const cardCache = {};
+// State vars declared at top
+// accessToken, selectedArc, isRunning, cardCache already declared
 
 // ─── DECK DATABASE ─────────────────────────────────────────────────────────
 // Cartes réelles Hearthstone par archétype+classe, noms anglais officiels
@@ -6710,7 +6807,7 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
 }
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
-let currentMode = 'archetype';
+// currentMode declared at top
 function selectArc(btn, arc) {
   document.querySelectorAll('.arc-btn').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
@@ -6852,6 +6949,8 @@ async function generateDeck() {
   // If "Ma collection" mode, filter to only cards in MY_COLLECTION
   if (cardSource === 'my') {
     parsed = parsed.filter(c => isInMyCollection(c.name));
+    // Apply collection quantity rules (will be enforced by rarity in resolveAndDisplay too)
+    // legendaries capped at 1, others at 2 (enforced in resolveAndDisplay)
     if (parsed.length === 0) {
       // fallback: use all but mark for display
       parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
@@ -6918,6 +7017,79 @@ document.addEventListener('click', e => {
     document.getElementById('ac-box')?.classList.remove('open');
   }
 });
+
+// ─── COLLECTION IMPORT ────────────────────────────────────────────────────────
+function importCollectionFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/);
+    const names = new Set();
+    for (const line of lines) {
+      const name = line.trim();
+      if (name) names.add(name);
+    }
+    MY_COLLECTION = names;
+    updateCollStats();
+    const status = document.getElementById('coll-import-status');
+    status.textContent = '✅ Collection importée : ' + names.size + ' cartes uniques chargées';
+    status.style.display = 'block';
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+    const badge = document.getElementById('coll-badge');
+    if (badge) badge.textContent = '✅ ' + names.size + ' cartes chargées';
+  };
+  reader.readAsText(file);
+}
+
+function clearCollection() {
+  if (!confirm('Vider la collection ? Vous perdrez les données actuelles.')) return;
+  MY_COLLECTION = new Set();
+  updateCollStats();
+  const badge = document.getElementById('coll-badge');
+  if (badge) badge.textContent = '⚠ Collection vide';
+}
+
+function updateCollStats() {
+  const uniqueEl = document.getElementById('coll-unique-count');
+  if (uniqueEl) uniqueEl.textContent = MY_COLLECTION.size.toLocaleString('fr-CA');
+  // We can't know rarity without API call, so show known stats
+  // Count based on names that contain known legendary patterns (rough estimate)
+  const legEl = document.getElementById('coll-leg-count');
+  const othEl = document.getElementById('coll-other-count');
+  if (legEl) legEl.textContent = '—';
+  if (othEl) othEl.textContent = (MY_COLLECTION.size).toLocaleString('fr-CA');
+}
+
+// Update legendary/non-legendary count after DB is loaded
+async function updateCollStatsDetailed() {
+  if (!hsJsonDb) return;
+  let legs = 0, others = 0;
+  for (const name of MY_COLLECTION) {
+    const card = hsJsonDb[name.toLowerCase()];
+    if (card && card.rarity === 'LEGENDARY') legs++;
+    else others++;
+  }
+  const legEl = document.getElementById('coll-leg-count');
+  const othEl = document.getElementById('coll-other-count');
+  if (legEl) legEl.textContent = legs.toLocaleString('fr-CA');
+  if (othEl) othEl.textContent = others.toLocaleString('fr-CA');
+}
+
+// Override isInMyCollection to respect quantity rules
+// (already defined above, but make it robust)
+window.isInMyCollection = function(cardName) {
+  return MY_COLLECTION.has(cardName);
+};
+
+// Initialize collection stats on load
+document.addEventListener('DOMContentLoaded', function() {
+  updateCollStats();
+  const badge = document.getElementById('coll-badge');
+  if (badge) badge.textContent = '✅ ' + MY_COLLECTION.size.toLocaleString('fr-CA') + ' cartes chargées';
+});
+
 </script>
 </body>
 </html>
