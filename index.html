@@ -6,443 +6,170 @@
 <title>HS Deck Forge — Générateur Intelligent</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap');
-
-:root {
-  --gold:#c9a84c; --gold-l:#f0d080; --gold-d:#8a5a00;
-  --dark:#08060d; --d2:#0f0c18; --d3:#16122a;
-  --brd:#2e2450; --brd-l:#4a3d80;
-  --red:#c94444; --grn:#4aad7a; --blu:#5a7fc0; --pur:#9a6adf;
-  --txt:#cfc8e8; --dim:#6a6090;
-  --arc-aggro:#e05050; --arc-mid:#60b860; --arc-ctrl:#5090e0;
-  --arc-combo:#c060e0; --arc-tempo:#e08030; --arc-ramp:#60c0a0;
-  --arc-zoo:#d0a030; --arc-otk:#e040a0; --arc-big:#9060c0;
-  --arc-token:#a0d050;
+:root{
+  --gold:#c9a84c;--gold-l:#f0d080;--gold-d:#8a5a00;
+  --dark:#08060d;--d2:#0f0c18;--d3:#16122a;
+  --brd:#2e2450;--brd-l:#4a3d80;
+  --red:#c94444;--grn:#4aad7a;--blu:#5a7fc0;--pur:#9a6adf;
+  --txt:#cfc8e8;--dim:#6a6090;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-
-body {
-  font-family:'Crimson Pro',Georgia,serif;
-  background:var(--dark);
-  color:var(--txt);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-
-/* BACKGROUND TEXTURE */
-body::before {
-  content:'';
-  position:fixed;
-  inset:0;
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(90,60,180,.12) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(200,120,40,.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 80%, rgba(60,40,120,.1) 0%, transparent 40%);
-  pointer-events:none;
-  z-index:0;
-}
-
-.wrap { position:relative; z-index:1; }
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--dark);color:var(--txt);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(90,60,180,.13),transparent 60%),
+             radial-gradient(ellipse at 80% 20%,rgba(200,120,40,.09),transparent 50%),
+             radial-gradient(ellipse at 60% 80%,rgba(60,40,120,.11),transparent 40%)}
+.wrap{position:relative;z-index:1}
 
 /* HEADER */
-.hdr {
-  text-align:center;
-  padding:36px 20px 24px;
-  border-bottom:1px solid var(--brd);
-  position:relative;
-}
-.hdr::before {
-  content:'';
-  position:absolute;
-  top:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,transparent,var(--gold),var(--pur),var(--gold),transparent);
-}
-.hdr h1 {
-  font-family:'Cinzel',serif;
-  font-size:clamp(1.4em,4vw,2.4em);
-  font-weight:900;
-  color:var(--gold-l);
-  letter-spacing:.08em;
-  text-shadow:0 0 40px rgba(201,168,76,.3);
-}
-.hdr h1 span { color:var(--pur); }
-.hdr p { margin-top:6px; color:var(--dim); font-style:italic; font-size:.9em; }
-
-/* LAYOUT */
-.main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+.hdr{text-align:center;padding:36px 20px 24px;border-bottom:1px solid var(--brd);position:relative}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--gold),var(--pur),var(--gold),transparent)}
+.hdr h1{font-family:'Cinzel',serif;font-size:clamp(1.4em,4vw,2.4em);font-weight:900;
+  color:var(--gold-l);letter-spacing:.08em;text-shadow:0 0 40px rgba(201,168,76,.3)}
+.hdr h1 span{color:var(--pur)}
+.hdr p{margin-top:6px;color:var(--dim);font-style:italic;font-size:.9em}
+.main{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
 
 /* PANELS */
-.panel {
-  background:var(--d2);
-  border:1px solid var(--brd);
-  border-radius:6px;
-  overflow:hidden;
-  margin-bottom:16px;
-}
-.ph {
-  padding:11px 16px;
-  border-bottom:1px solid var(--brd);
-  font-family:'Cinzel',serif;
-  font-size:.72em;
-  font-weight:700;
-  color:var(--gold);
-  letter-spacing:.12em;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.pb { padding:16px; }
+.panel{background:var(--d2);border:1px solid var(--brd);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.ph{padding:11px 16px;border-bottom:1px solid var(--brd);font-family:'Cinzel',serif;
+  font-size:.72em;font-weight:700;color:var(--gold);letter-spacing:.12em;
+  display:flex;align-items:center;gap:8px;justify-content:space-between}
+.pb{padding:16px}
 
 /* CREDENTIALS */
-.cred-box {
-  background:var(--d3);
-  border:1px solid var(--brd);
-  border-left:3px solid var(--blu);
-  border-radius:4px;
-  padding:14px;
-  margin-bottom:14px;
-  font-size:.86em;
-}
-.cred-box .lbl { font-size:.7em; color:var(--blu); text-transform:uppercase; letter-spacing:.1em; display:block; margin-bottom:10px; font-weight:700; font-family:'Cinzel',serif; }
-.cred-row { display:flex; gap:8px; align-items:center; margin-bottom:7px; flex-wrap:wrap; }
-.cred-row label { width:90px; font-size:.8em; color:var(--dim); flex-shrink:0; }
-.cred-row input { flex:1; min-width:160px; background:var(--dark); border:1px solid var(--brd); color:var(--txt); padding:6px 10px; border-radius:4px; font-family:monospace; font-size:.83em; outline:none; }
-.cred-row input:focus { border-color:var(--blu); box-shadow:0 0 0 2px rgba(90,127,192,.2); }
-.hint { font-size:.74em; color:var(--dim); font-style:italic; margin-top:6px; line-height:1.6; }
-.hint a { color:var(--blu); text-decoration:none; }
-.hint a:hover { color:var(--gold-l); }
-.token-status { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:.8em; padding:5px 10px; border-radius:4px; background:rgba(0,0,0,.3); flex:1; }
-.tok-dot { width:8px; height:8px; border-radius:50%; background:var(--dim); flex-shrink:0; }
-.tok-dot.ok { background:var(--grn); box-shadow:0 0 6px var(--grn); }
-.tok-dot.err { background:var(--red); }
-.tok-dot.spin { background:var(--gold); animation:pulse 1s infinite; }
-@keyframes pulse { 0%,100%{opacity:.3}50%{opacity:1} }
+.cred-box{background:var(--d3);border:1px solid var(--brd);border-left:3px solid var(--blu);
+  border-radius:4px;padding:14px;margin-bottom:14px;font-size:.86em}
+.cred-box .lbl{font-size:.7em;color:var(--blu);text-transform:uppercase;letter-spacing:.1em;
+  display:block;margin-bottom:10px;font-weight:700;font-family:'Cinzel',serif}
+.cred-row{display:flex;gap:8px;align-items:center;margin-bottom:7px;flex-wrap:wrap}
+.cred-row label{width:90px;font-size:.8em;color:var(--dim);flex-shrink:0}
+.cred-row input{flex:1;min-width:160px;background:var(--dark);border:1px solid var(--brd);
+  color:var(--txt);padding:6px 10px;border-radius:4px;font-family:monospace;font-size:.83em;outline:none}
+.cred-row input:focus{border-color:var(--blu);box-shadow:0 0 0 2px rgba(90,127,192,.2)}
+.hint{font-size:.74em;color:var(--dim);font-style:italic;margin-top:6px;line-height:1.6}
+.hint a{color:var(--blu);text-decoration:none}
+.token-status{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:.8em;
+  padding:5px 10px;border-radius:4px;background:rgba(0,0,0,.3);flex:1}
+.tok-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0}
+.tok-dot.ok{background:var(--grn);box-shadow:0 0 6px var(--grn)}
+.tok-dot.err{background:var(--red)}
+.tok-dot.spin{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.btn-tok{background:var(--blu);border:1px solid #7aa0d0;color:#e0f0ff;font-family:'Cinzel',serif;
+  font-size:.7em;font-weight:700;padding:5px 14px;border-radius:4px;cursor:pointer;
+  letter-spacing:.08em;text-transform:uppercase;margin-left:auto;transition:background .2s}
+.btn-tok:hover{background:#6a90d0}
+.btn-tok:disabled{opacity:.4;cursor:not-allowed}
 
-/* ARCHETYPE SELECTOR */
-.arc-section { margin-bottom:16px; }
-.arc-title {
-  font-family:'Cinzel',serif;
-  font-size:.78em;
-  color:var(--gold);
-  letter-spacing:.1em;
-  margin-bottom:12px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.arc-title::after { content:''; flex:1; height:1px; background:var(--brd); }
+/* ARCHETYPE BUTTONS */
+.arc-section-title{font-family:'Cinzel',serif;font-size:.76em;color:var(--gold);
+  letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.arc-section-title::after{content:'';flex:1;height:1px;background:var(--brd)}
+.arc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:14px}
+.arc-btn{padding:10px 6px 8px;border-radius:5px;border:1px solid var(--brd);
+  background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;
+  font-size:.63em;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  text-align:center;transition:all .2s;position:relative}
+.arc-btn:hover{transform:translateY(-2px);color:var(--txt);border-color:var(--brd-l)}
+.arc-btn.sel{color:#fff;border-color:transparent;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.arc-icon{font-size:1.7em;display:block;margin-bottom:4px}
+.arc-sub{font-size:.82em;opacity:.7;font-family:'Crimson Pro',serif;font-style:italic;
+  text-transform:none;letter-spacing:0;margin-top:3px;display:block;color:inherit}
+/* Couleurs archétypes */
+.arc-aggro{--c:#e05050}.arc-mid{--c:#60b860}.arc-ctrl{--c:#5090e0}
+.arc-combo{--c:#c060e0}.arc-tempo{--c:#e08030}.arc-ramp{--c:#3abf9a}
+.arc-zoo{--c:#d0a030}.arc-otk{--c:#e040a0}.arc-big{--c:#9060c0}.arc-token{--c:#a0d050}
+.arc-btn:hover{border-color:var(--c,var(--brd-l));color:var(--c,var(--txt))}
+.arc-btn.sel{background:var(--c);border-color:var(--c)}
 
-.arc-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-  gap:8px;
-  margin-bottom:12px;
-}
-.arc-btn {
-  padding:10px 8px;
-  border-radius:5px;
-  border:1px solid var(--brd);
-  background:var(--d3);
-  color:var(--dim);
-  cursor:pointer;
-  font-family:'Cinzel',serif;
-  font-size:.65em;
-  font-weight:700;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  text-align:center;
-  transition:all .2s;
-  position:relative;
-  overflow:hidden;
-}
-.arc-btn::before {
-  content:'';
-  position:absolute;
-  inset:0;
-  opacity:0;
-  transition:opacity .2s;
-}
-.arc-btn:hover { transform:translateY(-2px); color:var(--txt); border-color:var(--brd-l); }
-.arc-btn.sel { color:#fff; border-color:transparent; }
-.arc-btn .arc-icon { font-size:1.6em; display:block; margin-bottom:4px; }
-.arc-btn .arc-sub { font-size:.75em; color:inherit; opacity:.7; font-family:'Crimson Pro',serif; font-style:italic; text-transform:none; letter-spacing:0; margin-top:2px; display:block; }
+/* CONTROLS */
+.cf-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:.68em;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;font-family:'Cinzel',serif}
+select,input[type=text]{background:var(--d3);border:1px solid var(--brd);color:var(--txt);
+  padding:7px 10px;border-radius:4px;font-family:'Crimson Pro',inherit;font-size:.9em;outline:none;transition:border-color .2s}
+select:focus,input[type=text]:focus{border-color:var(--gold)}
 
-/* Archetype colors */
-.arc-aggro { --c:var(--arc-aggro); }
-.arc-mid { --c:var(--arc-mid); }
-.arc-ctrl { --c:var(--arc-ctrl); }
-.arc-combo { --c:var(--arc-combo); }
-.arc-tempo { --c:var(--arc-tempo); }
-.arc-ramp { --c:var(--arc-ramp); }
-.arc-zoo { --c:var(--arc-zoo); }
-.arc-otk { --c:var(--arc-otk); }
-.arc-big { --c:var(--arc-big); }
-.arc-token { --c:var(--arc-token); }
+/* SYNERGY INFO BOX */
+.syn-box{background:var(--d3);border:1px solid var(--brd);border-left:3px solid var(--gold-d);
+  border-radius:4px;padding:12px 14px;margin-bottom:14px;font-size:.84em;line-height:1.85;display:none}
+.syn-box.active{display:block}
+.syn-h{font-family:'Cinzel',serif;font-size:.68em;color:var(--gold);letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:8px}
+.syn-combo{color:var(--pur);font-weight:600}
+.syn-tag{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.22);
+  border-radius:3px;padding:0 5px;font-size:.85em;color:var(--gold-l);margin:1px;display:inline-block}
 
-[class*="arc-btn"]:hover { border-color:var(--c); color:var(--c); box-shadow:0 0 12px rgba(var(--c-rgb,.5,.3,.3),.15); }
-.arc-btn.sel { background:var(--c); border-color:var(--c); }
-
-/* CLASS / FORMAT ROW */
-.cf-row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px; }
-.fld { display:flex; flex-direction:column; gap:4px; }
-.fld label { font-size:.68em; color:var(--gold); text-transform:uppercase; letter-spacing:.1em; font-family:'Cinzel',serif; }
-select, input[type=text] {
-  background:var(--d3);
-  border:1px solid var(--brd);
-  color:var(--txt);
-  padding:7px 10px;
-  border-radius:4px;
-  font-family:'Crimson Pro',inherit;
-  font-size:.9em;
-  outline:none;
-  transition:border-color .2s;
-}
-select:focus, input[type=text]:focus { border-color:var(--gold); }
-
-/* GENERATE BUTTON — THE HERO */
-.btn-gen {
-  width:100%;
-  padding:14px;
+/* GENERATE BUTTON */
+.btn-gen{width:100%;padding:14px;
   background:linear-gradient(135deg,#3a2000,#6a4200,#3a2000);
-  border:1px solid var(--gold);
-  color:var(--gold-l);
-  font-family:'Cinzel',serif;
-  font-size:.9em;
-  font-weight:700;
-  letter-spacing:.15em;
-  text-transform:uppercase;
-  border-radius:5px;
-  cursor:pointer;
-  transition:all .25s;
-  position:relative;
-  overflow:hidden;
-}
-.btn-gen::before {
-  content:'';
-  position:absolute;
-  top:-50%; left:-60%;
-  width:40%; height:200%;
-  background:rgba(255,255,255,.06);
-  transform:skewX(-20deg);
-  transition:left .4s;
-}
-.btn-gen:hover:not(:disabled)::before { left:120%; }
-.btn-gen:hover:not(:disabled) {
-  background:linear-gradient(135deg,#5a3400,#9a6800,#5a3400);
-  box-shadow:0 0 30px rgba(201,168,76,.3);
-  transform:translateY(-1px);
-}
-.btn-gen:disabled { opacity:.3; cursor:not-allowed; }
-
-/* AI RESPONSE BOX */
-.ai-box {
-  background:var(--d3);
-  border:1px solid var(--brd);
-  border-left:3px solid var(--pur);
-  border-radius:4px;
-  padding:14px;
-  font-size:.88em;
-  line-height:1.8;
-  min-height:60px;
-  display:none;
-}
-.ai-box.active { display:block; }
-.ai-box .ai-lbl {
-  font-family:'Cinzel',serif;
-  font-size:.65em;
-  color:var(--pur);
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  margin-bottom:8px;
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-.ai-thinking { color:var(--dim); font-style:italic; }
-.ai-thinking span { animation:blink 1.2s infinite; }
-.ai-thinking span:nth-child(2) { animation-delay:.2s; }
-.ai-thinking span:nth-child(3) { animation-delay:.4s; }
-@keyframes blink { 0%,80%,100%{opacity:.3}40%{opacity:1} }
-
-/* DECK CARDS DISPLAY */
-.deck-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
-  gap:4px;
-  margin-top:12px;
-}
-.dc {
-  display:flex;
-  align-items:center;
-  gap:7px;
-  padding:4px 9px;
-  border-radius:4px;
-  border:1px solid transparent;
-  font-size:.8em;
-  transition:all .15s;
-  cursor:default;
-}
-.dc:hover { background:rgba(255,255,255,.04); }
-.dc.ok { border-color:rgba(74,173,122,.25); background:rgba(30,80,55,.12); }
-.dc.bad { border-color:rgba(201,68,68,.25); background:rgba(100,20,20,.12); }
-.dc.pend { border-color:rgba(201,168,76,.2); background:rgba(80,60,0,.1); }
-.mc {
-  background:linear-gradient(135deg,#1a3a7a,#0a1a4a);
-  color:#90c0ff;
-  border-radius:50%;
-  width:20px; height:20px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:.7em; font-weight:bold; flex-shrink:0;
-  border:1px solid #2a4a8a;
-}
-.cn { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.cq { color:var(--gold); font-size:.8em; }
-.synergy-badge {
-  font-size:.6em;
-  padding:1px 5px;
-  border-radius:10px;
-  background:rgba(154,106,223,.2);
-  border:1px solid rgba(154,106,223,.4);
-  color:var(--pur);
-  white-space:nowrap;
-}
-
-/* CODE OUTPUT */
-.code-wrap {
-  background:var(--dark);
-  border:1px solid var(--brd);
-  border-left:3px solid var(--grn);
-  border-radius:4px;
-  padding:12px;
-  font-family:monospace;
-  font-size:.78em;
-  color:#70d090;
-  word-break:break-all;
-  line-height:1.7;
-  min-height:56px;
-}
-.code-wrap.empty { color:var(--dim); font-family:'Crimson Pro',serif; font-style:italic; word-break:normal; }
-
-/* STATS ROW */
-.stats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-.stat { background:var(--d3); border:1px solid var(--brd); border-radius:4px; padding:3px 10px; font-size:.8em; }
-.stat .n { font-weight:700; font-size:1.05em; }
-.ok .n { color:var(--grn); }
-.warn .n { color:var(--gold); }
-.bad .n { color:var(--red); }
-
-/* BUTTONS */
-.btn-row { display:flex; gap:8px; margin-top:10px; }
-.btn-sm {
-  flex:1;
-  padding:9px;
-  border-radius:4px;
-  border:1px solid var(--brd);
-  background:var(--d3);
-  color:var(--txt);
-  font-family:'Cinzel',serif;
-  font-size:.68em;
-  font-weight:700;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  cursor:pointer;
-  transition:all .2s;
-}
-.btn-sm:hover:not(:disabled) { border-color:var(--gold); color:var(--gold-l); }
-.btn-sm:disabled { opacity:.35; cursor:not-allowed; }
-.btn-sm.green { border-color:rgba(74,173,122,.5); color:var(--grn); }
-.btn-sm.green:hover:not(:disabled) { background:rgba(74,173,122,.12); border-color:var(--grn); }
-
-/* TOKEN BUTTON */
-.btn-tok {
-  background:var(--blu);
-  border:1px solid #7aa0d0;
-  color:#e0f0ff;
-  font-family:'Cinzel',serif;
-  font-size:.7em;
-  font-weight:700;
-  padding:5px 14px;
-  border-radius:4px;
-  cursor:pointer;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  margin-left:auto;
-  transition:background .2s;
-}
-.btn-tok:hover { background:#6a90d0; }
-.btn-tok:disabled { opacity:.4; cursor:not-allowed; }
+  border:1px solid var(--gold);color:var(--gold-l);font-family:'Cinzel',serif;
+  font-size:.9em;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  border-radius:5px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;margin-top:4px}
+.btn-gen::before{content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;
+  background:rgba(255,255,255,.06);transform:skewX(-20deg);transition:left .4s}
+.btn-gen:hover:not(:disabled)::before{left:120%}
+.btn-gen:hover:not(:disabled){background:linear-gradient(135deg,#5a3400,#9a6800,#5a3400);
+  box-shadow:0 0 30px rgba(201,168,76,.3);transform:translateY(-1px)}
+.btn-gen:disabled{opacity:.3;cursor:not-allowed}
 
 /* PROGRESS */
-.prog-wrap { background:var(--d3); border:1px solid var(--brd); border-radius:4px; overflow:hidden; height:5px; margin-top:8px; display:none; }
-.prog-bar { height:100%; background:linear-gradient(90deg,var(--pur),var(--gold)); border-radius:4px; transition:width .3s; width:0; }
-.prog-txt { font-size:.72em; color:var(--dim); text-align:center; margin-top:4px; font-style:italic; display:none; }
+.prog-wrap{background:var(--d3);border:1px solid var(--brd);border-radius:4px;
+  overflow:hidden;height:5px;margin-top:8px;display:none}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--pur),var(--gold));
+  border-radius:4px;transition:width .3s;width:0}
+.prog-txt{font-size:.72em;color:var(--dim);text-align:center;margin-top:4px;font-style:italic;display:none}
 
-/* SYNERGY INFO */
-.syn-section {
-  background:var(--d3);
-  border:1px solid var(--brd);
-  border-left:3px solid var(--gold);
-  border-radius:4px;
-  padding:12px;
-  margin-top:12px;
-  font-size:.84em;
-  display:none;
-}
-.syn-section.active { display:block; }
-.syn-h { font-family:'Cinzel',serif; font-size:.7em; color:var(--gold); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
-.syn-list { line-height:1.9; color:var(--txt); }
-.syn-combo { color:var(--pur); font-weight:600; }
-.syn-tag { display:inline-block; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.25); border-radius:3px; padding:0 5px; font-size:.85em; color:var(--gold-l); margin:1px; }
+/* CARD GRID */
+.cw{max-height:260px;overflow-y:auto;padding-right:3px;margin-top:10px}
+.cw::-webkit-scrollbar{width:4px}
+.cw::-webkit-scrollbar-track{background:var(--dark)}
+.cw::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+.deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px}
+.dc{display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:4px;
+  border:1px solid transparent;font-size:.8em;transition:all .15s}
+.dc:hover{background:rgba(255,255,255,.03)}
+.dc.ok{border-color:rgba(74,173,122,.25);background:rgba(30,80,55,.12)}
+.dc.bad{border-color:rgba(201,68,68,.25);background:rgba(100,20,20,.12)}
+.dc.pend{border-color:rgba(201,168,76,.18);background:rgba(80,60,0,.1)}
+.mc{background:linear-gradient(135deg,#1a3a7a,#0a1a4a);color:#90c0ff;
+  border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  font-size:.7em;font-weight:bold;flex-shrink:0;border:1px solid #2a4a8a}
+.cn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cq{color:var(--gold);font-size:.8em}
 
-/* SCROLLBAR */
-::-webkit-scrollbar { width:4px; }
-::-webkit-scrollbar-track { background:var(--dark); }
-::-webkit-scrollbar-thumb { background:var(--brd); border-radius:2px; }
+/* OUTPUT */
+.code-wrap{background:var(--dark);border:1px solid var(--brd);border-left:3px solid var(--grn);
+  border-radius:4px;padding:12px;font-family:monospace;font-size:.78em;color:#70d090;
+  word-break:break-all;line-height:1.7;min-height:56px}
+.code-wrap.empty{color:var(--dim);font-family:'Crimson Pro',serif;font-style:italic;word-break:normal}
+.stats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.stat{background:var(--d3);border:1px solid var(--brd);border-radius:4px;padding:3px 10px;font-size:.8em}
+.stat .n{font-weight:700;font-size:1.05em}
+.ok-s .n{color:var(--grn)}.warn .n{color:var(--gold)}.bad-s .n{color:var(--red)}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--brd),transparent);margin:10px 0}
+.miss-t{font-size:.7em;color:var(--red);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;font-family:'Cinzel',serif}
+.miss-l{font-size:.82em;color:var(--red);line-height:2.1}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-sm{flex:1;padding:9px;border-radius:4px;border:1px solid var(--brd);background:var(--d3);
+  color:var(--txt);font-family:'Cinzel',serif;font-size:.68em;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.btn-sm:hover:not(:disabled){border-color:var(--gold);color:var(--gold-l)}
+.btn-sm:disabled{opacity:.35;cursor:not-allowed}
+.btn-sm.green{border-color:rgba(74,173,122,.5);color:var(--grn)}
+.btn-sm.green:hover:not(:disabled){background:rgba(74,173,122,.12);border-color:var(--grn)}
+.sbar{text-align:center;padding:8px;font-size:.78em;font-style:italic;
+  border-top:1px solid var(--brd);color:var(--grn)}
 
-/* MISS LIST */
-.miss-t { font-size:.7em; color:var(--red); text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px; font-family:'Cinzel',serif; }
-.miss-l { font-size:.82em; color:var(--red); line-height:2.1; }
-.divider { height:1px; background:linear-gradient(90deg,transparent,var(--brd),transparent); margin:10px 0; }
+/* IMPORT GUIDE */
+.import-box{background:var(--d3);border:1px solid rgba(74,173,122,.3);border-radius:4px;
+  padding:12px 14px;margin-top:10px;font-size:.82em;display:none}
+.import-box.active{display:block}
+.import-h{font-family:'Cinzel',serif;font-size:.68em;color:var(--grn);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
 
-/* STATUS BAR */
-.sbar { text-align:center; padding:8px; font-size:.78em; font-style:italic; border-top:1px solid var(--brd); color:var(--grn); }
-
-/* CARD SCROLL */
-.cw { max-height:240px; overflow-y:auto; padding-right:3px; }
-
-/* FORMAT BOX */
-.fmt-note {
-  background:var(--d3);
-  border:1px solid var(--brd);
-  border-left:3px solid var(--gold-d);
-  border-radius:4px;
-  padding:10px 12px;
-  font-size:.82em;
-  line-height:1.8;
-  margin-bottom:14px;
-  color:var(--dim);
-}
-.fmt-note strong { color:var(--txt); }
-
-/* RESPONSIVE */
-@media(max-width:640px) {
-  .arc-grid { grid-template-columns:repeat(3,1fr); }
-  .cf-row { flex-direction:column; }
-}
-
-/* COPY HS LINK */
-.hs-link-box {
-  background:var(--d3);
-  border:1px solid rgba(74,173,122,.3);
-  border-radius:4px;
-  padding:10px 12px;
-  font-size:.8em;
-  color:var(--dim);
-  margin-top:8px;
-  display:none;
-}
-.hs-link-box.active { display:block; }
-.hs-link-box .lnk-h { font-family:'Cinzel',serif; font-size:.68em; color:var(--grn); letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
-.hs-url { font-family:monospace; font-size:.85em; color:#70d090; word-break:break-all; background:var(--dark); padding:5px 8px; border-radius:3px; border:1px solid var(--brd); margin-bottom:6px; }
+@media(max-width:640px){.arc-grid{grid-template-columns:repeat(3,1fr)}.cf-row{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -450,14 +177,14 @@ select:focus, input[type=text]:focus { border-color:var(--gold); }
 
 <div class="hdr">
   <h1>⚔️ HS Deck <span>Forge</span></h1>
-  <p>Génération intelligente par archétype &middot; Synergies &amp; Combos &middot; Code Hearthstone</p>
+  <p>Archétype → Classe → Générer → Copier dans Hearthstone</p>
 </div>
 
 <div class="main">
 
-  <!-- API BLIZZARD -->
+  <!-- CONNEXION API BLIZZARD -->
   <div class="panel">
-    <div class="ph">🔑 Connexion API Blizzard</div>
+    <div class="ph"><span>🔑 Connexion API Blizzard</span></div>
     <div class="pb">
       <div class="cred-box">
         <span class="lbl">📄 Identifiants Blizzard Developer</span>
@@ -467,7 +194,7 @@ select:focus, input[type=text]:focus { border-color:var(--gold); }
         </div>
         <div class="cred-row">
           <label>Client Secret</label>
-          <input type="text" id="csec" placeholder="Votre client_secret Blizzard" autocomplete="off" type="password">
+          <input type="password" id="csec" placeholder="Votre client_secret Blizzard" autocomplete="off">
         </div>
         <div class="cred-row" style="align-items:center">
           <div class="token-status">
@@ -484,73 +211,68 @@ select:focus, input[type=text]:focus { border-color:var(--gold); }
     </div>
   </div>
 
-  <!-- ARCHETYPE SELECTOR -->
+  <!-- ARCHÉTYPE + CLASSE + FORMAT -->
   <div class="panel">
-    <div class="ph">⚡ Choisissez votre Archétype</div>
+    <div class="ph"><span>⚡ Construire un Deck</span></div>
     <div class="pb">
 
-      <div class="arc-title">Archétypes Principaux</div>
-      <div class="arc-grid" id="arc-main">
-        <button class="arc-btn arc-aggro" data-arc="Aggro" onclick="selectArc(this,'Aggro')">
-          <span class="arc-icon">⚡</span>Aggro
-          <span class="arc-sub">Tuer vite &amp; fort</span>
+      <div class="arc-section-title">Archétypes principaux</div>
+      <div class="arc-grid">
+        <button class="arc-btn arc-aggro" onclick="selectArc(this,'Aggro')">
+          <span class="arc-icon">⚡</span>Aggro<span class="arc-sub">Tuer vite</span>
         </button>
-        <button class="arc-btn arc-mid" data-arc="Midrange" onclick="selectArc(this,'Midrange')">
-          <span class="arc-icon">⚖️</span>Midrange
-          <span class="arc-sub">Équilibré &amp; solide</span>
+        <button class="arc-btn arc-mid" onclick="selectArc(this,'Midrange')">
+          <span class="arc-icon">⚖️</span>Midrange<span class="arc-sub">Équilibré</span>
         </button>
-        <button class="arc-btn arc-ctrl" data-arc="Control" onclick="selectArc(this,'Control')">
-          <span class="arc-icon">🛡️</span>Control
-          <span class="arc-sub">Survivre &amp; dominer</span>
+        <button class="arc-btn arc-ctrl" onclick="selectArc(this,'Control')">
+          <span class="arc-icon">🛡️</span>Control<span class="arc-sub">Survivre &amp; win</span>
         </button>
-        <button class="arc-btn arc-combo" data-arc="Combo" onclick="selectArc(this,'Combo')">
-          <span class="arc-icon">🎯</span>Combo
-          <span class="arc-sub">Assembler &amp; écraser</span>
+        <button class="arc-btn arc-combo" onclick="selectArc(this,'Combo')">
+          <span class="arc-icon">🎯</span>Combo<span class="arc-sub">Assembler</span>
         </button>
       </div>
 
-      <div class="arc-title">Variantes &amp; Sous-types</div>
-      <div class="arc-grid" id="arc-sub">
-        <button class="arc-btn arc-tempo" data-arc="Tempo" onclick="selectArc(this,'Tempo')">
-          <span class="arc-icon">🔥</span>Tempo
-          <span class="arc-sub">Board &amp; rythme</span>
+      <div class="arc-section-title">Variantes &amp; sous-types</div>
+      <div class="arc-grid">
+        <button class="arc-btn arc-tempo" onclick="selectArc(this,'Tempo')">
+          <span class="arc-icon">🔥</span>Tempo<span class="arc-sub">Board control</span>
         </button>
-        <button class="arc-btn arc-ramp" data-arc="Ramp" onclick="selectArc(this,'Ramp')">
-          <span class="arc-icon">🌿</span>Ramp
-          <span class="arc-sub">Mana accéléré</span>
+        <button class="arc-btn arc-ramp" onclick="selectArc(this,'Ramp')">
+          <span class="arc-icon">🌿</span>Ramp<span class="arc-sub">Mana accéléré</span>
         </button>
-        <button class="arc-btn arc-zoo" data-arc="Zoo" onclick="selectArc(this,'Zoo')">
-          <span class="arc-icon">🐾</span>Zoo
-          <span class="arc-sub">Submerger de board</span>
+        <button class="arc-btn arc-zoo" onclick="selectArc(this,'Zoo')">
+          <span class="arc-icon">🐾</span>Zoo<span class="arc-sub">Submerger</span>
         </button>
-        <button class="arc-btn arc-otk" data-arc="OTK" onclick="selectArc(this,'OTK')">
-          <span class="arc-icon">💥</span>OTK
-          <span class="arc-sub">One Turn Kill</span>
+        <button class="arc-btn arc-otk" onclick="selectArc(this,'OTK')">
+          <span class="arc-icon">💥</span>OTK<span class="arc-sub">One Turn Kill</span>
         </button>
-        <button class="arc-btn arc-big" data-arc="Big" onclick="selectArc(this,'Big')">
-          <span class="arc-icon">🐉</span>Big
-          <span class="arc-sub">Grosses menaces</span>
+        <button class="arc-btn arc-big" onclick="selectArc(this,'Big')">
+          <span class="arc-icon">🐉</span>Big<span class="arc-sub">Grosses menaces</span>
         </button>
-        <button class="arc-btn arc-token" data-arc="Token" onclick="selectArc(this,'Token')">
-          <span class="arc-icon">🪙</span>Token
-          <span class="arc-sub">Masse de tokens</span>
+        <button class="arc-btn arc-token" onclick="selectArc(this,'Token')">
+          <span class="arc-icon">🪙</span>Token<span class="arc-sub">Masse tokens</span>
         </button>
       </div>
 
-      <!-- CLASS & FORMAT -->
-      <div class="cf-row">
+      <!-- SYNERGIES DISPLAY (updated when archetype selected) -->
+      <div class="syn-box" id="syn-box">
+        <div class="syn-h">⚡ Synergies &amp; Combos de cet archétype</div>
+        <div id="syn-content"></div>
+      </div>
+
+      <div class="cf-row" style="margin-top:14px">
         <div class="fld">
           <label>Classe</label>
-          <select id="hc">
-            <option value="WARRIOR">Warrior</option>
-            <option value="SHAMAN">Shaman</option>
-            <option value="ROGUE">Rogue</option>
-            <option value="PALADIN">Paladin</option>
+          <select id="hc" onchange="updateSynergies()">
+            <option value="DRUID">Druid</option>
             <option value="HUNTER">Hunter</option>
-            <option value="DRUID" selected>Druid</option>
-            <option value="WARLOCK">Warlock</option>
             <option value="MAGE">Mage</option>
+            <option value="PALADIN">Paladin</option>
             <option value="PRIEST">Priest</option>
+            <option value="ROGUE">Rogue</option>
+            <option value="SHAMAN">Shaman</option>
+            <option value="WARLOCK">Warlock</option>
+            <option value="WARRIOR">Warrior</option>
             <option value="DEMONHUNTER">Demon Hunter</option>
             <option value="DEATHKNIGHT">Death Knight</option>
           </select>
@@ -564,52 +286,33 @@ select:focus, input[type=text]:focus { border-color:var(--gold); }
         </div>
         <div class="fld">
           <label>Nom du Deck</label>
-          <input type="text" id="dn" placeholder="Mon Deck Légendaire" style="width:160px">
-        </div>
-      </div>
-
-      <div class="fmt-note">
-        <strong>Comment ça marche :</strong> Choisissez un archétype, une classe et le format. 
-        L'IA va analyser les meilleures synergies et combos disponibles, puis générer une liste de 30 cartes 
-        optimisée qui maximise vos chances de victoire.
-      </div>
-
-      <!-- AI RESPONSE -->
-      <div class="ai-box" id="ai-box">
-        <div class="ai-lbl">🤖 Analyse IA en cours</div>
-        <div id="ai-content" class="ai-thinking">
-          <span>●</span><span>●</span><span>●</span>
+          <input type="text" id="dn" placeholder="Mon Deck" style="width:160px">
         </div>
       </div>
 
       <button class="btn-gen" id="gen-btn" onclick="generateDeck()" disabled>
-        ⚡ Générer le Deck
+        ⚡ Générer le Deck (30 cartes)
       </button>
+
+      <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+      <div class="prog-txt" id="prog-txt"></div>
     </div>
   </div>
 
-  <!-- CARD LOOKUP + OUTPUT (hidden until generated) -->
+  <!-- OUTPUT PANEL -->
   <div class="panel" id="out-panel" style="display:none">
-    <div class="ph" style="justify-content:space-between">
+    <div class="ph">
       <span>🃏 Deck Généré</span>
       <span id="cl" style="font-size:.77em;color:var(--dim);text-transform:none;letter-spacing:0;font-family:'Crimson Pro',serif"></span>
     </div>
     <div class="pb">
-
       <div class="stats" id="sta" style="display:none">
-        <div class="stat ok"><span class="n" id="sf">0</span> résolues</div>
+        <div class="stat ok-s"><span class="n" id="sf">0</span> résolues</div>
         <div class="stat warn"><span class="n" id="sc">0</span> cartes</div>
-        <div class="stat bad" id="sbx" style="display:none"><span class="n" id="sm">0</span> manquantes</div>
+        <div class="stat bad-s" id="sbx" style="display:none"><span class="n" id="sm">0</span> manquantes</div>
       </div>
 
-      <!-- SYNERGY DISPLAY -->
-      <div class="syn-section" id="syn-section">
-        <div class="syn-h">⚡ Synergies &amp; Combos détectés</div>
-        <div class="syn-list" id="syn-list"></div>
-      </div>
-
-      <!-- CARD GRID -->
-      <div class="cw" style="margin-top:12px">
+      <div class="cw">
         <div class="deck-grid" id="cg">
           <div style="color:var(--dim);font-style:italic;text-align:center;padding:18px;grid-column:1/-1">
             En attente de génération…
@@ -617,26 +320,26 @@ select:focus, input[type=text]:focus { border-color:var(--gold); }
         </div>
       </div>
 
-      <div id="msdiv" style="display:none">
+      <div id="msdiv" style="display:none;margin-top:8px">
         <div class="divider"></div>
-        <div class="miss-t">⚠ Cartes non trouvées via l'API</div>
+        <div class="miss-t">⚠ Cartes non trouvées via l'API Blizzard</div>
         <div class="miss-l" id="mlst"></div>
       </div>
 
       <div class="divider"></div>
 
-      <!-- CODE OUTPUT -->
-      <div style="font-family:'Cinzel',serif;font-size:.7em;color:var(--gold);letter-spacing:.1em;margin-bottom:6px;">📋 Code du Deck</div>
+      <div style="font-family:'Cinzel',serif;font-size:.7em;color:var(--gold);letter-spacing:.1em;margin-bottom:6px">📋 Code du Deck Hearthstone</div>
       <div class="code-wrap empty" id="cbox">Le code apparaîtra ici...</div>
 
-      <!-- HS IMPORT LINK -->
-      <div class="hs-link-box" id="hs-link-box">
-        <div class="lnk-h">🔗 Importer dans Hearthstone</div>
-        <div class="hs-url" id="hs-url"></div>
-        <p style="color:var(--dim);font-size:.85em;font-style:italic">
-          Copiez le code ci-dessus → ouvrez Hearthstone → Collection → Nouveau Deck → Coller le code.
-          Ou utilisez le bouton Copier ci-dessous.
-        </p>
+      <div class="import-box" id="import-box">
+        <div class="import-h">🎮 Comment importer dans Hearthstone</div>
+        <div style="color:var(--dim);line-height:1.9">
+          1. Copiez le code avec le bouton ci-dessous<br>
+          2. Ouvrez <strong style="color:var(--txt)">Hearthstone</strong><br>
+          3. Allez dans <strong style="color:var(--txt)">Collection → Mes Decks → Nouveau Deck</strong><br>
+          4. Cliquez sur <strong style="color:var(--txt)">"Importer un Deck"</strong> (ou collez avec Ctrl+V)<br>
+          5. Le deck apparaît automatiquement ✅
+        </div>
       </div>
 
       <div class="btn-row">
@@ -644,27 +347,1711 @@ select:focus, input[type=text]:focus { border-color:var(--gold); }
         <button class="btn-sm" onclick="regenerate()">🔄 Régénérer</button>
       </div>
     </div>
-
-    <div class="sbar" id="sb2">En attente de connexion...</div>
+    <div class="sbar" id="sb2">En attente...</div>
   </div>
 
-  <!-- PROGRESS -->
-  <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
-  <div class="prog-txt" id="prog-txt"></div>
-
-</div>
-</div>
+</div><!-- /main -->
+</div><!-- /wrap -->
 
 <script>
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let accessToken = null;
 let selectedArc = null;
 let isRunning = false;
-let lastDeckList = [];
-let lastSynergies = '';
 const cardCache = {};
 
-// ─── ENCODER ─────────────────────────────────────────────────────────────────
+// ─── DECK DATABASE ─────────────────────────────────────────────────────────
+// Cartes réelles Hearthstone par archétype+classe, noms anglais officiels
+// Format: { archétype: { classe: { cards: [{name,cnt}], synergies: [str] } } }
+const DECKS = {
+  Aggro: {
+    WARRIOR: {
+      cards: [
+        {n:"Worgen Infiltrator",c:2},{n:"Risky Skipper",c:2},{n:"Whirlwind",c:2},
+        {n:"Town Crier",c:2},{n:"Bloodsail Deckhand",c:2},{n:"Upgradeable Framebot",c:2},
+        {n:"Ancharrr",c:1},{n:"Livewire Lance",c:2},{n:"Plague of Wrath",c:1},
+        {n:"Skybarge",c:2},{n:"Warpath",c:2},{n:"Sky Raider",c:2},
+        {n:"Southsea Deckhand",c:2},{n:"Heroic Strike",c:2},{n:"Bulwark of Azzinoth",c:1},
+        {n:"Grommash Hellscream",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Risky Skipper + Whirlwind</span> : board clear massif pour 2 mana",
+        "⚡ <span class='syn-combo'>Livewire Lance + Pirates</span> : dégâts explosifs chaque tour",
+        "⚡ <span class='syn-combo'>Grommash Hellscream + Whirlwind</span> : 10 dégâts de face OTK",
+        "⚡ <span class='syn-combo'>Town Crier + Rush</span> : pioche garantie de serviteurs Rush"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Mana Wyrm",c:2},{n:"Arcane Missiles",c:2},{n:"Arcane Explosion",c:2},
+        {n:"Frostbolt",c:2},{n:"Sorcerer's Apprentice",c:2},{n:"Arcane Intellect",c:2},
+        {n:"Fireball",c:2},{n:"Flamestrike",c:1},{n:"Archmage Antonidas",c:1},
+        {n:"Flamewaker",c:2},{n:"Arcane Blast",c:2},{n:"Counterspell",c:2},
+        {n:"Cabalist's Tome",c:1},{n:"Vex Crow",c:2},{n:"Mana Bind",c:2},
+        {n:"Book of Specters",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Mana Wyrm + Sorts</span> : +1/+1 à chaque sort lancé",
+        "⚡ <span class='syn-combo'>Sorcerer's Apprentice + Antonidas</span> : Fireball infini à 0 mana",
+        "⚡ <span class='syn-combo'>Flamewaker + Sorts Arcane</span> : dégâts aléatoires x2 par sort",
+        "⚡ <span class='syn-combo'>Vex Crow + Sorts</span> : serviteur aléatoire 2 mana à chaque sort"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Jewel of N'Zoth",c:1},{n:"Tracking",c:2},{n:"Springpaw",c:2},
+        {n:"Adorable Infestation",c:2},{n:"Wolpertinger",c:2},{n:"Pack Tactics",c:2},
+        {n:"Scavenging Hyena",c:2},{n:"Phase Stalker",c:2},{n:"Headmaster Kel'Thuzad",c:1},
+        {n:"Bestial Wrath",c:2},{n:"Voracious Reader",c:2},{n:"Knife Juggler",c:2},
+        {n:"Disk of Legend",c:1},{n:"Explosive Trap",c:2},{n:"Freezing Trap",c:2},
+        {n:"Rinling's Rifle",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Scavenging Hyena + Beast death</span> : +2/+1 par bête morte",
+        "⚡ <span class='syn-combo'>Phase Stalker + Secrets</span> : secret gratuit chaque attaque",
+        "⚡ <span class='syn-combo'>Springpaw + Scavenging Hyena</span> : 2 tokens + hyena boost",
+        "⚡ <span class='syn-combo'>Knife Juggler + Tokens</span> : dégâts aléatoires massifs"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Righteous Protector",c:2},{n:"Brazen Zealot",c:2},{n:"Crystology",c:2},
+        {n:"Glow-Tron",c:2},{n:"Lightforged Blessing",c:2},{n:"Micro Mummy",c:2},
+        {n:"Consecration",c:2},{n:"Warhorse Trainer",c:2},{n:"Muster for Battle",c:2},
+        {n:"Quartermaster",c:2},{n:"Rallying Blade",c:2},{n:"Muradin Bronzebeard",c:1},
+        {n:"Equality",c:2},{n:"Truesilver Champion",c:2},{n:"Argent Squire",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Muster for Battle + Quartermaster</span> : 3 tokens +2/+2 = burst 9 dégâts",
+        "⚡ <span class='syn-combo'>Brazen Zealot + tokens</span> : +1 Attaque par serviteur invoqué",
+        "⚡ <span class='syn-combo'>Warhorse Trainer + Silver Hand</span> : recrues +1 Attaque permanents",
+        "⚡ <span class='syn-combo'>Crystology + 1/1</span> : pioche des serviteurs 1/1 pour 1 mana"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Backstab",c:2},{n:"Preparation",c:2},{n:"Shadowstep",c:2},
+        {n:"Cold Blood",c:2},{n:"Eviscerate",c:2},{n:"SI:7 Agent",c:2},
+        {n:"Edwin VanCleef",c:1},{n:"Questing Adventurer",c:2},{n:"Raiding Party",c:2},
+        {n:"Southsea Deckhand",c:2},{n:"Sap",c:2},{n:"Fan of Knives",c:2},
+        {n:"Bloodsail Raider",c:2},{n:"Captain Hooktusk",c:1},{n:"Bazaar Mugger",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Edwin VanCleef + Combo</span> : géant pour 2-3 mana avec combos",
+        "⚡ <span class='syn-combo'>Preparation + Sorts</span> : sorts à -3 mana, setup burst",
+        "⚡ <span class='syn-combo'>Questing Adventurer + Combo</span> : +1/+1 par carte jouée",
+        "⚡ <span class='syn-combo'>Shadowstep + SI:7 Agent</span> : Combo infiniment réutilisable"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Flame Imp",c:2},{n:"Kobold Librarian",c:2},{n:"Possessed Villager",c:2},
+        {n:"Malchezaar's Imp",c:2},{n:"Darkshire Councilman",c:2},{n:"Knife Juggler",c:2},
+        {n:"Imp Gang Boss",c:2},{n:"Void Terror",c:2},{n:"Doomguard",c:2},
+        {n:"Power Overwhelming",c:2},{n:"Soulfire",c:2},{n:"Voidwalker",c:2},
+        {n:"Nether Imp",c:2},{n:"Illidan Stormrage",c:1},{n:"Deathwing the Destroyer",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Darkshire Councilman + Tokens</span> : +1 Attaque par serviteur invoqué",
+        "⚡ <span class='syn-combo'>Malchezaar's Imp + Discard</span> : pioche par carte défaussée",
+        "⚡ <span class='syn-combo'>Power Overwhelming + Void Terror</span> : géant surprise en late",
+        "⚡ <span class='syn-combo'>Knife Juggler + Imps</span> : dégâts aléatoires massifs"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Lightning Bolt",c:2},{n:"Rockbiter Weapon",c:2},{n:"Flametongue Totem",c:2},
+        {n:"Tunnel Trogg",c:2},{n:"Totem Golem",c:2},{n:"Maelstrom Portal",c:2},
+        {n:"Feral Spirit",c:2},{n:"Flamewreathed Faceless",c:2},{n:"Thunderhead",c:2},
+        {n:"Spirit of the Frog",c:1},{n:"Lava Burst",c:2},{n:"Al'Akir the Windlord",c:1},
+        {n:"Overlord's Whip",c:2},{n:"Underbelly Angler",c:2},{n:"Murloc Tidecaller",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Tunnel Trogg + Surcharge</span> : +1 Attaque par mana surchargé",
+        "⚡ <span class='syn-combo'>Thunderhead + Surcharge</span> : 2 tokens 1/1 chaque surcharge",
+        "⚡ <span class='syn-combo'>Flametongue Totem + Tokens</span> : +2 Attaque serviteurs adjacents",
+        "⚡ <span class='syn-combo'>Al'Akir + Rockbiter</span> : Divine Shield + Windfury + buff = burst"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Living Roots",c:2},{n:"Enchanted Raven",c:2},
+        {n:"Mark of the Lotus",c:2},{n:"Power of the Wild",c:2},{n:"Savage Roar",c:2},
+        {n:"Wrath",c:2},{n:"Soul of the Forest",c:2},{n:"Spreading Plague",c:1},
+        {n:"Wisps of the Old Gods",c:2},{n:"Violet Teacher",c:2},{n:"Cenarius",c:1},
+        {n:"Force of Nature",c:2},{n:"Flobbidinous Floop",c:1},{n:"Treenforcements",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Force of Nature + Savage Roar</span> : 14 dégâts burst classique",
+        "⚡ <span class='syn-combo'>Violet Teacher + Sorts</span> : 1/1 à chaque sort lancé",
+        "⚡ <span class='syn-combo'>Mark of the Lotus + Tokens</span> : +1/+1 à tous les serviteurs",
+        "⚡ <span class='syn-combo'>Innervate + Cenarius</span> : Cenarius tour 4 = game over"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Consume Magic",c:2},{n:"Battlefiend",c:2},
+        {n:"Ur'zul Horror",c:2},{n:"Crimson Sigil Runner",c:2},{n:"Altruis the Outcast",c:1},
+        {n:"Coordinated Strike",c:2},{n:"Immolation Aura",c:2},{n:"Wrathscale Naga",c:2},
+        {n:"Outcast",c:2},{n:"Chaos Strike",c:2},{n:"Umberwing",c:2},
+        {n:"Expendable Performers",c:1},{n:"Skull of Gul'dan",c:2},{n:"Metamorphosis",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Battlefiend + Attaques Héros</span> : +1 Attaque à chaque attaque héros",
+        "⚡ <span class='syn-combo'>Altruis + Outcast</span> : dégâts à tous les ennemis par carte Outcast",
+        "⚡ <span class='syn-combo'>Twin Slice + Battlefiend</span> : 2 attaques = +2 Battlefiend pour 1 mana",
+        "⚡ <span class='syn-combo'>Wrathscale Naga + Tokens morts</span> : 3 dégâts par token mort"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Northshire Cleric",c:2},{n:"Inner Fire",c:2},{n:"Divine Spirit",c:2},
+        {n:"Power Word: Shield",c:2},{n:"Mass Dispel",c:2},{n:"Circle of Healing",c:2},
+        {n:"Shadow Word: Death",c:2},{n:"Shadow Word: Pain",c:2},{n:"Duskbreaker",c:2},
+        {n:"Auchenai Soulpriest",c:2},{n:"Lightbomb",c:1},{n:"Cabal Shadow Priest",c:2},
+        {n:"Injured Blademaster",c:2},{n:"Shadowreaper Anduin",c:1},{n:"Thoughtsteal",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Divine Spirit + Inner Fire</span> : serviteur 1/10 → 10/10 combo",
+        "⚡ <span class='syn-combo'>Northshire Cleric + Circle of Healing</span> : pioche massive",
+        "⚡ <span class='syn-combo'>Auchenai Soulpriest + Circle of Healing</span> : board clear surprise",
+        "⚡ <span class='syn-combo'>Injured Blademaster + Divine Spirit</span> : 1/7 → 1/14 → 14/14"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Frost Strike",c:2},{n:"Blood Boil",c:2},{n:"Plagued Grain",c:2},
+        {n:"Ghoul Charge",c:2},{n:"Rotting Applies",c:2},{n:"Vampiric Blood",c:2},
+        {n:"Army of the Dead",c:1},{n:"Dark Transformation",c:2},{n:"Corpse Explosion",c:2},
+        {n:"Baron Rivendare",c:1},{n:"Corrupted Ashbringer",c:1},{n:"Acolyte of Death",c:2},
+        {n:"Necrotic Mortician",c:2},{n:"Deathbringer Saurfang",c:1},{n:"Construct Quarter",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Ghoul Charge + Corpse Explosion</span> : burst dégâts + clear board",
+        "⚡ <span class='syn-combo'>Baron Rivendare + Deathrattles</span> : double deathrattle trigger",
+        "⚡ <span class='syn-combo'>Acolyte of Death + Corpses</span> : pioche par cadavre consommé",
+        "⚡ <span class='syn-combo'>Vampiric Blood + Aggro</span> : survie garantie tout en attaquant"
+      ]
+    }
+  },
+  Midrange: {
+    HUNTER: {
+      cards: [
+        {n:"Tracking",c:2},{n:"Springpaw",c:2},{n:"Voracious Reader",c:2},
+        {n:"Animal Companion",c:2},{n:"Kill Command",c:2},{n:"Master's Call",c:2},
+        {n:"Dire Frenzy",c:2},{n:"Tundra Rhino",c:2},{n:"Savannah Highmane",c:2},
+        {n:"Zul'jin",c:1},{n:"Unleash the Hounds",c:2},{n:"Houndmaster",c:2},
+        {n:"Rat Pack",c:2},{n:"Hyena Alpha",c:2},{n:"Wolpertinger",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Savannah Highmane + Dire Frenzy</span> : 3 copies de Hyenas",
+        "⚡ <span class='syn-combo'>Tundra Rhino + Bêtes</span> : toutes les bêtes gagnent Rush",
+        "⚡ <span class='syn-combo'>Zul'jin + Sorts Hunter</span> : relance tous les sorts joués",
+        "⚡ <span class='syn-combo'>Kill Command + Bête</span> : 5 dégâts pour 3 mana avec bête"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Aldor Peacekeeper",c:2},{n:"Truesilver Champion",c:2},{n:"Consecration",c:2},
+        {n:"Tirion Fordring",c:1},{n:"Equality",c:2},{n:"Avenging Wrath",c:2},
+        {n:"Sunkeeper Tarim",c:1},{n:"Spikeridged Steed",c:2},{n:"Hammer of Wrath",c:2},
+        {n:"Blessings of Might",c:2},{n:"Shielded Minibot",c:2},{n:"Muster for Battle",c:2},
+        {n:"Steed",c:2},{n:"Zilliax",c:1},{n:"Guardian of Kings",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Equality + Consecration</span> : board clear total pour 6 mana",
+        "⚡ <span class='syn-combo'>Tirion Fordring + Deathrattle</span> : arme 5/3 + divin bouclier",
+        "⚡ <span class='syn-combo'>Sunkeeper Tarim + tokens</span> : tous serviteurs 3/3 = lethal",
+        "⚡ <span class='syn-combo'>Spikeridged Steed + serviteur</span> : Divine Shield + Rush + +2/+6"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Slam",c:2},{n:"Shield Slam",c:2},{n:"Armorsmith",c:2},
+        {n:"Frothing Berserker",c:2},{n:"Acolyte of Pain",c:2},{n:"Ravaging Ghoul",c:2},
+        {n:"Shield Block",c:2},{n:"Brawl",c:2},{n:"Grommash Hellscream",c:1},
+        {n:"Armor Vendor",c:2},{n:"Heavy Metal!",c:2},{n:"Bladestorm",c:2},
+        {n:"Kargath Bladefist",c:1},{n:"Teron Gorefiend",c:1},{n:"Venomous Scorpid",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Armorsmith + AoE damage</span> : armure massive en board clear",
+        "⚡ <span class='syn-combo'>Grommash + Whirlwind</span> : 10 dégâts en un tour",
+        "⚡ <span class='syn-combo'>Shield Slam + Armure</span> : removal quasi-gratuit",
+        "⚡ <span class='syn-combo'>Frothing Berserker + AoE</span> : +1 Attaque par dégât reçu"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Wild Growth",c:2},{n:"Innervate",c:2},{n:"Wrath",c:2},
+        {n:"Fandral Staghelm",c:1},{n:"Swipe",c:2},{n:"Branching Paths",c:2},
+        {n:"Nourish",c:2},{n:"Ancient of Lore",c:2},{n:"Ancient of War",c:2},
+        {n:"Spreading Plague",c:1},{n:"Malfurion the Pestilent",c:1},{n:"Grizzled Guardian",c:2},
+        {n:"Kun the Forgotten King",c:1},{n:"Flobbidinnous Floop",c:1},{n:"Cenarius",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Wild Growth + Nourish</span> : mana explosif dès le tour 3",
+        "⚡ <span class='syn-combo'>Fandral Staghelm + Sorts Choisir</span> : obtient les 2 effets",
+        "⚡ <span class='syn-combo'>Kun + Flobbidinnous Floop</span> : Kun à 4 mana après avoir joué",
+        "⚡ <span class='syn-combo'>Ancient of War + buff</span> : 5/10 Provocation indestrutible"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Frostbolt",c:2},{n:"Arcane Intellect",c:2},{n:"Fireball",c:2},
+        {n:"Blizzard",c:2},{n:"Flamestrike",c:2},{n:"Jaina Proudmoore",c:1},
+        {n:"Frost Nova",c:2},{n:"Ice Block",c:2},{n:"Icicle",c:2},
+        {n:"Cone of Cold",c:2},{n:"Glacial Mysteries",c:1},{n:"Luna's Pocket Galaxy",c:1},
+        {n:"Pyroblast",c:2},{n:"Ice Lance",c:2},{n:"Counterspell",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Frost Nova + Blizzard</span> : board gelé = aucun dégât",
+        "⚡ <span class='syn-combo'>Ice Block + Pyroblast</span> : survie garantie + 10 dégâts",
+        "⚡ <span class='syn-combo'>Luna's Pocket Galaxy</span> : toutes créatures coûtent 1 mana",
+        "⚡ <span class='syn-combo'>Jaina + Sorts Givre</span> : tokens 3/3 gratuits chaque sort"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Totemic Might",c:2},{n:"Flametongue Totem",c:2},{n:"Mana Tide Totem",c:2},
+        {n:"Far Sight",c:2},{n:"Hex",c:2},{n:"Lightning Storm",c:2},
+        {n:"Earth Elemental",c:2},{n:"Hagatha the Witch",c:1},{n:"Shudderwock",c:1},
+        {n:"Grumble Worldshaker",c:1},{n:"Bog Slosher",c:2},{n:"Haunting Visions",c:2},
+        {n:"Zap!",c:2},{n:"Omega Mind",c:2},{n:"Walking Fountain",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Shudderwock + Battlecries</span> : rejoue tous les battlecries",
+        "⚡ <span class='syn-combo'>Grumble + Shudderwock</span> : Shudderwock revient à 1 mana",
+        "⚡ <span class='syn-combo'>Hagatha + Sorts Shaman</span> : sort aléatoire après chaque serviteur",
+        "⚡ <span class='syn-combo'>Mana Tide Totem + Sorts</span> : pioche massive chaque fin de tour"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Backstab",c:2},{n:"Deadly Poison",c:2},{n:"Defias Ringleader",c:2},
+        {n:"EVIL Miscreant",c:2},{n:"Edwin VanCleef",c:1},{n:"SI:7 Agent",c:2},
+        {n:"Vendetta",c:2},{n:"Vilespine Slayer",c:2},{n:"The Caverns Below",c:1},
+        {n:"Shadowstep",c:2},{n:"Walk the Plank",c:2},{n:"Shark",c:2},
+        {n:"Waggle Pick",c:2},{n:"Heistbaron Togwaggle",c:1},{n:"Cannon Barrage",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Edwin VanCleef + Backstab/Combo</span> : 6/6+ pour 3 mana",
+        "⚡ <span class='syn-combo'>EVIL Miscreant + Lackeys</span> : 2 Lackeys générés = valeur",
+        "⚡ <span class='syn-combo'>Vendetta + cartes volées</span> : 4 dégâts à 0 mana",
+        "⚡ <span class='syn-combo'>Shark + Battlecries</span> : tous les battlecries x2"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Mortal Coil",c:2},{n:"Defile",c:2},{n:"Lesser Amethyst Spellstone",c:2},
+        {n:"Vulgar Homunculus",c:2},{n:"Crystallizer",c:2},{n:"Mountain Giant",c:2},
+        {n:"Twilight Drake",c:2},{n:"Handlock Giant",c:2},{n:"Nether Dragon",c:2},
+        {n:"Emperor Thaurissan",c:1},{n:"Siphon Soul",c:2},{n:"Lord Jaraxxus",c:1},
+        {n:"Mal'Ganis",c:1},{n:"Dark Pact",c:2},{n:"Cataclysm",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Mountain Giant + main pleine</span> : géant 1-3 mana main pleine",
+        "⚡ <span class='syn-combo'>Twilight Drake + main pleine</span> : +1/+1 par carte en main",
+        "⚡ <span class='syn-combo'>Defile + tokens 1/1</span> : clear board infini avec chaîne",
+        "⚡ <span class='syn-combo'>Lord Jaraxxus + jeu late</span> : héros 15 PV infini"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Northshire Cleric",c:2},{n:"Power Word: Shield",c:2},{n:"Shadow Word: Pain",c:2},
+        {n:"Shadow Word: Death",c:2},{n:"Kabal Talonpriest",c:2},{n:"Priest of the Feast",c:2},
+        {n:"Potion of Madness",c:2},{n:"Mind Control",c:2},{n:"Lyra the Sunshard",c:1},
+        {n:"Prophet Velen",c:1},{n:"Velens Chosen",c:2},{n:"Entomb",c:2},
+        {n:"Cabal Shadow Priest",c:2},{n:"Binding Heal",c:2},{n:"Twilight's Call",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Prophet Velen + Mind Blast</span> : 10 dégâts à la face pour 4 mana",
+        "⚡ <span class='syn-combo'>Lyra + Sorts</span> : génère sort Priest à chaque sort lancé",
+        "⚡ <span class='syn-combo'>Northshire + Binding Heal</span> : pioche à chaque soin",
+        "⚡ <span class='syn-combo'>Potion of Madness + gros serviteur</span> : vol + attaque = removal"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Chaos Strike",c:2},{n:"Blur",c:2},
+        {n:"Fel Summoning",c:2},{n:"Spectral Sight",c:2},{n:"Eye Beam",c:2},
+        {n:"Imprisoned Antaen",c:2},{n:"Priestess of Fury",c:2},{n:"Kayn Sunfury",c:1},
+        {n:"Skull of Gul'dan",c:2},{n:"Metamorphosis",c:1},{n:"Warglaives of Azzinoth",c:2},
+        {n:"Zai the Incredible",c:1},{n:"Magtheridon",c:1},{n:"Il'gynoth",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Il'gynoth + sorts dégâts héros</span> : dégâts doublés à la face",
+        "⚡ <span class='syn-combo'>Kayn Sunfury + Rush</span> : Divine Shield + Rush + ignore provoc",
+        "⚡ <span class='syn-combo'>Imprisoned Antaen + dégâts reçus</span> : 10 missiles à sa mort",
+        "⚡ <span class='syn-combo'>Warglaives + Twin Slice</span> : attaques héros x2 = burst"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Runic Empowerment",c:2},{n:"Corpse Bride",c:2},{n:"Plagued Grain",c:2},
+        {n:"Nerubian Vizier",c:2},{n:"Corpse Explosion",c:2},{n:"Chillfallen Baron",c:2},
+        {n:"Gnome Muncher",c:2},{n:"Army of the Dead",c:2},{n:"Scourge Strike",c:2},
+        {n:"Instructor Fireheart",c:1},{n:"The Lich King",c:1},{n:"Deathbringer Saurfang",c:1},
+        {n:"Blood Tap",c:2},{n:"Construct Quarter",c:2},{n:"Helya",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>The Lich King + late game</span> : carte Death Knight chaque tour",
+        "⚡ <span class='syn-combo'>Army of the Dead + Corpses</span> : serviteurs morts relancés",
+        "⚡ <span class='syn-combo'>Deathbringer Saurfang + Deathrattle</span> : retour immédiat",
+        "⚡ <span class='syn-combo'>Corpse Explosion + board plein</span> : clear AoE massif"
+      ]
+    }
+  },
+  Control: {
+    PRIEST: {
+      cards: [
+        {n:"Power Word: Shield",c:2},{n:"Binding Heal",c:2},{n:"Shadow Word: Pain",c:2},
+        {n:"Shadow Word: Death",c:2},{n:"Duskbreaker",c:2},{n:"Mass Hysteria",c:2},
+        {n:"Holy Nova",c:2},{n:"Lightbomb",c:1},{n:"Mind Control",c:2},
+        {n:"Mass Dispel",c:2},{n:"Cabal Shadow Priest",c:2},{n:"Raza the Chained",c:1},
+        {n:"Shadowreaper Anduin",c:1},{n:"Razakus",c:1},{n:"Shifting Shade",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Raza + Shadowreaper Anduin</span> : Hero Power 0 mana = 2 dégâts ∞",
+        "⚡ <span class='syn-combo'>Duskbreaker + Dragons</span> : 3 dégâts à tous ennemis si dragon en main",
+        "⚡ <span class='syn-combo'>Mass Hysteria + petit board</span> : board clear asymétrique",
+        "⚡ <span class='syn-combo'>Cabal Shadow Priest + 2 Attaque ou moins</span> : vol serviteur"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Shield Slam",c:2},{n:"Slam",c:2},{n:"Armorsmith",c:2},
+        {n:"Shield Block",c:2},{n:"Acolyte of Pain",c:2},{n:"Brawl",c:2},
+        {n:"Alexstrasza",c:1},{n:"Gorehowl",c:1},{n:"Ysera",c:1},
+        {n:"Deathwing",c:1},{n:"Warbot",c:2},{n:"Omega Devastator",c:2},
+        {n:"Execute",c:2},{n:"Forge of Souls",c:2},{n:"Devastate",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Armorsmith + AoE</span> : armure explosive en board clear",
+        "⚡ <span class='syn-combo'>Shield Slam + Shield Block</span> : removal + 5 armure pour 2",
+        "⚡ <span class='syn-combo'>Alexstrasza + Gorehowl</span> : 15 PV adversaire puis kill",
+        "⚡ <span class='syn-combo'>Deathwing</span> : reset complet du board en desperate"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Defile",c:2},{n:"Hellfire",c:2},{n:"Twisting Nether",c:2},
+        {n:"Dark Pact",c:2},{n:"Plot Twist",c:2},{n:"Sense Demons",c:2},
+        {n:"Enhanced Dreadlord",c:2},{n:"Voidlord",c:2},{n:"Mal'Ganis",c:1},
+        {n:"N'Zoth the Corruptor",c:1},{n:"Guldan",c:1},{n:"Rin the First Disciple",c:1},
+        {n:"Expired Merchant",c:2},{n:"Arch-Villain Rafaam",c:1},{n:"Lord Jaraxxus",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Rin the First Disciple</span> : détruire deck adverse (6 cartes)",
+        "⚡ <span class='syn-combo'>Voidlord + Guldan</span> : ressuscite Voidlords infinis",
+        "⚡ <span class='syn-combo'>N'Zoth + Deathrattles</span> : tous les deathrattles reviennent",
+        "⚡ <span class='syn-combo'>Defile + 1/1 token</span> : clear board en chaîne infini"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Frostbolt",c:2},{n:"Arcane Intellect",c:2},{n:"Frost Nova",c:2},
+        {n:"Ice Block",c:2},{n:"Fireball",c:2},{n:"Blizzard",c:2},
+        {n:"Flamestrike",c:2},{n:"Glacial Mysteries",c:1},{n:"Luna's Pocket Galaxy",c:1},
+        {n:"Pyroblast",c:2},{n:"Mountain Giant",c:2},{n:"Archmage Antonidas",c:1},
+        {n:"Alexstrasza",c:1},{n:"Counterspell",c:2},{n:"Ice Barrier",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Ice Block + Pyroblast</span> : immortalité + 10 dégâts",
+        "⚡ <span class='syn-combo'>Frost Nova + Blizzard</span> : freeze total 2 tours",
+        "⚡ <span class='syn-combo'>Antonidas + sorts 0 mana</span> : Fireballs infinies",
+        "⚡ <span class='syn-combo'>Luna's Pocket Galaxy + gros serviteurs</span> : tout à 1 mana"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Wild Growth",c:2},{n:"Nourish",c:2},{n:"Wrath",c:2},
+        {n:"Swipe",c:2},{n:"Branching Paths",c:2},{n:"Spreading Plague",c:2},
+        {n:"Malfurion the Pestilent",c:1},{n:"Ultimate Infestation",c:2},{n:"Kun the Forgotten King",c:1},
+        {n:"Ysera",c:1},{n:"Deathwing Dragonlord",c:1},{n:"Hadronox",c:1},
+        {n:"Taunt Wall",c:2},{n:"Ironwood Golem",c:2},{n:"Oaken Summons",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Hadronox + Provocation</span> : toutes les provocations mortes reviennent",
+        "⚡ <span class='syn-combo'>Ultimate Infestation + Ramp</span> : 5 dégâts + 5 armure + 5 cartes + 5/5",
+        "⚡ <span class='syn-combo'>Spreading Plague + AoE ennemie</span> : mur de scarabées 1/5 prov",
+        "⚡ <span class='syn-combo'>Kun + Malfurion</span> : 10 mana refreshed = double boss"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Hex",c:2},{n:"Far Sight",c:2},{n:"Lightning Storm",c:2},
+        {n:"Earthquake",c:2},{n:"Hagatha the Witch",c:1},{n:"Kalimos Primal Lord",c:1},
+        {n:"Walking Fountain",c:2},{n:"Omega Mind",c:2},{n:"Mana Tide Totem",c:2},
+        {n:"Haunting Visions",c:2},{n:"Al'Akir the Windlord",c:1},{n:"Thing from Below",c:2},
+        {n:"Ancestral Knowledge",c:2},{n:"Electra Stormsurge",c:1},{n:"Thrall Deathseer",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Electra + Lightning Storm</span> : double AoE pour 6 mana",
+        "⚡ <span class='syn-combo'>Kalimos + Élémentaux</span> : invocation massive + board clear",
+        "⚡ <span class='syn-combo'>Hagatha + serviteurs</span> : sort Shaman aléatoire à chaque serviteur",
+        "⚡ <span class='syn-combo'>Walking Fountain + Lifesteal Windfury</span> : 8 soins par attaque"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Explosive Trap",c:2},{n:"Freezing Trap",c:2},{n:"Snipe",c:2},
+        {n:"Cloaked Huntress",c:2},{n:"Deadly Shot",c:2},{n:"Deathstalker Rexxar",c:1},
+        {n:"Savannah Highmane",c:2},{n:"Zul'jin",c:1},{n:"Nine Lives",c:2},
+        {n:"Rhok'delar",c:1},{n:"Swamp King Dred",c:1},{n:"Spellbreaker",c:2},
+        {n:"Emerald Explorer",c:2},{n:"Grizzled Guardian",c:2},{n:"Stitched Tracker",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Deathstalker Rexxar</span> : crée des zombêtes custom chaque tour",
+        "⚡ <span class='syn-combo'>Zul'jin + Secrets</span> : rejoue tous les secrets joués",
+        "⚡ <span class='syn-combo'>Cloaked Huntress + Secrets</span> : secrets à 0 mana",
+        "⚡ <span class='syn-combo'>Rhok'delar + aucun serviteur</span> : sort Hunter aléatoire x5"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Equality",c:2},{n:"Consecration",c:2},{n:"Aldor Peacekeeper",c:2},
+        {n:"Truesilver Champion",c:2},{n:"Hammer of Wrath",c:2},{n:"Avenging Wrath",c:2},
+        {n:"Tirion Fordring",c:1},{n:"Lay on Hands",c:2},{n:"Uther of the Ebon Blade",c:1},
+        {n:"The Last Kaleidosaur",c:1},{n:"Lynessa Sunsorrow",c:1},{n:"Sound the Bells!",c:2},
+        {n:"Flash of Light",c:2},{n:"Zandalari Templar",c:2},{n:"Kangor's Apprentice",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Equality + Consecration</span> : board clear total 6 mana",
+        "⚡ <span class='syn-combo'>Uther of the Ebon Blade</span> : 4 Cavaliers = instant win",
+        "⚡ <span class='syn-combo'>Lynessa + buffs</span> : rejoue tous les sorts buff lancés",
+        "⚡ <span class='syn-combo'>Lay on Hands</span> : 8 PV + 3 cartes = survie assurée"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Preparation",c:2},{n:"Backstab",c:2},{n:"Sap",c:2},
+        {n:"Fan of Knives",c:2},{n:"Vilespine Slayer",c:2},{n:"Vanish",c:2},
+        {n:"Myra's Unstable Element",c:1},{n:"Tess Greymane",c:1},{n:"Valeera the Hollow",c:1},
+        {n:"Bladed Cultist",c:2},{n:"Shadowblade",c:2},{n:"Academic Espionage",c:2},
+        {n:"Necrium Blade",c:2},{n:"Sonya Shadowdancer",c:1},{n:"Vendetta",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Valeera the Hollow + Shadow Step</span> : 1 extra carte chaque tour",
+        "⚡ <span class='syn-combo'>Tess Greymane + cartes volées</span> : rejoue tout le deck adverse",
+        "⚡ <span class='syn-combo'>Preparation + Vanish</span> : reset board pour 3 mana",
+        "⚡ <span class='syn-combo'>Academic Espionage + Preparation</span> : cartes adverses 1 mana"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Consume Magic",c:2},{n:"Blur",c:2},{n:"Eye Beam",c:2},
+        {n:"Mana Burn",c:2},{n:"Spectral Sight",c:2},{n:"Soul Fragment",c:2},
+        {n:"Feast of Souls",c:2},{n:"Soulshard Lapidary",c:1},{n:"Shardshatter Mystic",c:2},
+        {n:"Soulciologist Malicia",c:1},{n:"Warglaives of Azzinoth",c:2},{n:"Skull of Gul'dan",c:2},
+        {n:"Raging Felscreamer",c:2},{n:"Furious Felfin",c:2},{n:"Kael'thas Sunstrider",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Soul Fragment + Feast of Souls</span> : soins massifs pioche",
+        "⚡ <span class='syn-combo'>Shardshatter Mystic + Soul Fragments</span> : 3 dégâts par fragment",
+        "⚡ <span class='syn-combo'>Soulshard Lapidary + Fragment</span> : serviteur +5/+5",
+        "⚡ <span class='syn-combo'>Kael'thas + sorts alternés</span> : 3e sort gratuit"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Blood Tap",c:2},{n:"Vampiric Blood",c:2},{n:"Corpse Explosion",c:2},
+        {n:"Death Coil",c:2},{n:"Anti-Magic Shell",c:2},{n:"Deathlord",c:2},
+        {n:"Rattling Rascal",c:2},{n:"The Lich King",c:1},{n:"Sindragosa",c:1},
+        {n:"Frostmourne",c:1},{n:"Helya",c:1},{n:"Army of the Dead",c:2},
+        {n:"Deathbringer Saurfang",c:1},{n:"Gnome Muncher",c:2},{n:"Chillfallen Baron",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>The Lich King</span> : carte Death Knight aléatoire chaque tour",
+        "⚡ <span class='syn-combo'>Frostmourne + morts</span> : ressuscite 5 serviteurs",
+        "⚡ <span class='syn-combo'>Vampiric Blood + dégâts</span> : survie permanente en control",
+        "⚡ <span class='syn-combo'>Sindragosa + Gelez</span> : serviteurs gelés deviennent 1/1"
+      ]
+    }
+  },
+  Combo: {
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Wild Growth",c:2},{n:"Nourish",c:2},
+        {n:"Auctioneer",c:1},{n:"Gadgetzan Auctioneer",c:1},{n:"Naturalise",c:2},
+        {n:"Savage Roar",c:2},{n:"Force of Nature",c:2},{n:"Living Roots",c:2},
+        {n:"Fandral Staghelm",c:1},{n:"Malygos",c:1},{n:"Kun the Forgotten King",c:1},
+        {n:"Flobbidinnous Floop",c:1},{n:"Overflow",c:2},{n:"Hidden Oasis",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Malygos + Force of Nature + Savage Roar</span> : 22+ dégâts de face",
+        "⚡ <span class='syn-combo'>Kun + Innervate + Auctioneer</span> : draw complet du deck combo",
+        "⚡ <span class='syn-combo'>Force of Nature + Savage Roar</span> : 14 dégâts combo classique",
+        "⚡ <span class='syn-combo'>Floop + Kun</span> : copie Kun à 4 mana pour double refresh"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Preparation",c:2},{n:"Backstab",c:2},{n:"Shadowstep",c:2},
+        {n:"Cold Blood",c:2},{n:"Deadly Poison",c:2},{n:"Edwin VanCleef",c:1},
+        {n:"Vilespine Slayer",c:2},{n:"Questing Adventurer",c:2},{n:"Arcane Flakmage",c:2},
+        {n:"Myra's Unstable Element",c:1},{n:"Pick Pocket",c:2},{n:"Blink Fox",c:2},
+        {n:"Elven Minstrel",c:2},{n:"Togwaggle's Scheme",c:1},{n:"Waggle Pick",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Shadowstep + Vilespine Slayer</span> : 2 removals pour 7 mana total",
+        "⚡ <span class='syn-combo'>Preparation + Myra</span> : draw tout le deck restant pour 2 mana",
+        "⚡ <span class='syn-combo'>Edwin + Backstab/Prep</span> : 8/8+ pour 3 mana tour 2-3",
+        "⚡ <span class='syn-combo'>Cold Blood + Shadowstep</span> : +4 attaque x2 sur serviteur"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Inner Fire",c:2},{n:"Divine Spirit",c:2},{n:"Power Word: Shield",c:2},
+        {n:"Northshire Cleric",c:2},{n:"Radiant Elemental",c:2},{n:"Shadow Visions",c:2},
+        {n:"Seance",c:2},{n:"Vivid Nightmare",c:2},{n:"Topsy Turvy",c:2},
+        {n:"Injured Blademaster",c:2},{n:"Auchenai Soulpriest",c:2},{n:"Prophet Velen",c:1},
+        {n:"Flash Heal",c:2},{n:"Penance",c:1},{n:"Holy Fire",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Divine Spirit x2 + Inner Fire</span> : 1/12 → 12/12 OTK potentiel",
+        "⚡ <span class='syn-combo'>Injured Blademaster + Divine Spirit</span> : 1/7 → 14/14",
+        "⚡ <span class='syn-combo'>Radiant Elemental + sorts</span> : tous les sorts -2 mana",
+        "⚡ <span class='syn-combo'>Prophet Velen + sorts dégâts</span> : tous dégâts sorts x2"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Void Ripper",c:2},{n:"Animated Berserker",c:2},{n:"High Priest Amet",c:1},
+        {n:"Darkshire Councilman",c:2},{n:"Expired Merchant",c:2},{n:"Keli'dan the Breaker",c:1},
+        {n:"Loatheb",c:1},{n:"Doomguard",c:2},{n:"Soulfire",c:2},
+        {n:"Nether Dragon",c:2},{n:"Lakkari Sacrifice",c:1},{n:"Treachery",c:2},
+        {n:"Cataclysm",c:2},{n:"Skull of the Man'ari",c:1},{n:"Plot Twist",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Expired Merchant + Doomguard</span> : x2 Doomguard même tour",
+        "⚡ <span class='syn-combo'>Treachery + bombe ennemie</span> : transfert bombe à l'adversaire",
+        "⚡ <span class='syn-combo'>Skull of Man'ari + Démons</span> : démon gratuit chaque tour",
+        "⚡ <span class='syn-combo'>Lakkari Sacrifice + Discard</span> : portail Twisting Nether"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Shudderwock",c:1},{n:"Grumble Worldshaker",c:1},{n:"Zola the Gorgon",c:1},
+        {n:"Saronite Chain Gang",c:2},{n:"Murmuring Elemental",c:2},{n:"Lackey spells",c:2},
+        {n:"Hagatha the Witch",c:1},{n:"Far Sight",c:2},{n:"Omega Mind",c:2},
+        {n:"Lifedrinker",c:2},{n:"Bog Slosher",c:2},{n:"Electra Stormsurge",c:1},
+        {n:"Voltaic Burst",c:2},{n:"Bloodlust",c:2},{n:"Thing from Below",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Shudderwock + Grumble + Zola</span> : boucle infinie OTK",
+        "⚡ <span class='syn-combo'>Saronite Chain Gang + Shudderwock</span> : 2x Shudderwock en jeu",
+        "⚡ <span class='syn-combo'>Lifedrinker + Shudderwock</span> : 3 dégâts + 3 soins x∞",
+        "⚡ <span class='syn-combo'>Electra + Lightning Storm</span> : double AoE"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Archmage Antonidas",c:1},{n:"Sorcerer's Apprentice",c:2},{n:"Preparation",c:2},
+        {n:"Arcane Missiles",c:2},{n:"Arcane Intellect",c:2},{n:"Mana Cyclone",c:2},
+        {n:"Arcane Breath",c:2},{n:"Unexpected Results",c:2},{n:"Puzzle Box of Yogg-Saron",c:1},
+        {n:"Conjurer's Calling",c:2},{n:"Kael'thas Sunstrider",c:1},{n:"Mordresh Fire Eye",c:1},
+        {n:"Malygos",c:1},{n:"Stargazer Luna",c:1},{n:"Magic Trick",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Antonidas + sorts gratuits</span> : Fireballs infinies",
+        "⚡ <span class='syn-combo'>Malygos + sorts</span> : tous les sorts +5 dégâts",
+        "⚡ <span class='syn-combo'>Kael'thas + sorts alternés</span> : 3e sort gratuit",
+        "⚡ <span class='syn-combo'>Sorcerer's Apprentice x2 + sorts</span> : boucle 0 mana"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Timber Wolf",c:2},{n:"Leokk",c:2},{n:"Houndmaster Shaw",c:1},
+        {n:"Master's Call",c:2},{n:"Dire Frenzy",c:2},{n:"Beastmaster Leoroxx",c:1},
+        {n:"King Krush",c:1},{n:"Misha",c:2},{n:"Rexxar",c:1},
+        {n:"Kathrena Winterwisp",c:1},{n:"Nagrand Slam",c:2},{n:"Call of the Wild",c:2},
+        {n:"Tundra Rhino",c:2},{n:"Stonetusk Boar",c:2},{n:"Nine Lives",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Beastmaster Leoroxx + King Krush</span> : King Krush gratuit en jeu",
+        "⚡ <span class='syn-combo'>Tundra Rhino + Bêtes</span> : Rush immédiat = board clear + face",
+        "⚡ <span class='syn-combo'>Kathrena + gros Beast</span> : invoque gros beast à sa mort",
+        "⚡ <span class='syn-combo'>Timber Wolf x2 + Bêtes</span> : +2 Attaque à toutes les bêtes"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Prismatic Lens",c:2},{n:"Crystology",c:2},{n:"Flash of Light",c:2},
+        {n:"Equality",c:2},{n:"Call to Adventure",c:2},{n:"Lightforged Crusader",c:1},
+        {n:"Lynessa Sunsorrow",c:1},{n:"Sound the Bells!",c:2},{n:"Salhet's Pride",c:2},
+        {n:"A New Challenger...",c:2},{n:"The Last Kaleidosaur",c:1},{n:"Kangor's Apprentice",c:1},
+        {n:"Muradin Bronzebeard",c:1},{n:"Immortal Prelate",c:2},{n:"Glowstone Technician",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Immortal Prelate + buffs</span> : serviteur garde tous ses buffs infiniment",
+        "⚡ <span class='syn-combo'>Lynessa + sorts buff</span> : rejout toutes les bénédictions",
+        "⚡ <span class='syn-combo'>The Last Kaleidosaur + buffs</span> : buff 8/8 + charge divine",
+        "⚡ <span class='syn-combo'>Prismatic Lens + gros serviteur</span> : serviteur = coût sort"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Inner Rage",c:2},{n:"Whirlwind",c:2},{n:"Rampage",c:2},
+        {n:"Frothing Berserker",c:2},{n:"Grommash Hellscream",c:1},{n:"Charge",c:2},
+        {n:"Warsong Commander",c:2},{n:"Kor'kron Elite",c:1},{n:"Bolster",c:2},
+        {n:"King Mosh",c:1},{n:"N'Zoth's First Mate",c:2},{n:"Livewire Lance",c:2},
+        {n:"Ancharrr",c:1},{n:"Upgrade!",c:2},{n:"Bloodsworn Mercenary",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Grommash + Inner Rage</span> : 12 dégâts de face pour 8+0 mana",
+        "⚡ <span class='syn-combo'>Frothing Berserker + Whirlwind</span> : +X Attaque burst",
+        "⚡ <span class='syn-combo'>Warsong Commander + Charge</span> : combo Rush classique",
+        "⚡ <span class='syn-combo'>Bloodsworn Mercenary + gros serviteur</span> : copie un serviteur"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Chaos Strike",c:2},{n:"Inner Demon",c:2},
+        {n:"Demon Companion",c:2},{n:"Il'gynoth",c:1},{n:"Skull of Gul'dan",c:2},
+        {n:"Nethrandamus",c:1},{n:"Metamorphosis",c:1},{n:"Amalgam of the Deep",c:2},
+        {n:"Raging Felscreamer",c:2},{n:"Expendable Performers",c:1},{n:"Warglaives of Azzinoth",c:2},
+        {n:"Acrobatics",c:2},{n:"Dispose of Evidence",c:2},{n:"Kael'thas Sunstrider",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Il'gynoth + Hero Power dégâts</span> : tous dégâts face x2 = OTK",
+        "⚡ <span class='syn-combo'>Inner Demon + attaque héros</span> : +8 attaque = 16+ dégâts",
+        "⚡ <span class='syn-combo'>Metamorphosis + Rush</span> : double attaque héros immunisé",
+        "⚡ <span class='syn-combo'>Kael'thas + Skull Gul'dan</span> : gros démon gratuit"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Plagued Grain",c:2},{n:"Runic Empowerment",c:2},{n:"Gravedigger's Shovel",c:2},
+        {n:"Nerubian Vizier",c:2},{n:"Death Strike",c:2},{n:"Gnome Muncher",c:2},
+        {n:"Chillfallen Baron",c:2},{n:"Corpse Bride",c:2},{n:"Plagued Outpost",c:2},
+        {n:"Baron Rivendare",c:1},{n:"Deathbringer Saurfang",c:1},{n:"Lord Marrowgar",c:1},
+        {n:"Army of the Dead",c:2},{n:"Blood Boil",c:2},{n:"Patchwerk",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Baron Rivendare + Deathrattles</span> : double chaque deathrattle",
+        "⚡ <span class='syn-combo'>Lord Marrowgar + Corpses</span> : 10 dégâts AoE massif",
+        "⚡ <span class='syn-combo'>Patchwerk</span> : commence avec 30 armure = 60 points de vie",
+        "⚡ <span class='syn-combo'>Gnome Muncher + Corpses</span> : +2/+2 par corpse consommé"
+      ]
+    }
+  },
+  Tempo: {
+    ROGUE: {
+      cards: [
+        {n:"Preparation",c:2},{n:"Backstab",c:2},{n:"Deadly Poison",c:2},
+        {n:"Cold Blood",c:2},{n:"Eviscerate",c:2},{n:"SI:7 Agent",c:2},
+        {n:"Edwin VanCleef",c:1},{n:"Vilespine Slayer",c:2},{n:"Raiding Party",c:2},
+        {n:"Southsea Captain",c:2},{n:"Bazaar Mugger",c:2},{n:"Walk the Plank",c:2},
+        {n:"Waggle Pick",c:2},{n:"Captain Hooktusk",c:1},{n:"Sap",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Preparation + gros sort</span> : sort à -3 mana = tempo explosif",
+        "⚡ <span class='syn-combo'>Edwin VanCleef tôt</span> : 4/4+ tour 2 = snowball garantie",
+        "⚡ <span class='syn-combo'>SI:7 Agent + Combo</span> : 3/3 + 2 dégâts pour 3 mana",
+        "⚡ <span class='syn-combo'>Vilespine + removal</span> : 3/4 + détruire = tempo parfait"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Mana Wyrm",c:2},{n:"Frostbolt",c:2},{n:"Sorcerer's Apprentice",c:2},
+        {n:"Arcane Intellect",c:2},{n:"Fireball",c:2},{n:"Flamewaker",c:2},
+        {n:"Counterspell",c:2},{n:"Mirror Entity",c:2},{n:"Vex Crow",c:2},
+        {n:"Arcane Keysmith",c:2},{n:"Aluneth",c:1},{n:"Dragoncaster",c:2},
+        {n:"Jandice Barov",c:1},{n:"Deep Freeze",c:2},{n:"Doomsayer",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Mana Wyrm + sorts</span> : +1/+1 par sort = snowball",
+        "⚡ <span class='syn-combo'>Flamewaker + sorts</span> : 2 missiles aléatoires par sort",
+        "⚡ <span class='syn-combo'>Vex Crow + sorts</span> : serviteur 2 mana aléatoire par sort",
+        "⚡ <span class='syn-combo'>Counterspell + Mirror Entity</span> : double piège sorts/serviteurs"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Town Crier",c:2},{n:"Risky Skipper",c:2},{n:"Livewire Lance",c:2},
+        {n:"Ancharrr",c:1},{n:"Skybarge",c:2},{n:"Sky Raider",c:2},
+        {n:"Southsea Captain",c:2},{n:"Bloodsail Deckhand",c:2},{n:"Heroic Strike",c:2},
+        {n:"Arcanite Reaper",c:2},{n:"Plague of Wrath",c:2},{n:"Kargath Bladefist",c:1},
+        {n:"Blademaster Samuro",c:1},{n:"Bladestorm",c:2},{n:"Troublemaker",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Livewire Lance + Pirates</span> : burst chaque attaque",
+        "⚡ <span class='syn-combo'>Skybarge + Pirates</span> : 2 dégâts aléatoires par pirate",
+        "⚡ <span class='syn-combo'>Town Crier + Rush</span> : pioche serviteur Rush garanti",
+        "⚡ <span class='syn-combo'>Heroic Strike + armure</span> : +4 attaque pour 2 mana"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Raven Idol",c:2},{n:"Wrath",c:2},
+        {n:"Swipe",c:2},{n:"Fandral Staghelm",c:1},{n:"Branching Paths",c:2},
+        {n:"Witchwood Apple",c:2},{n:"Sound the Bells!",c:2},{n:"Twig of the World Tree",c:1},
+        {n:"Nourish",c:2},{n:"Ferocious Howl",c:2},{n:"Crystal Power",c:2},
+        {n:"Gloom Stag",c:2},{n:"Bewitched Guardian",c:2},{n:"Barnabus the Stomper",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Fandral + sorts Choisir</span> : obtient les 2 options",
+        "⚡ <span class='syn-combo'>Innervate + gros serviteur tôt</span> : tempo explosif tour 1",
+        "⚡ <span class='syn-combo'>Twig of the World Tree</span> : 10 mana bonus quand détruite",
+        "⚡ <span class='syn-combo'>Bewitched Guardian + main pleine</span> : +1/+1 par carte en main"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Aldor Peacekeeper",c:2},{n:"Truesilver Champion",c:2},{n:"Consecration",c:2},
+        {n:"Shielded Minibot",c:2},{n:"Muster for Battle",c:2},{n:"Equality",c:2},
+        {n:"Quartermaster",c:2},{n:"Rallying Blade",c:2},{n:"Sunkeeper Tarim",c:1},
+        {n:"Bolvar Fireblood",c:1},{n:"Bellringer Sentry",c:2},{n:"Holy Wrath",c:2},
+        {n:"Prismatic Lens",c:2},{n:"Libram of Hope",c:1},{n:"Argent Protector",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Muster for Battle + Quartermaster</span> : 9 dégâts burst",
+        "⚡ <span class='syn-combo'>Bolvar + tokens divine shield morts</span> : géant qui grossit",
+        "⚡ <span class='syn-combo'>Equality + Consecration</span> : board clear 6 mana",
+        "⚡ <span class='syn-combo'>Holy Wrath + Shirvallah</span> : 25 dégâts pour 2 mana"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Tracking",c:2},{n:"Springpaw",c:2},{n:"Phase Stalker",c:2},
+        {n:"Animal Companion",c:2},{n:"Kill Command",c:2},{n:"Scavenging Hyena",c:2},
+        {n:"Pack Tactics",c:2},{n:"Eaglehorn Bow",c:2},{n:"Rat Pack",c:2},
+        {n:"Master's Call",c:2},{n:"Unleash the Hounds",c:2},{n:"Hyena Alpha",c:2},
+        {n:"Voracious Reader",c:2},{n:"Rinling's Rifle",c:1},{n:"Zul'jin",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Phase Stalker + Secrets</span> : secret gratuit chaque attaque",
+        "⚡ <span class='syn-combo'>Eaglehorn Bow + Secrets</span> : +1 durabilité par secret déclenché",
+        "⚡ <span class='syn-combo'>Scavenging Hyena + Beast death</span> : +2/+1 par bête morte",
+        "⚡ <span class='syn-combo'>Hyena Alpha + Secrets</span> : 2 Hyenas 3/3 si secret actif"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Lightning Bolt",c:2},{n:"Flametongue Totem",c:2},{n:"Tunnel Trogg",c:2},
+        {n:"Totem Golem",c:2},{n:"Maelstrom Portal",c:2},{n:"Feral Spirit",c:2},
+        {n:"Thunderhead",c:2},{n:"Lava Burst",c:2},{n:"Bloodlust",c:2},
+        {n:"Spirit of the Frog",c:1},{n:"Mogu Fleshshaper",c:2},{n:"Overlord's Whip",c:2},
+        {n:"Doomhammer",c:1},{n:"Far Sight",c:2},{n:"Hex",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Tunnel Trogg + Surcharge</span> : +1 Attaque par mana surchargé",
+        "⚡ <span class='syn-combo'>Thunderhead + Surcharge</span> : 2 tokens 1/1 Rush",
+        "⚡ <span class='syn-combo'>Doomhammer + Windfury + Surcharge</span> : 8 dégâts/tour",
+        "⚡ <span class='syn-combo'>Bloodlust + tokens Totem</span> : +3 attaque tous serviteurs"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Mortal Coil",c:2},{n:"Kobold Librarian",c:2},{n:"Lackey Spells",c:2},
+        {n:"EVIL Genius",c:2},{n:"Darkshire Councilman",c:2},{n:"Knife Juggler",c:2},
+        {n:"Imp Gang Boss",c:2},{n:"Imp-losion",c:2},{n:"Void Terror",c:2},
+        {n:"Floating Watcher",c:2},{n:"Voidlord",c:1},{n:"Doomguard",c:2},
+        {n:"Plot Twist",c:2},{n:"Dark Pact",c:1},{n:"Arch-Villain Rafaam",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Darkshire Councilman + Tokens/Imps</span> : +1 attaque par invocation",
+        "⚡ <span class='syn-combo'>EVIL Genius + token</span> : 2 Lackeys en sacrifiant un token",
+        "⚡ <span class='syn-combo'>Imp-losion + Void Terror</span> : géant pour 2 mana après imps",
+        "⚡ <span class='syn-combo'>Knife Juggler + Imps</span> : missiles aléatoires massifs"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Northshire Cleric",c:2},{n:"Power Word: Shield",c:2},{n:"Shadow Word: Pain",c:2},
+        {n:"Radiant Elemental",c:2},{n:"Shadow Visions",c:2},{n:"Twilight Whelp",c:2},
+        {n:"Twilight Drake",c:2},{n:"Duskbreaker",c:2},{n:"Cobalt Scalebane",c:2},
+        {n:"Murozond",c:1},{n:"Ysera",c:1},{n:"Cabal Shadow Priest",c:2},
+        {n:"Holy Nova",c:2},{n:"Nefarian",c:1},{n:"Lyra the Sunshard",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Duskbreaker + Dragons en main</span> : 3 dégâts AoE si dragon",
+        "⚡ <span class='syn-combo'>Radiant Elemental + sorts</span> : sorts -2 mana = plays multiples",
+        "⚡ <span class='syn-combo'>Twilight Drake + main pleine</span> : +1/+1 par carte",
+        "⚡ <span class='syn-combo'>Lyra + sorts</span> : sort Priest gratuit à chaque sort lancé"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Consume Magic",c:2},{n:"Battlefiend",c:2},
+        {n:"Crimson Sigil Runner",c:2},{n:"Chaos Strike",c:2},{n:"Blur",c:2},
+        {n:"Coordinated Strike",c:2},{n:"Altruis the Outcast",c:1},{n:"Eye Beam",c:2},
+        {n:"Spectral Sight",c:2},{n:"Imprisoned Antaen",c:2},{n:"Priestess of Fury",c:2},
+        {n:"Kayn Sunfury",c:1},{n:"Skull of Gul'dan",c:2},{n:"Kael'thas Sunstrider",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Battlefiend + Twin Slice</span> : +2 attaque pour 1 mana",
+        "⚡ <span class='syn-combo'>Altruis + Outcast cards</span> : dégâts à tous ennemis",
+        "⚡ <span class='syn-combo'>Crimson Sigil Runner + Outcast</span> : pioche si Outcast déclenché",
+        "⚡ <span class='syn-combo'>Kayn + Divine Shield/Rush</span> : ignore toutes les provocations"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Frost Strike",c:2},{n:"Runic Empowerment",c:2},{n:"Ghoul Charge",c:2},
+        {n:"Plagued Grain",c:2},{n:"Blood Boil",c:2},{n:"Acolyte of Death",c:2},
+        {n:"Necrotic Mortician",c:2},{n:"Army of the Dead",c:2},{n:"Corpse Explosion",c:2},
+        {n:"Chillfallen Baron",c:2},{n:"Gnome Muncher",c:2},{n:"Construct Quarter",c:2},
+        {n:"Death Strike",c:2},{n:"Baron Rivendare",c:1},{n:"Deathbringer Saurfang",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Acolyte of Death + Corpses</span> : pioche par corpse consommé",
+        "⚡ <span class='syn-combo'>Gnome Muncher + Corpses</span> : +2/+2 par corpse = géant",
+        "⚡ <span class='syn-combo'>Ghoul Charge + Rush</span> : board clear immédiat + corpse",
+        "⚡ <span class='syn-combo'>Corpse Explosion + board plein</span> : clear AoE massif"
+      ]
+    }
+  },
+  Ramp: {
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Wild Growth",c:2},{n:"Oaken Summons",c:2},
+        {n:"Nourish",c:2},{n:"Branching Paths",c:2},{n:"Grizzled Guardian",c:2},
+        {n:"Witching Hour",c:2},{n:"Spreading Plague",c:2},{n:"Ultimate Infestation",c:2},
+        {n:"Deathwing Dragonlord",c:1},{n:"Ysera",c:1},{n:"Kun the Forgotten King",c:1},
+        {n:"Malfurion the Pestilent",c:1},{n:"Master Oakheart",c:1},{n:"Hadronox",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Innervate + Wild Growth</span> : 8 mana au tour 3",
+        "⚡ <span class='syn-combo'>Ultimate Infestation + Ramp</span> : 5+5+5+5/5 pour 10 mana",
+        "⚡ <span class='syn-combo'>Kun + Malfurion</span> : double boss même tour avec mana refresh",
+        "⚡ <span class='syn-combo'>Grizzled Guardian + Rush</span> : 2 créatures 3/5 Rush rush invoquées"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Far Sight",c:2},{n:"Mana Tide Totem",c:2},{n:"Haunting Visions",c:2},
+        {n:"Hex",c:2},{n:"Lightning Storm",c:2},{n:"Earthquake",c:2},
+        {n:"Kalimos Primal Lord",c:1},{n:"Walking Fountain",c:2},{n:"Thing from Below",c:2},
+        {n:"Al'Akir the Windlord",c:1},{n:"Hagatha the Witch",c:1},{n:"Shudderwock",c:1},
+        {n:"Omega Mind",c:2},{n:"Thrall Deathseer",c:1},{n:"Moorabi",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Far Sight + gros sort</span> : -3 mana sur un sort 7+",
+        "⚡ <span class='syn-combo'>Mana Tide Totem + Sorts</span> : pioche massive chaque tour",
+        "⚡ <span class='syn-combo'>Thing from Below + Totems</span> : -1 mana par totem invoqué",
+        "⚡ <span class='syn-combo'>Kalimos + Élémentaux</span> : effet massif selon l'invocation"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Shield Block",c:2},{n:"Armorsmith",c:2},{n:"Acolyte of Pain",c:2},
+        {n:"Heavy Metal!",c:2},{n:"Dimensional Ripper",c:2},{n:"Omega Devastator",c:2},
+        {n:"Dr. Boom",c:1},{n:"Armagedillo",c:1},{n:"Sul'thraze",c:1},
+        {n:"Deathwing",c:1},{n:"Ornery Tortoise",c:2},{n:"Stage Dive",c:2},
+        {n:"Forge of Souls",c:2},{n:"Wrenchcalibur",c:1},{n:"Frightened Flunky",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Heavy Metal! + armure 10+</span> : gros serviteur aléatoire gratuit",
+        "⚡ <span class='syn-combo'>Dimensional Ripper + gros serviteur</span> : 2x copies invoquées",
+        "⚡ <span class='syn-combo'>Dr. Boom + Phase</span> : hero power aléatoire chaque tour",
+        "⚡ <span class='syn-combo'>Armorsmith + AoE dégâts</span> : armure massive par clear"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Crystology",c:2},{n:"Prismatic Lens",c:2},{n:"Libram of Wisdom",c:2},
+        {n:"Aldor Attendant",c:2},{n:"Libram of Justice",c:2},{n:"Libram of Hope",c:2},
+        {n:"Aldor Truthseeker",c:2},{n:"Lady Liadrin",c:1},{n:"Lightforged Crusader",c:1},
+        {n:"Lightforged Zealot",c:2},{n:"Tirion Fordring",c:1},{n:"Benedictus",c:1},
+        {n:"High Abbess Alura",c:2},{n:"Glowstone Technician",c:1},{n:"Equality",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Aldor Attendant + Librams</span> : Librams -1 mana permanents",
+        "⚡ <span class='syn-combo'>Lady Liadrin + Librams</span> : copie tous les Librams joués",
+        "⚡ <span class='syn-combo'>High Abbess Alura + gros sort</span> : sort joué gratuitement",
+        "⚡ <span class='syn-combo'>Libram of Hope + Lightforged</span> : 8 PV + Divine Shield 8/8"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Arcane Intellect",c:2},{n:"Mana Cyclone",c:2},{n:"Conjurer's Calling",c:2},
+        {n:"Luna's Pocket Galaxy",c:1},{n:"Stargazer Luna",c:1},{n:"Kael'thas Sunstrider",c:1},
+        {n:"Grand Archivist",c:1},{n:"Puzzle Box of Yogg-Saron",c:1},{n:"Dragoncaster",c:2},
+        {n:"Malygos",c:1},{n:"Azure Explorer",c:2},{n:"Breath of Sindragosa",c:2},
+        {n:"Unexpected Results",c:2},{n:"Magic Trick",c:2},{n:"Rolling Fireball",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Luna's Pocket Galaxy</span> : tous serviteurs coûtent 1 mana",
+        "⚡ <span class='syn-combo'>Kael'thas + sorts alternés</span> : 3e sort toujours gratuit",
+        "⚡ <span class='syn-combo'>Dragoncaster + Dragon en main</span> : sort gratuit",
+        "⚡ <span class='syn-combo'>Grand Archivist</span> : lance sort aléatoire de votre deck chaque tour"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Tracking",c:2},{n:"Jewel of N'Zoth",c:1},{n:"Master's Call",c:2},
+        {n:"Dire Frenzy",c:2},{n:"Beastmaster Leoroxx",c:1},{n:"King Krush",c:1},
+        {n:"Savannah Highmane",c:2},{n:"Zul'jin",c:1},{n:"Nagrand Slam",c:2},
+        {n:"Hunters' Mark",c:2},{n:"Unleash the Hounds",c:2},{n:"Swamp King Dred",c:1},
+        {n:"Deathstalker Rexxar",c:1},{n:"Grizzled Guardian",c:2},{n:"Rhok'delar",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Beastmaster Leoroxx + King Krush</span> : Krush gratuit = 8 dégâts Charge",
+        "⚡ <span class='syn-combo'>Dire Frenzy + Highmane</span> : 3 copies Highmane dans le deck",
+        "⚡ <span class='syn-combo'>Deathstalker Rexxar + Zombêtes</span> : créatures custom chaque tour",
+        "⚡ <span class='syn-combo'>Zul'jin + Sorts Hunter</span> : rejoue TOUS les sorts joués"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Mortal Coil",c:2},{n:"Kobold Librarian",c:2},{n:"Nether Dragon",c:2},
+        {n:"Mountain Giant",c:2},{n:"Twilight Drake",c:2},{n:"Handlock Giant",c:2},
+        {n:"Siphon Soul",c:2},{n:"Twisting Nether",c:2},{n:"Enhanced Dreadlord",c:2},
+        {n:"Voidlord",c:2},{n:"Guldan",c:1},{n:"Mal'Ganis",c:1},
+        {n:"N'Zoth the Corruptor",c:1},{n:"Emperor Thaurissan",c:1},{n:"Cataclysm",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Mountain Giant + main pleine</span> : géant 1-3 mana tôt",
+        "⚡ <span class='syn-combo'>Voidlord + Guldan</span> : ressuscite Voidlords infinis",
+        "⚡ <span class='syn-combo'>Emperor Thaurissan + main pleine</span> : -1 mana par carte",
+        "⚡ <span class='syn-combo'>Mal'Ganis</span> : Démons +2/+2 + héros immunisé"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Power Word: Shield",c:2},{n:"Binding Heal",c:2},{n:"Shadow Word: Pain",c:2},
+        {n:"Shadow Word: Death",c:2},{n:"Radiant Elemental",c:2},{n:"Kabal Talonpriest",c:2},
+        {n:"Holy Nova",c:2},{n:"Duskbreaker",c:2},{n:"Twilight Drake",c:2},
+        {n:"Mind Control",c:2},{n:"Cabal Shadow Priest",c:2},{n:"Lyra the Sunshard",c:1},
+        {n:"Prophet Velen",c:1},{n:"Shadowreaper Anduin",c:1},{n:"Mass Hysteria",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Radiant Elemental + sorts</span> : -2 mana sur chaque sort",
+        "⚡ <span class='syn-combo'>Duskbreaker + Dragons</span> : 3 dégâts board clear si dragon",
+        "⚡ <span class='syn-combo'>Lyra + sorts enchaînés</span> : sorts Priest gratuits en chaîne",
+        "⚡ <span class='syn-combo'>Prophet Velen + dégâts sorts</span> : tout x2"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Preparation",c:2},{n:"Backstab",c:2},{n:"Shadowstep",c:2},
+        {n:"Cold Blood",c:2},{n:"Eviscerate",c:2},{n:"SI:7 Agent",c:2},
+        {n:"Edwin VanCleef",c:1},{n:"Vilespine Slayer",c:2},{n:"The Caverns Below",c:1},
+        {n:"Walk the Plank",c:2},{n:"Shark",c:2},{n:"Togwaggle's Scheme",c:2},
+        {n:"Leeching Poison",c:2},{n:"Necrium Blade",c:2},{n:"Tess Greymane",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Shadowstep + Vilespine</span> : 2 removals pour 7 mana",
+        "⚡ <span class='syn-combo'>Edwin VanCleef + Backstab + Prep</span> : 6/6+ tour 3",
+        "⚡ <span class='syn-combo'>Shark + Battlecries</span> : double chaque battlecry",
+        "⚡ <span class='syn-combo'>Togwaggle's Scheme + gros serviteur</span> : 8+ copies dans deck"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Fel Summoning",c:2},{n:"Spectral Sight",c:2},
+        {n:"Eye Beam",c:2},{n:"Raging Felscreamer",c:2},{n:"Imprisoned Antaen",c:2},
+        {n:"Priestess of Fury",c:2},{n:"Skull of Gul'dan",c:2},{n:"Kayn Sunfury",c:1},
+        {n:"Warglaives of Azzinoth",c:2},{n:"Nethrandamus",c:1},{n:"Metamorphosis",c:1},
+        {n:"Chaos Nova",c:2},{n:"Magtheridon",c:1},{n:"Il'gynoth",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Raging Felscreamer + Démons</span> : -2 mana prochain démon",
+        "⚡ <span class='syn-combo'>Nethrandamus + serviteurs pairs</span> : géant Dragon invoqué",
+        "⚡ <span class='syn-combo'>Il'gynoth + Hero Power</span> : dégâts face x2 = OTK potentiel",
+        "⚡ <span class='syn-combo'>Skull of Gul'dan + Outcast</span> : 3 démons à 0 mana"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Runic Empowerment",c:2},{n:"Vampiric Blood",c:2},{n:"Blood Tap",c:2},
+        {n:"Corpse Explosion",c:2},{n:"Army of the Dead",c:2},{n:"Nerubian Vizier",c:2},
+        {n:"Chillfallen Baron",c:2},{n:"Gnome Muncher",c:2},{n:"The Lich King",c:1},
+        {n:"Sindragosa",c:1},{n:"Deathbringer Saurfang",c:1},{n:"Helya",c:1},
+        {n:"Frostmourne",c:1},{n:"Baron Rivendare",c:1},{n:"Patchwerk",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Patchwerk</span> : commence avec 30 armure bonus = 60 PV",
+        "⚡ <span class='syn-combo'>Vampiric Blood + dégâts</span> : soins permanents chaque dégât reçu",
+        "⚡ <span class='syn-combo'>Frostmourne + morts</span> : ressuscite 5 serviteurs à sa destruction",
+        "⚡ <span class='syn-combo'>Sindragosa + Gelez</span> : serviteurs gelés deviennent 1/1"
+      ]
+    }
+  },
+  Zoo: {
+    WARLOCK: {
+      cards: [
+        {n:"Flame Imp",c:2},{n:"Possessed Villager",c:2},{n:"Malchezaar's Imp",c:2},
+        {n:"Voidwalker",c:2},{n:"Kobold Librarian",c:2},{n:"Knife Juggler",c:2},
+        {n:"Darkshire Councilman",c:2},{n:"Imp Gang Boss",c:2},{n:"Power Overwhelming",c:2},
+        {n:"Soulfire",c:2},{n:"Doomguard",c:2},{n:"Voidlord",c:1},
+        {n:"Leeroy Jenkins",c:1},{n:"Sea Giant",c:2},{n:"Illidan Stormrage",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Darkshire Councilman + Imps</span> : +1 attaque par invocation",
+        "⚡ <span class='syn-combo'>Malchezaar's Imp + Discard</span> : pioche par défausse",
+        "⚡ <span class='syn-combo'>Knife Juggler + Tokens</span> : missiles aléatoires massifs",
+        "⚡ <span class='syn-combo'>Sea Giant + board plein</span> : géant 8/8 pour 1-3 mana"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Argent Squire",c:2},{n:"Righteous Protector",c:2},{n:"Brazen Zealot",c:2},
+        {n:"Crystology",c:2},{n:"Micro Mummy",c:2},{n:"Glow-Tron",c:2},
+        {n:"Warhorse Trainer",c:2},{n:"Muster for Battle",c:2},{n:"Knife Juggler",c:2},
+        {n:"Quartermaster",c:2},{n:"Rallying Blade",c:2},{n:"Muradin Bronzebeard",c:1},
+        {n:"Sunkeeper Tarim",c:1},{n:"Blessing of Kings",c:2},{n:"Divine Favor",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Muster for Battle + Quartermaster</span> : 3 tokens +2/+2 = 9 dégâts",
+        "⚡ <span class='syn-combo'>Brazen Zealot + serviteurs</span> : +1 attaque par invocation",
+        "⚡ <span class='syn-combo'>Knife Juggler + Silver Hand Recruits</span> : missiles par token",
+        "⚡ <span class='syn-combo'>Sunkeeper Tarim + zoo plein</span> : tout 3/3 = board wide lethal"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Living Roots",c:2},{n:"Enchanted Raven",c:2},
+        {n:"Mark of the Lotus",c:2},{n:"Power of the Wild",c:2},{n:"Violet Teacher",c:2},
+        {n:"Savage Roar",c:2},{n:"Soul of the Forest",c:2},{n:"Wisps of the Old Gods",c:2},
+        {n:"Cenarius",c:1},{n:"Spreading Plague",c:1},{n:"Force of Nature",c:2},
+        {n:"Twig of the World Tree",c:1},{n:"Crypt Lord",c:2},{n:"Witching Hour",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Violet Teacher + Sorts</span> : 1/1 à chaque sort",
+        "⚡ <span class='syn-combo'>Savage Roar + board plein</span> : +2 attaque = burst massif",
+        "⚡ <span class='syn-combo'>Mark of the Lotus + Tokens</span> : +1/+1 tous serviteurs",
+        "⚡ <span class='syn-combo'>Crypt Lord + invocations</span> : +1/0 par serviteur invoqué"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Springpaw",c:2},{n:"Wolpertinger",c:2},{n:"Adorable Infestation",c:2},
+        {n:"Scavenging Hyena",c:2},{n:"Timber Wolf",c:2},{n:"Pack Tactics",c:2},
+        {n:"Animal Companion",c:2},{n:"Knife Juggler",c:2},{n:"Hyena Alpha",c:2},
+        {n:"Unleash the Hounds",c:2},{n:"Kill Command",c:2},{n:"Houndmaster",c:2},
+        {n:"Voracious Reader",c:2},{n:"Rat Pack",c:1},{n:"Rinling's Rifle",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Scavenging Hyena + Beast tokens</span> : +2/+1 par bête morte",
+        "⚡ <span class='syn-combo'>Knife Juggler + Springpaw</span> : 2 tokens + 2 missiles",
+        "⚡ <span class='syn-combo'>Timber Wolf x2 + Bêtes</span> : +2 attaque à toutes les bêtes",
+        "⚡ <span class='syn-combo'>Unleash the Hounds + board adverse plein</span> : meute Rush"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Voltaic Burst",c:2},{n:"Lightning Bolt",c:2},{n:"Flametongue Totem",c:2},
+        {n:"Bloodlust",c:2},{n:"Murloc Tidecaller",c:2},{n:"Underbelly Angler",c:2},
+        {n:"Murloc Warleader",c:2},{n:"Coldlight Seer",c:2},{n:"Gentle Megasaur",c:2},
+        {n:"Finja the Flying Star",c:1},{n:"Hagatha the Witch",c:1},{n:"Everyfin is Awesome",c:2},
+        {n:"Mrgglaargl!",c:2},{n:"Corrupt the Waters",c:1},{n:"Murloc Tastyfin",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Murloc Warleader + Murlocs</span> : +2/+1 à tous les Murlocs",
+        "⚡ <span class='syn-combo'>Everyfin is Awesome + Murlocs</span> : -1 mana par Murloc en jeu",
+        "⚡ <span class='syn-combo'>Finja + attaque</span> : invoque 2 Murlocs aléatoires",
+        "⚡ <span class='syn-combo'>Bloodlust + zoo plein</span> : +3 attaque à tous = lethal"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Worgen Infiltrator",c:2},{n:"Town Crier",c:2},{n:"Upgradeable Framebot",c:2},
+        {n:"Southsea Deckhand",c:2},{n:"Bloodsail Raider",c:2},{n:"Skybarge",c:2},
+        {n:"Sky Raider",c:2},{n:"Ancharrr",c:1},{n:"Livewire Lance",c:2},
+        {n:"Southsea Captain",c:2},{n:"Heroic Strike",c:2},{n:"Frothing Berserker",c:2},
+        {n:"Plague of Wrath",c:2},{n:"Grommash Hellscream",c:1},{n:"Armagedillo",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Skybarge + Pirates</span> : 2 dégâts par pirate joué",
+        "⚡ <span class='syn-combo'>Southsea Captain + Pirates</span> : +1/+1 à tous les pirates",
+        "⚡ <span class='syn-combo'>Frothing Berserker + board wide attack</span> : snowball attaque",
+        "⚡ <span class='syn-combo'>Town Crier + Rush serviteurs</span> : pioche garantie"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Backstab",c:2},{n:"Defias Ringleader",c:2},{n:"Swashburglar",c:2},
+        {n:"Blink Fox",c:2},{n:"Edwin VanCleef",c:1},{n:"Wax Elemental",c:2},
+        {n:"EVIL Miscreant",c:2},{n:"Raiding Party",c:2},{n:"Shark",c:2},
+        {n:"Southsea Captain",c:2},{n:"Captain Hooktusk",c:1},{n:"Pick Pocket",c:2},
+        {n:"Sap",c:2},{n:"Bazaar Mugger",c:2},{n:"Walk the Plank",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Defias Ringleader + Combo</span> : 2/3 + 2/1 Stealth pour 2 mana",
+        "⚡ <span class='syn-combo'>Shark + Battlecries Pirates</span> : double chaque battlecry",
+        "⚡ <span class='syn-combo'>EVIL Miscreant + Combo</span> : 2 Lackeys aléatoires",
+        "⚡ <span class='syn-combo'>Edwin + zoo cards</span> : géant 6/6+ facilement"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Mana Wyrm",c:2},{n:"Frostbolt",c:2},{n:"Sorcerer's Apprentice",c:2},
+        {n:"Flamewaker",c:2},{n:"Vex Crow",c:2},{n:"Arcane Explosion",c:2},
+        {n:"Arcane Missiles",c:2},{n:"Arcane Intellect",c:2},{n:"Fireball",c:2},
+        {n:"Counterspell",c:2},{n:"Mirror Image",c:2},{n:"Mana Cyclone",c:2},
+        {n:"Jandice Barov",c:1},{n:"Conjurer's Calling",c:1},{n:"Doomsayer",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Mana Wyrm + sorts</span> : snowball +1/+1 par sort",
+        "⚡ <span class='syn-combo'>Flamewaker + sorts</span> : 2 missiles par sort = board clear",
+        "⚡ <span class='syn-combo'>Vex Crow + sorts</span> : serviteur 2 mana aléatoire par sort",
+        "⚡ <span class='syn-combo'>Mana Cyclone + sorts</span> : sort Mage par sort lancé ce tour"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Northshire Cleric",c:2},{n:"Power Word: Shield",c:2},{n:"Potion of Madness",c:2},
+        {n:"Shadow Word: Pain",c:2},{n:"Inner Fire",c:2},{n:"Divine Spirit",c:2},
+        {n:"Kabal Talonpriest",c:2},{n:"Priest of the Feast",c:2},{n:"Circle of Healing",c:2},
+        {n:"Auchenai Soulpriest",c:2},{n:"Holy Nova",c:2},{n:"Prophet Velen",c:1},
+        {n:"Lightspawn",c:2},{n:"Injured Blademaster",c:1},{n:"Lyra the Sunshard",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Lightspawn + Santé = Attaque</span> : buff Santé = buff Attaque",
+        "⚡ <span class='syn-combo'>Northshire + Circle of Healing</span> : pioche de masse",
+        "⚡ <span class='syn-combo'>Auchenai + Circle of Healing</span> : board clear surprise",
+        "⚡ <span class='syn-combo'>Inner Fire + Divine Spirit + Lightspawn</span> : géant instakill"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Battlefiend",c:2},{n:"Twin Slice",c:2},{n:"Ur'zul Horror",c:2},
+        {n:"Crimson Sigil Runner",c:2},{n:"Wrathscale Naga",c:2},{n:"Chaos Strike",c:2},
+        {n:"Coordinated Strike",c:2},{n:"Immolation Aura",c:2},{n:"Altruis the Outcast",c:1},
+        {n:"Expendable Performers",c:1},{n:"Eye Beam",c:2},{n:"Consume Magic",c:2},
+        {n:"Umberwing",c:2},{n:"Acrobatics",c:2},{n:"Metamorphosis",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Wrathscale Naga + tokens morts</span> : 3 dégâts par token mort",
+        "⚡ <span class='syn-combo'>Coordinated Strike + Altruis</span> : 3 tokens + dégâts ennemis",
+        "⚡ <span class='syn-combo'>Battlefiend + Twin Slice</span> : +2 attaque pour 1 mana",
+        "⚡ <span class='syn-combo'>Expendable Performers + Outcast</span> : tokens pour sacrifier"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Ghoul Charge",c:2},{n:"Plagued Grain",c:2},{n:"Rotting Applies",c:2},
+        {n:"Acolyte of Death",c:2},{n:"Necrotic Mortician",c:2},{n:"Corpse Explosion",c:2},
+        {n:"Blood Boil",c:2},{n:"Army of the Dead",c:2},{n:"Gnome Muncher",c:2},
+        {n:"Chillfallen Baron",c:2},{n:"Construct Quarter",c:2},{n:"Deathbringer Saurfang",c:1},
+        {n:"Baron Rivendare",c:1},{n:"Death Strike",c:2},{n:"Patchwerk",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Ghoul Charge + Rush</span> : board presence immédiate + corpse généré",
+        "⚡ <span class='syn-combo'>Gnome Muncher + Corpses</span> : +2/+2 par corpse consommé",
+        "⚡ <span class='syn-combo'>Baron Rivendare + Deathrattles</span> : double deathrattle trigger",
+        "⚡ <span class='syn-combo'>Army of the Dead + Corpses</span> : ressuscite serviteurs morts"
+      ]
+    }
+  },
+  OTK: {
+    PRIEST: {
+      cards: [
+        {n:"Inner Fire",c:2},{n:"Divine Spirit",c:2},{n:"Power Word: Shield",c:2},
+        {n:"Radiant Elemental",c:2},{n:"Shadow Visions",c:2},{n:"Vivid Nightmare",c:2},
+        {n:"Topsy Turvy",c:2},{n:"Injured Blademaster",c:2},{n:"Northshire Cleric",c:2},
+        {n:"Flash Heal",c:2},{n:"Binding Heal",c:2},{n:"Holy Ripple",c:1},
+        {n:"Lightbomb",c:1},{n:"Prophet Velen",c:1},{n:"Circle of Healing",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Injured Blademaster + Divine Spirit x2 + Inner Fire</span> : 28/28 OTK",
+        "⚡ <span class='syn-combo'>Radiant Elemental + sorts</span> : chaîne de sorts -2 mana",
+        "⚡ <span class='syn-combo'>Shadow Visions</span> : copie Inner Fire/Divine Spirit manquant",
+        "⚡ <span class='syn-combo'>Vivid Nightmare + géant buffé</span> : 2 copies du monstre"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Whirlwind",c:2},{n:"Inner Rage",c:2},{n:"Battle Rage",c:2},
+        {n:"Acolyte of Pain",c:2},{n:"Frothing Berserker",c:2},{n:"Charge",c:2},
+        {n:"Warsong Commander",c:2},{n:"Grommash Hellscream",c:1},{n:"Kor'kron Elite",c:2},
+        {n:"Bloodsworn Mercenary",c:2},{n:"Rampage",c:2},{n:"Brann Bronzebeard",c:1},
+        {n:"Omega Assembly",c:2},{n:"Devastate",c:1},{n:"Eternium Rover",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Grommash + Inner Rage</span> : 12 dégâts de face = OTK",
+        "⚡ <span class='syn-combo'>Bloodsworn Mercenary + Grommash</span> : 2 Grommash enragés",
+        "⚡ <span class='syn-combo'>Frothing Berserker + Whirlwind + Battle Rage</span> : géant + pioche",
+        "⚡ <span class='syn-combo'>Warsong Commander + Charge</span> : combo Rush classique"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Archmage Antonidas",c:1},{n:"Sorcerer's Apprentice",c:2},{n:"Preparation",c:2},
+        {n:"Arcane Missiles",c:2},{n:"Arcane Intellect",c:2},{n:"Malygos",c:1},
+        {n:"Frostbolt",c:2},{n:"Fireball",c:2},{n:"Ice Lance",c:2},
+        {n:"Glacier Racer",c:2},{n:"Pyroblast",c:2},{n:"Stargazer Luna",c:1},
+        {n:"Open the Waygate",c:1},{n:"Time Warp",c:1},{n:"Arcane Keysmith",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Open the Waygate + Sorts non répétés</span> : tour supplémentaire OTK",
+        "⚡ <span class='syn-combo'>Malygos + Frostbolt + Ice Lance</span> : 13 dégâts burst",
+        "⚡ <span class='syn-combo'>Antonidas + Sorcerer x2 + sorts</span> : Fireballs gratuites infinies",
+        "⚡ <span class='syn-combo'>Pyroblast x2</span> : 20 dégâts = lethal garanti si adversaire ≤20"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Shudderwock",c:1},{n:"Grumble Worldshaker",c:1},{n:"Zola the Gorgon",c:1},
+        {n:"Saronite Chain Gang",c:2},{n:"Murmuring Elemental",c:2},{n:"Lifedrinker",c:2},
+        {n:"Baleful Banker",c:2},{n:"Bog Slosher",c:2},{n:"Glacial Shard",c:2},
+        {n:"Far Sight",c:2},{n:"Mana Tide Totem",c:2},{n:"Witch's Brew",c:2},
+        {n:"Electra Stormsurge",c:1},{n:"Omega Mind",c:2},{n:"Hagatha the Witch",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Shudderwock + Grumble + Zola</span> : boucle infinie OTK",
+        "⚡ <span class='syn-combo'>Lifedrinker + Shudderwock</span> : 3 dégâts + 3 soins par replay",
+        "⚡ <span class='syn-combo'>Saronite Chain Gang + Shudderwock</span> : 2x Shudderwock",
+        "⚡ <span class='syn-combo'>Baleful Banker + Shudderwock</span> : remet dans deck pour reboucler"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Wild Growth",c:2},{n:"Gadgetzan Auctioneer",c:1},
+        {n:"Living Roots",c:2},{n:"Wrath",c:2},{n:"Malygos",c:1},
+        {n:"Moonfire",c:2},{n:"Flobbidinous Floop",c:1},{n:"Kun the Forgotten King",c:1},
+        {n:"Nourish",c:2},{n:"Overflow",c:2},{n:"Juicy Psychmelon",c:1},
+        {n:"Ultimate Infestation",c:2},{n:"Naturalize",c:2},{n:"Branching Paths",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Malygos + Moonfire x2</span> : 12 dégâts burst pour 3 mana",
+        "⚡ <span class='syn-combo'>Gadgetzan + sorts 0 mana</span> : draw massif + OTK setup",
+        "⚡ <span class='syn-combo'>Kun + refresh mana</span> : OTK sur turn mana full",
+        "⚡ <span class='syn-combo'>Floop + Kun</span> : copie Kun pour 4 mana = double refresh"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Holy Wrath",c:2},{n:"Molten Giant",c:2},{n:"Draw the bow",c:2},
+        {n:"Flash of Light",c:2},{n:"Crystology",c:2},{n:"Prismatic Lens",c:2},
+        {n:"Righteous Protector",c:2},{n:"Equality",c:2},{n:"Consecration",c:2},
+        {n:"The Last Kaleidosaur",c:1},{n:"Tirion Fordring",c:1},{n:"Lay on Hands",c:2},
+        {n:"High Abbess Alura",c:2},{n:"Kangor's Apprentice",c:1},{n:"Lightforged Crusader",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Holy Wrath + Shirvallah (25 mana)</span> : 25 dégâts pour 2 mana OTK",
+        "⚡ <span class='syn-combo'>High Abbess Alura + Holy Wrath</span> : lance Holy Wrath gratuitement",
+        "⚡ <span class='syn-combo'>Prismatic Lens + Shirvallah</span> : swap coût carte/serviteur",
+        "⚡ <span class='syn-combo'>Flash of Light x2</span> : réduit Shirvallah + pioche"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Soulfire",c:2},{n:"Dark Pact",c:2},{n:"Power Overwhelming",c:2},
+        {n:"Void Terror",c:2},{n:"Expired Merchant",c:2},{n:"Plot Twist",c:2},
+        {n:"Cataclysm",c:2},{n:"Skull of the Man'ari",c:1},{n:"Enhanced Dreadlord",c:2},
+        {n:"Doomguard",c:2},{n:"Leeroy Jenkins",c:1},{n:"Mal'Ganis",c:1},
+        {n:"Keli'dan the Breaker",c:1},{n:"Treachery",c:2},{n:"Lord Jaraxxus",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Doomguard x2 + Expired Merchant</span> : 2 Doomguard même tour",
+        "⚡ <span class='syn-combo'>Mal'Ganis + Doomguard</span> : Doomguard immunisé +2/+2",
+        "⚡ <span class='syn-combo'>Soulfire x2 + Leeroy</span> : 14 dégâts pour 5 mana OTK",
+        "⚡ <span class='syn-combo'>Power Overwhelming + Void Terror</span> : géant surprise"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Timber Wolf",c:2},{n:"Leokk",c:2},{n:"Houndmaster Shaw",c:1},
+        {n:"Beastmaster Leoroxx",c:1},{n:"King Krush",c:1},{n:"Tundra Rhino",c:2},
+        {n:"Master's Call",c:2},{n:"Stonetusk Boar",c:2},{n:"Nagrand Slam",c:2},
+        {n:"Call of the Wild",c:2},{n:"Kill Command",c:2},{n:"Tracking",c:2},
+        {n:"Misdirection",c:2},{n:"Zul'jin",c:1},{n:"Dire Frenzy",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Leoroxx + King Krush</span> : 8/8 Charge gratuit = 8 dégâts face min",
+        "⚡ <span class='syn-combo'>Tundra Rhino + Bêtes Charge</span> : board clear + face immédiat",
+        "⚡ <span class='syn-combo'>Timber Wolf x2 + Stonetusk Boar</span> : 3/1 Charge burst",
+        "⚡ <span class='syn-combo'>Nagrand Slam + Tundra Rhino</span> : 4 bêtes rush = board+face"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Preparation",c:2},{n:"Shadowstep",c:2},{n:"Cold Blood",c:2},
+        {n:"Leeroy Jenkins",c:1},{n:"Sap",c:2},{n:"Eviscerate",c:2},
+        {n:"Togwaggle's Scheme",c:2},{n:"Vanish",c:2},{n:"Walk the Plank",c:2},
+        {n:"Vilespine Slayer",c:2},{n:"Edwin VanCleef",c:1},{n:"Fan of Knives",c:2},
+        {n:"Heistbaron Togwaggle",c:1},{n:"Tess Greymane",c:1},{n:"Cannon Barrage",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Leeroy + Shadowstep x2 + Cold Blood</span> : 26 dégâts OTK burst",
+        "⚡ <span class='syn-combo'>Shadowstep + Leeroy</span> : Leeroy x3 = 18 dégâts minimum",
+        "⚡ <span class='syn-combo'>Preparation + Vanish</span> : reset board pour 3 mana",
+        "⚡ <span class='syn-combo'>Cold Blood x2 + Stealth</span> : attaque surprise +8 dégâts"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Inner Demon",c:2},{n:"Il'gynoth",c:1},
+        {n:"Chaos Strike",c:2},{n:"Warglaives of Azzinoth",c:2},{n:"Blur",c:2},
+        {n:"Spectral Sight",c:2},{n:"Eye Beam",c:2},{n:"Acrobatics",c:2},
+        {n:"Metamorphosis",c:1},{n:"Skull of Gul'dan",c:2},{n:"Nethrandamus",c:1},
+        {n:"Raging Felscreamer",c:2},{n:"Kael'thas Sunstrider",c:1},{n:"Disposal of Evidence",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Il'gynoth + Hero Power attaque</span> : tous dégâts face x2 = OTK",
+        "⚡ <span class='syn-combo'>Inner Demon + attaque héros</span> : +8 attaque héros pour 8 mana",
+        "⚡ <span class='syn-combo'>Warglaives + Windfury</span> : double attaque = burst massif",
+        "⚡ <span class='syn-combo'>Metamorphosis + Rush + Il'gynoth</span> : double attaque x2 dégâts"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Blood Boil",c:2},{n:"Runic Empowerment",c:2},{n:"Plagued Grain",c:2},
+        {n:"Army of the Dead",c:2},{n:"Corpse Explosion",c:2},{n:"Gnome Muncher",c:2},
+        {n:"Lord Marrowgar",c:1},{n:"Baron Rivendare",c:1},{n:"Deathbringer Saurfang",c:1},
+        {n:"Patchwerk",c:1},{n:"The Lich King",c:1},{n:"Frostmourne",c:1},
+        {n:"Chillfallen Baron",c:2},{n:"Nerubian Vizier",c:2},{n:"Death Strike",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Lord Marrowgar + Corpses</span> : 10 dégâts massifs AoE",
+        "⚡ <span class='syn-combo'>Baron Rivendare + Deathrattles massifs</span> : double trigger OTK",
+        "⚡ <span class='syn-combo'>Gnome Muncher + gros tas Corpses</span> : géant 20/20+",
+        "⚡ <span class='syn-combo'>Patchwerk + Control</span> : 60 PV total = jamais tué avant combo"
+      ]
+    }
+  },
+  Big: {
+    PRIEST: {
+      cards: [
+        {n:"Eternal Servitude",c:2},{n:"Resurrect",c:2},{n:"Shadow Essence",c:2},
+        {n:"Duskbreaker",c:2},{n:"Mass Hysteria",c:2},{n:"Holy Nova",c:2},
+        {n:"Mind Control",c:2},{n:"Greater Healing Potion",c:2},{n:"Psychic Scream",c:2},
+        {n:"Ysera",c:1},{n:"The Lich King",c:1},{n:"Ragnaros the Firelord",c:1},
+        {n:"Archbishop Benedictus",c:1},{n:"Twilight Drake",c:1},{n:"Catrina Muerte",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Shadow Essence + Ysera/Lich King</span> : copie de légende tour 5",
+        "⚡ <span class='syn-combo'>Resurrect + Legendary morts</span> : résurrection aléatoire permanente",
+        "⚡ <span class='syn-combo'>Catrina Muerte + Undead</span> : invoque mort-vivant chaque fin de tour",
+        "⚡ <span class='syn-combo'>Psychic Scream + board adverse</span> : reset deck = fatigue"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Dimensional Ripper",c:2},{n:"Omega Devastator",c:2},{n:"Heavy Metal!",c:2},
+        {n:"Armorsmith",c:2},{n:"Shield Block",c:2},{n:"Brawl",c:2},
+        {n:"Dr. Boom",c:1},{n:"Armagedillo",c:1},{n:"Deathwing",c:1},
+        {n:"Ysera",c:1},{n:"Alexstrasza",c:1},{n:"Grommash Hellscream",c:1},
+        {n:"Scrapyard Colossus",c:2},{n:"Forge of Souls",c:2},{n:"Frightened Flunky",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Dimensional Ripper + gros serviteur</span> : 2 copies invoquées",
+        "⚡ <span class='syn-combo'>Heavy Metal! + armure 10+</span> : serviteur aléatoire ≥5 mana",
+        "⚡ <span class='syn-combo'>Deathwing</span> : défausse toute sa main + détruit tout le board",
+        "⚡ <span class='syn-combo'>Dr. Boom + Phase</span> : hero power aléatoire à 1 mana chaque tour"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Wild Growth",c:2},{n:"Nourish",c:2},
+        {n:"Oaken Summons",c:2},{n:"Grizzled Guardian",c:2},{n:"Witching Hour",c:2},
+        {n:"Hadronox",c:1},{n:"Spreading Plague",c:2},{n:"Ultimate Infestation",c:2},
+        {n:"Deathwing Dragonlord",c:1},{n:"Ysera",c:1},{n:"Kun the Forgotten King",c:1},
+        {n:"Master Oakheart",c:1},{n:"Malfurion the Pestilent",c:1},{n:"Cenarius",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Hadronox + mur de provocation</span> : résurrection totale des provoc",
+        "⚡ <span class='syn-combo'>Witching Hour + Hadronox mort</span> : ressuscite Hadronox",
+        "⚡ <span class='syn-combo'>Grizzled Guardian Rush + Ramp</span> : 2x 3/5 Rush tôt",
+        "⚡ <span class='syn-combo'>Oaken Summons + 4 mana serviteurs</span> : 4 armure + serviteur"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Luna's Pocket Galaxy",c:1},{n:"Arcane Intellect",c:2},{n:"Conjurer's Calling",c:2},
+        {n:"Dragoncaster",c:2},{n:"Azure Explorer",c:2},{n:"Grand Archivist",c:1},
+        {n:"Malygos",c:1},{n:"Ysera",c:1},{n:"Alexstrasza",c:1},
+        {n:"Blizzard",c:2},{n:"Flamestrike",c:2},{n:"Ice Block",c:2},
+        {n:"Frost Nova",c:2},{n:"Counterspell",c:2},{n:"Pyroblast",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Luna's Pocket Galaxy</span> : tous serviteurs coûtent 1 mana",
+        "⚡ <span class='syn-combo'>Conjurer's Calling + géant</span> : 2 serviteurs même coût",
+        "⚡ <span class='syn-combo'>Dragoncaster + Dragon</span> : sort gratuit avec dragon en main",
+        "⚡ <span class='syn-combo'>Grand Archivist</span> : lance sort aléatoire du deck chaque tour"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Kalimos Primal Lord",c:1},{n:"Walking Fountain",c:2},{n:"Earthquake",c:2},
+        {n:"Hagatha the Witch",c:1},{n:"Al'Akir the Windlord",c:1},{n:"Hex",c:2},
+        {n:"Lightning Storm",c:2},{n:"Far Sight",c:2},{n:"Mana Tide Totem",c:2},
+        {n:"Haunting Visions",c:2},{n:"Earth Elemental",c:2},{n:"Ragnaros the Firelord",c:1},
+        {n:"Thing from Below",c:2},{n:"Omega Mind",c:2},{n:"Ysera",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Kalimos + Élémentaux</span> : board clear + invocations massives",
+        "⚡ <span class='syn-combo'>Walking Fountain + Windfury</span> : 8 soins par attaque",
+        "⚡ <span class='syn-combo'>Earth Elemental + Surcharge</span> : 7/8 Provoc pour 5 mana",
+        "⚡ <span class='syn-combo'>Hagatha + serviteurs</span> : sort Shaman aléatoire par serviteur"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Voidlord",c:2},{n:"Enhanced Dreadlord",c:2},{n:"Twisting Nether",c:2},
+        {n:"Plot Twist",c:2},{n:"Guldan",c:1},{n:"Mal'Ganis",c:1},
+        {n:"Void Ripper",c:2},{n:"Nether Dragon",c:2},{n:"Dark Pact",c:2},
+        {n:"Hellfire",c:2},{n:"N'Zoth the Corruptor",c:1},{n:"Lord Jaraxxus",c:1},
+        {n:"Siphon Soul",c:2},{n:"Arch-Villain Rafaam",c:1},{n:"Mountain Giant",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Guldan + Deathrattles Demons</span> : ressuscite tous démons morts",
+        "⚡ <span class='syn-combo'>Mal'Ganis</span> : Démons immunisés +2/+2 tant qu'en jeu",
+        "⚡ <span class='syn-combo'>Voidlord + Dark Pact</span> : 8 soins + 3 Voidwalkers gratuits",
+        "⚡ <span class='syn-combo'>N'Zoth + Deathrattles</span> : ressuscite tous deathrattles"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Kathrena Winterwisp",c:1},{n:"King Krush",c:1},{n:"The Beast",c:1},
+        {n:"Savannah Highmane",c:2},{n:"Swamp King Dred",c:1},{n:"Tundra Rhino",c:2},
+        {n:"Deathstalker Rexxar",c:1},{n:"Zul'jin",c:1},{n:"Rhok'delar",c:1},
+        {n:"Tracking",c:2},{n:"Master's Call",c:2},{n:"Dire Frenzy",c:2},
+        {n:"Nine Lives",c:2},{n:"Grizzled Guardian",c:2},{n:"Stitched Tracker",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Kathrena + gros Beast en deck</span> : invoque beast à sa mort",
+        "⚡ <span class='syn-combo'>Swamp King Dred</span> : attaque et détruit tout serviteur attaquant",
+        "⚡ <span class='syn-combo'>Nine Lives + Highmane mort</span> : Highmane + 2 Hyenas revenus",
+        "⚡ <span class='syn-combo'>Rhok'delar</span> : 5 sorts Hunter aléatoires si deck vide de serviteurs"
+      ]
+    },
+    PALADIN: {
+      cards: [
+        {n:"Prismatic Lens",c:2},{n:"Tirion Fordring",c:1},{n:"Lay on Hands",c:2},
+        {n:"Uther of the Ebon Blade",c:1},{n:"Equality",c:2},{n:"Consecration",c:2},
+        {n:"Sunkeeper Tarim",c:1},{n:"Lightforged Crusader",c:1},{n:"Lightforged Zealot",c:2},
+        {n:"The Last Kaleidosaur",c:1},{n:"Lynessa Sunsorrow",c:1},{n:"Holy Wrath",c:2},
+        {n:"Sound the Bells!",c:2},{n:"Zandalari Templar",c:2},{n:"A New Challenger...",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>A New Challenger + 7 mana</span> : légende aléatoire Divine Shield Rush",
+        "⚡ <span class='syn-combo'>Uther Ebon Blade + 4 Cavaliers</span> : win condition unique",
+        "⚡ <span class='syn-combo'>Lynessa + buffs jouées</span> : géante avec tous les buffs",
+        "⚡ <span class='syn-combo'>Lightforged Crusader</span> : 5 cartes Paladin aléatoires"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Preparation",c:2},{n:"Shadowstep",c:2},{n:"Vilespine Slayer",c:2},
+        {n:"Myra's Unstable Element",c:1},{n:"Tess Greymane",c:1},{n:"Valeera the Hollow",c:1},
+        {n:"Academic Espionage",c:2},{n:"Necrium Blade",c:2},{n:"Sonya Shadowdancer",c:1},
+        {n:"Vendetta",c:2},{n:"Bladed Cultist",c:2},{n:"Sap",c:2},
+        {n:"Fan of Knives",c:2},{n:"Walk the Plank",c:2},{n:"Cannon Barrage",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Necrium Blade + Deathrattle</span> : déclenche deathrattle en attaquant",
+        "⚡ <span class='syn-combo'>Sonya Shadowdancer + Rush</span> : copie serviteur mort pour 1 mana",
+        "⚡ <span class='syn-combo'>Valeera the Hollow</span> : extra carte dans l'ombre chaque tour",
+        "⚡ <span class='syn-combo'>Academic Espionage</span> : 10 cartes adverses à 1 mana dans deck"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Raging Felscreamer",c:2},{n:"Imprisoned Antaen",c:2},{n:"Priestess of Fury",c:2},
+        {n:"Nethrandamus",c:1},{n:"Skull of Gul'dan",c:2},{n:"Metamorphosis",c:1},
+        {n:"Kayn Sunfury",c:1},{n:"Il'gynoth",c:1},{n:"Warglaives of Azzinoth",c:2},
+        {n:"Eye Beam",c:2},{n:"Consume Magic",c:2},{n:"Spectral Sight",c:2},
+        {n:"Chaos Nova",c:2},{n:"Magtheridon",c:1},{n:"Inner Demon",c:2}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Raging Felscreamer + Démon</span> : prochain démon -2 mana",
+        "⚡ <span class='syn-combo'>Imprisoned Antaen + dégâts reçus</span> : 10 missiles à sa mort",
+        "⚡ <span class='syn-combo'>Nethrandamus + pairs invoqués</span> : géant Dragon random",
+        "⚡ <span class='syn-combo'>Skull Gul'dan + Outcast</span> : 3 démons gratuits = board massif"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"The Lich King",c:1},{n:"Sindragosa",c:1},{n:"Frostmourne",c:1},
+        {n:"Deathbringer Saurfang",c:1},{n:"Patchwerk",c:1},{n:"Helya",c:1},
+        {n:"Army of the Dead",c:2},{n:"Blood Tap",c:2},{n:"Vampiric Blood",c:2},
+        {n:"Corpse Explosion",c:2},{n:"Chillfallen Baron",c:2},{n:"Baron Rivendare",c:1},
+        {n:"Gnome Muncher",c:2},{n:"Death Strike",c:2},{n:"Lord Marrowgar",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>The Lich King</span> : carte Death Knight chaque fin de tour",
+        "⚡ <span class='syn-combo'>Frostmourne + morts</span> : ressuscite 5 serviteurs à sa destruction",
+        "⚡ <span class='syn-combo'>Deathbringer Saurfang + Deathrattles</span> : retour immédiat",
+        "⚡ <span class='syn-combo'>Patchwerk + gros board</span> : commence avec 60 PV effectifs"
+      ]
+    }
+  },
+  Token: {
+    PALADIN: {
+      cards: [
+        {n:"Righteous Protector",c:2},{n:"Brazen Zealot",c:2},{n:"Crystology",c:2},
+        {n:"Glow-Tron",c:2},{n:"Micro Mummy",c:2},{n:"Warhorse Trainer",c:2},
+        {n:"Muster for Battle",c:2},{n:"Quartermaster",c:2},{n:"Rallying Blade",c:2},
+        {n:"Knife Juggler",c:2},{n:"Sunkeeper Tarim",c:1},{n:"Muradin Bronzebeard",c:1},
+        {n:"Divine Favor",c:2},{n:"Blessing of Kings",c:2},{n:"Lightforged Zealot",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Muster for Battle + Quartermaster</span> : 3 recrues +2/+2 = 9 dégâts",
+        "⚡ <span class='syn-combo'>Brazen Zealot + Tokens</span> : +1 attaque par invocation",
+        "⚡ <span class='syn-combo'>Sunkeeper Tarim + zoo tokens</span> : tout 3/3 = lethal board wide",
+        "⚡ <span class='syn-combo'>Knife Juggler + recrues</span> : missiles aléatoires continus"
+      ]
+    },
+    DRUID: {
+      cards: [
+        {n:"Innervate",c:2},{n:"Living Roots",c:2},{n:"Mark of the Lotus",c:2},
+        {n:"Power of the Wild",c:2},{n:"Violet Teacher",c:2},{n:"Savage Roar",c:2},
+        {n:"Soul of the Forest",c:2},{n:"Spreading Plague",c:1},{n:"Wisps of the Old Gods",c:2},
+        {n:"Force of Nature",c:2},{n:"Cenarius",c:1},{n:"Crypt Lord",c:2},
+        {n:"Twig of the World Tree",c:1},{n:"Witchwood Apple",c:2},{n:"Flobbidinous Floop",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Violet Teacher + Sorts</span> : 1/1 à chaque sort",
+        "⚡ <span class='syn-combo'>Savage Roar + board plein</span> : +2 attaque tous = burst 14+",
+        "⚡ <span class='syn-combo'>Mark of the Lotus + Tokens</span> : +1/+1 tous serviteurs",
+        "⚡ <span class='syn-combo'>Crypt Lord + invocations</span> : +1/0 par serviteur invoqué"
+      ]
+    },
+    SHAMAN: {
+      cards: [
+        {n:"Flametongue Totem",c:2},{n:"Mana Tide Totem",c:2},{n:"Totemic Might",c:2},
+        {n:"Bloodlust",c:2},{n:"Spirit of the Frog",c:1},{n:"Thing from Below",c:2},
+        {n:"Murmuring Elemental",c:2},{n:"Primal Talismans",c:2},{n:"Likkim",c:2},
+        {n:"Voltaic Burst",c:2},{n:"Haunting Visions",c:2},{n:"Hagatha the Witch",c:1},
+        {n:"Thunderhead",c:2},{n:"Far Sight",c:2},{n:"Electra Stormsurge",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Flametongue Totem + Tokens</span> : +2 attaque adjacents",
+        "⚡ <span class='syn-combo'>Thunderhead + Surcharge</span> : 2 tokens 1/1 Rush par surcharge",
+        "⚡ <span class='syn-combo'>Bloodlust + board plein Tokens</span> : +3 attaque tous = lethal",
+        "⚡ <span class='syn-combo'>Thing from Below + Totems</span> : -1 mana par totem joué"
+      ]
+    },
+    WARRIOR: {
+      cards: [
+        {n:"Town Crier",c:2},{n:"Whirlwind",c:2},{n:"Armorsmith",c:2},
+        {n:"Frothing Berserker",c:2},{n:"Acolyte of Pain",c:2},{n:"Devastate",c:2},
+        {n:"Battle Rage",c:2},{n:"Bolster",c:2},{n:"Upgradeable Framebot",c:2},
+        {n:"Zilliax",c:1},{n:"Warpath",c:2},{n:"Omega Devastator",c:2},
+        {n:"Direhorn Hatchling",c:2},{n:"Rabble Bouncer",c:2},{n:"Troublemaker",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Bolster + Provocation Tokens</span> : +2/+2 par serviteur provoc",
+        "⚡ <span class='syn-combo'>Frothing Berserker + AoE</span> : +1 attaque par dégât board",
+        "⚡ <span class='syn-combo'>Armorsmith + AoE</span> : armure par dégât = quasi-immortel",
+        "⚡ <span class='syn-combo'>Battle Rage + tokens blessés</span> : pioche massive"
+      ]
+    },
+    MAGE: {
+      cards: [
+        {n:"Mana Wyrm",c:2},{n:"Arcane Missiles",c:2},{n:"Mirror Image",c:2},
+        {n:"Frostbolt",c:2},{n:"Sorcerer's Apprentice",c:2},{n:"Flamewaker",c:2},
+        {n:"Vex Crow",c:2},{n:"Arcane Intellect",c:2},{n:"Fireball",c:2},
+        {n:"Mana Cyclone",c:2},{n:"Unexpected Results",c:2},{n:"Doomsayer",c:2},
+        {n:"Frost Nova",c:1},{n:"Jandice Barov",c:1},{n:"Archmage Antonidas",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Vex Crow + sorts</span> : serviteur 2 mana aléatoire par sort",
+        "⚡ <span class='syn-combo'>Unexpected Results + sorts</span> : 2 serviteurs 2 mana aléatoires",
+        "⚡ <span class='syn-combo'>Flamewaker + board de tokens</span> : 2 missiles par sort",
+        "⚡ <span class='syn-combo'>Mana Cyclone + sorts ce tour</span> : sort Mage par sort lancé"
+      ]
+    },
+    HUNTER: {
+      cards: [
+        {n:"Springpaw",c:2},{n:"Wolpertinger",c:2},{n:"Adorable Infestation",c:2},
+        {n:"Timber Wolf",c:2},{n:"Knife Juggler",c:2},{n:"Pack Tactics",c:2},
+        {n:"Scavenging Hyena",c:2},{n:"Animal Companion",c:2},{n:"Unleash the Hounds",c:2},
+        {n:"Rat Pack",c:2},{n:"Voracious Reader",c:2},{n:"Hyena Alpha",c:2},
+        {n:"Rinling's Rifle",c:1},{n:"Houndmaster Shaw",c:1},{n:"Tundra Rhino",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Springpaw + Adorable Infestation</span> : 5 tokens tour 3-4",
+        "⚡ <span class='syn-combo'>Scavenging Hyena + Beast tokens</span> : +2/+1 par bête morte",
+        "⚡ <span class='syn-combo'>Knife Juggler + invocations</span> : missiles par token",
+        "⚡ <span class='syn-combo'>Unleash Hounds + board adverse plein</span> : meute Rush"
+      ]
+    },
+    PRIEST: {
+      cards: [
+        {n:"Northshire Cleric",c:2},{n:"Power Word: Shield",c:2},{n:"Circle of Healing",c:2},
+        {n:"Inner Fire",c:2},{n:"Divine Spirit",c:2},{n:"Kabal Talonpriest",c:2},
+        {n:"Priest of the Feast",c:2},{n:"Lightspawn",c:2},{n:"Auchenai Soulpriest",c:2},
+        {n:"Holy Nova",c:2},{n:"Prophet Velen",c:1},{n:"Soul Mirror",c:1},
+        {n:"Mass Hysteria",c:2},{n:"Holy Ripple",c:1},{n:"Lyra the Sunshard",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Auchenai + Circle of Healing</span> : board clear surprise 2 mana",
+        "⚡ <span class='syn-combo'>Northshire + Circle of Healing</span> : pioche massive tokens blessés",
+        "⚡ <span class='syn-combo'>Lightspawn + Divine Spirit</span> : +Santé = +Attaque = géant",
+        "⚡ <span class='syn-combo'>Soul Mirror + board adverse</span> : copie tous serviteurs ennemis"
+      ]
+    },
+    WARLOCK: {
+      cards: [
+        {n:"Flame Imp",c:2},{n:"Possessed Villager",c:2},{n:"Darkshire Councilman",c:2},
+        {n:"Nether Imp",c:2},{n:"Imp Gang Boss",c:2},{n:"Knife Juggler",c:2},
+        {n:"Void Terror",c:2},{n:"Power Overwhelming",c:2},{n:"Imp-losion",c:2},
+        {n:"Sea Giant",c:2},{n:"Doomguard",c:2},{n:"Illidan Stormrage",c:1},
+        {n:"Leeroy Jenkins",c:1},{n:"Mal'Ganis",c:1},{n:"Kobold Librarian",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Darkshire Councilman + Imps</span> : +1 attaque par invocation",
+        "⚡ <span class='syn-combo'>Imp Gang Boss + dégâts reçus</span> : 1/1 Imp par dégât reçu",
+        "⚡ <span class='syn-combo'>Imp-losion + Void Terror</span> : 4 tokens + géant surprise",
+        "⚡ <span class='syn-combo'>Sea Giant + board plein</span> : 8/8 pour 1-3 mana"
+      ]
+    },
+    ROGUE: {
+      cards: [
+        {n:"Swashburglar",c:2},{n:"Defias Ringleader",c:2},{n:"Blink Fox",c:2},
+        {n:"EVIL Miscreant",c:2},{n:"Edwin VanCleef",c:1},{n:"Raiding Party",c:2},
+        {n:"Southsea Captain",c:2},{n:"Lackey Spells",c:2},{n:"Shark",c:2},
+        {n:"Fan of Knives",c:2},{n:"Backstab",c:2},{n:"Captain Hooktusk",c:1},
+        {n:"Walk the Plank",c:2},{n:"Cannon Barrage",c:1},{n:"Sap",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Defias Ringleader + Combo</span> : 2/3 + 2/1 Stealth pour 2 mana",
+        "⚡ <span class='syn-combo'>EVIL Miscreant + Combo</span> : 2 Lackeys aléatoires puissants",
+        "⚡ <span class='syn-combo'>Shark + Battlecries Pirates</span> : double chaque battlecry",
+        "⚡ <span class='syn-combo'>Edwin + board de tokens</span> : gigantesque pour 3 mana"
+      ]
+    },
+    DEMONHUNTER: {
+      cards: [
+        {n:"Twin Slice",c:2},{n:"Battlefiend",c:2},{n:"Ur'zul Horror",c:2},
+        {n:"Coordinated Strike",c:2},{n:"Immolation Aura",c:2},{n:"Wrathscale Naga",c:2},
+        {n:"Altruis the Outcast",c:1},{n:"Eye Beam",c:2},{n:"Expendable Performers",c:1},
+        {n:"Umberwing",c:2},{n:"Consume Magic",c:2},{n:"Chaos Strike",c:2},
+        {n:"Acrobatics",c:2},{n:"Metamorphosis",c:1},{n:"Kael'thas Sunstrider",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Coordinated Strike</span> : 3 tokens 1/1 Rush = board presence",
+        "⚡ <span class='syn-combo'>Wrathscale Naga + tokens morts</span> : 3 dégâts par token mort",
+        "⚡ <span class='syn-combo'>Altruis + Outcast</span> : dégâts ennemis par carte Outcast",
+        "⚡ <span class='syn-combo'>Battlefiend + Twin Slice</span> : +2 attaque pour 1 mana"
+      ]
+    },
+    DEATHKNIGHT: {
+      cards: [
+        {n:"Plagued Grain",c:2},{n:"Ghoul Charge",c:2},{n:"Rotting Applies",c:2},
+        {n:"Blood Boil",c:2},{n:"Acolyte of Death",c:2},{n:"Army of the Dead",c:2},
+        {n:"Corpse Explosion",c:2},{n:"Gnome Muncher",c:2},{n:"Necrotic Mortician",c:2},
+        {n:"Chillfallen Baron",c:2},{n:"Construct Quarter",c:2},{n:"Death Strike",c:2},
+        {n:"Baron Rivendare",c:1},{n:"Deathbringer Saurfang",c:1},{n:"Lord Marrowgar",c:1}
+      ],
+      synergies: [
+        "⚡ <span class='syn-combo'>Plagued Grain + board</span> : tokens empoisonnés chaque fin de tour",
+        "⚡ <span class='syn-combo'>Baron Rivendare + Deathrattles token</span> : double tokens générés",
+        "⚡ <span class='syn-combo'>Acolyte of Death + Corpses</span> : pioche par corpse consommé",
+        "⚡ <span class='syn-combo'>Corpse Explosion + board plein</span> : clear AoE massif"
+      ]
+    }
+  }
+};
+
+// Fallback si combo introuvable — construit un deck générique avec les meilleures cartes
+function getFallbackDeck(cls) {
+  const generics = [
+    {n:"Backstab",c:2},{n:"Fireball",c:2},{n:"Frostbolt",c:2},
+    {n:"Innervate",c:2},{n:"Wild Growth",c:2},{n:"Swipe",c:2},
+    {n:"Nourish",c:2},{n:"Savage Roar",c:2},{n:"Force of Nature",c:2},
+    {n:"Living Roots",c:2},{n:"Wrath",c:2},{n:"Branching Paths",c:2},
+    {n:"Spreading Plague",c:1},{n:"Malfurion the Pestilent",c:1},{n:"Ysera",c:1}
+  ];
+  return { cards: generics, synergies: ["Deck générique de secours — essayez une autre classe/archétype"] };
+}
+
+// ─── ENCODER ────────────────────────────────────────────────────────────────
 function writeVI(n, a) {
   n = n >>> 0;
   do { let b = n & 0x7F; n >>>= 7; if (n !== 0) b |= 0x80; a.push(b); } while (n !== 0);
@@ -689,17 +2076,31 @@ const HEROES = {
   DEMONHUNTER:56550, DEATHKNIGHT:78065
 };
 
-// ─── ARCHETYPE SELECT ────────────────────────────────────────────────────────
+// ─── ARCHETYPE SELECT ───────────────────────────────────────────────────────
 function selectArc(btn, arc) {
   document.querySelectorAll('.arc-btn').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
   selectedArc = arc;
+  updateSynergies();
   updateGenBtn();
 }
 
+function updateSynergies() {
+  if (!selectedArc) return;
+  const cls = document.getElementById('hc').value;
+  const data = (DECKS[selectedArc] || {})[cls] || getFallbackDeck(cls);
+  const box = document.getElementById('syn-box');
+  const content = document.getElementById('syn-content');
+  if (data.synergies && data.synergies.length) {
+    content.innerHTML = data.synergies.join('<br>');
+    box.classList.add('active');
+  } else {
+    box.classList.remove('active');
+  }
+}
+
 function updateGenBtn() {
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = !(accessToken && selectedArc);
+  document.getElementById('gen-btn').disabled = !(accessToken && selectedArc);
 }
 
 // ─── OAUTH TOKEN ─────────────────────────────────────────────────────────────
@@ -723,27 +2124,25 @@ async function getToken() {
     const exp = Math.round(data.expires_in / 3600);
     setTok('ok', `Connecté — token valide ~${exp}h`);
     updateGenBtn();
+    document.getElementById('sb2').textContent = '✅ API Blizzard connectée — prêt à générer';
   } catch(e) {
     setTok('err', 'Erreur : ' + e.message);
     accessToken = null;
   }
   document.getElementById('tok-btn').disabled = false;
 }
-
 function setTok(state, msg) {
   document.getElementById('tok-dot').className = 'tok-dot ' + state;
   document.getElementById('tok-txt').textContent = msg;
 }
 
-// ─── BLIZZARD CARD LOOKUP ─────────────────────────────────────────────────────
+// ─── BLIZZARD CARD LOOKUP ─────────────────────────────────────────────────
 async function lookupCard(name) {
   if (cardCache[name] !== undefined) return cardCache[name];
   try {
     const url = 'https://us.api.blizzard.com/hearthstone/cards'
-      + '?locale=en_US'
-      + '&name=' + encodeURIComponent(name)
-      + '&collectible=1'
-      + '&access_token=' + accessToken;
+      + '?locale=en_US&name=' + encodeURIComponent(name)
+      + '&collectible=1&access_token=' + accessToken;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
@@ -760,133 +2159,23 @@ async function lookupCard(name) {
   }
 }
 
-// ─── PARSE CARD LIST ─────────────────────────────────────────────────────────
-function parse(txt) {
-  return txt.split('\n')
-    .map(l => l.trim().replace(/^#+\s*/, '').replace(/\*+/g,'').trim())
-    .filter(l => l && !l.startsWith('#') && !l.startsWith('//') && !l.startsWith('###'))
-    .map(l => {
-      const m = l.match(/^(\d+)\s*[xX×]\s*(.+)/) || l.match(/^(\d+)\s+(.+)/);
-      return m
-        ? { name: m[2].trim().replace(/\s*\(.*\)\s*$/,'').trim(), cnt: Math.min(parseInt(m[1]), 2) }
-        : { name: l.replace(/\s*\(.*\)\s*$/,'').trim(), cnt: 1 };
-    })
-    .filter(c => c.name.length > 0);
-}
-
-// ─── AI DECK GENERATION ──────────────────────────────────────────────────────
+// ─── GENERATE ───────────────────────────────────────────────────────────────
 async function generateDeck() {
   if (isRunning || !accessToken || !selectedArc) return;
   isRunning = true;
 
   const cls = document.getElementById('hc').value;
-  const fmt = document.getElementById('hf').value;
-  const fmtName = fmt === '2' ? 'Standard' : 'Wild';
+  const fmt = parseInt(document.getElementById('hf').value);
   const dn = document.getElementById('dn').value.trim() || `${selectedArc} ${cls}`;
+  const fmtName = fmt === 2 ? 'Standard' : 'Wild';
 
-  // Show AI box
-  const aiBox = document.getElementById('ai-box');
-  const aiContent = document.getElementById('ai-content');
-  aiBox.classList.add('active');
-  aiContent.innerHTML = '<span class="ai-thinking"><span>●</span><span>●</span><span>●</span> L\'IA analyse les synergies pour ' + selectedArc + ' ' + cls + '...</span>';
+  const data = (DECKS[selectedArc] || {})[cls] || getFallbackDeck(cls);
+  const parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
 
   document.getElementById('gen-btn').disabled = true;
-  document.getElementById('gen-btn').textContent = '⏳ Génération en cours...';
+  document.getElementById('gen-btn').textContent = '⏳ Chargement des cartes...';
+  document.getElementById('out-panel').style.display = 'block';
 
-  // Build AI prompt
-  const arcDescriptions = {
-    Aggro: "très rapide, veut tuer le plus tôt possible avec une pression constante, courbe de mana 1-4",
-    Midrange: "équilibré, solide au milieu de partie, menaces efficaces aux tours 3-6",
-    Control: "survie, gestion du board, win condition tardive, beaucoup de sorts de contrôle",
-    Combo: "assembler des pièces pour un gros swing ou kill soudain, piocher et tenir jusqu'au combo",
-    Tempo: "prendre l'avantage du board immédiatement, garder le rythme et ne jamais le lâcher",
-    Ramp: "accélérer le mana pour jouer de grosses cartes beaucoup plus vite, mana génération",
-    Zoo: "plein de petits serviteurs efficaces pour submerger l'adversaire rapidement",
-    OTK: "One Turn Kill, tuer en un seul tour avec une séquence de cartes précise",
-    Big: "tricher ou invoquer rapidement de très grosses menaces, créatures 7+ mana",
-    Token: "remplir le board avec beaucoup de petites créatures, buff collectif"
-  };
-
-  const systemPrompt = `Tu es un expert Hearthstone qui connaît toutes les cartes du jeu par cœur.
-Tu dois générer un deck de 30 cartes compétitif pour le format ${fmtName} Hearthstone.
-RÈGLES ABSOLUES :
-- Exactement 30 cartes dans le deck (compter les doublons : 2x = 2 cartes)
-- Format de sortie strict : d'abord les synergies/combos, puis la liste de cartes
-- Utilise des cartes réelles qui existent dans Hearthstone ${fmtName}
-- Maximum 2 exemplaires d'une même carte (sauf cartes légendaires : max 1)
-- Optimise pour GAGNER le plus souvent possible avec l'archétype choisi
-- Inclus les meilleures synergies et combos disponibles pour cet archétype
-
-FORMAT DE RÉPONSE (respecte exactement) :
-
-SYNERGIES:
-[liste des 3-5 synergies/combos principaux du deck, format: "Carte A + Carte B : explication"]
-
-LISTE:
-2x Nom Carte
-2x Nom Carte
-1x Nom Légendaire
-[etc jusqu'à 30 cartes total]`;
-
-  const userPrompt = `Génère un deck ${selectedArc} pour ${cls} en format ${fmtName} Hearthstone.
-Archétype : ${arcDescriptions[selectedArc] || selectedArc}
-La liste doit avoir exactement 30 cartes total. Optimise pour le maximum de victoires.
-Nomme les cartes en ANGLAIS (noms officiels Hearthstone).`;
-
-  try {
-    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      })
-    });
-
-    const aiData = await aiResp.json();
-    const rawText = aiData.content?.map(b => b.text || '').join('') || '';
-
-    // Parse synergies and card list
-    const synMatch = rawText.match(/SYNERGIES:\s*([\s\S]*?)(?=LISTE:|$)/i);
-    const listMatch = rawText.match(/LISTE:\s*([\s\S]*)/i);
-
-    lastSynergies = synMatch ? synMatch[1].trim() : '';
-    const cardListRaw = listMatch ? listMatch[1].trim() : rawText;
-
-    // Display AI synergies
-    if (lastSynergies) {
-      aiContent.innerHTML = '<strong style="color:var(--gold-l)">Archétype analysé</strong> — synergies identifiées, construction du deck...';
-    }
-
-    // Parse the card list
-    lastDeckList = parse(cardListRaw);
-
-    if (lastDeckList.length === 0) {
-      aiContent.innerHTML = '<span style="color:var(--red)">❌ L\'IA n\'a pas pu générer la liste. Réessayez.</span>';
-      isRunning = false;
-      document.getElementById('gen-btn').disabled = false;
-      document.getElementById('gen-btn').textContent = '⚡ Générer le Deck';
-      return;
-    }
-
-    // Now resolve cards via Blizzard API
-    aiContent.innerHTML = `✅ <strong>${lastDeckList.length} cartes identifiées</strong> — résolution via API Blizzard...`;
-    document.getElementById('out-panel').style.display = 'block';
-
-    await resolveAndDisplay(lastDeckList, lastSynergies, cls, parseInt(fmt), dn);
-
-  } catch(e) {
-    aiContent.innerHTML = '<span style="color:var(--red)">❌ Erreur IA : ' + e.message + '</span>';
-    isRunning = false;
-    document.getElementById('gen-btn').disabled = false;
-    document.getElementById('gen-btn').textContent = '⚡ Générer le Deck';
-  }
-}
-
-// ─── RESOLVE & DISPLAY ───────────────────────────────────────────────────────
-async function resolveAndDisplay(parsed, synergies, cls, fmt, dn) {
   const unique = [...new Set(parsed.map(p => p.name))];
   const total = unique.length;
 
@@ -903,22 +2192,19 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn) {
   for (const {name, cnt} of parsed) {
     const el = document.createElement('div');
     el.className = 'dc pend';
-    el.id = 'ci-' + name.replace(/\W/g,'_');
     el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cnt}</span><span style="font-size:.8em">⏳</span>`;
     grid.appendChild(el);
     elMap[name] = el;
   }
 
-  // Batch lookups
   const BATCH = 3;
   let done = 0;
   for (let i = 0; i < unique.length; i += BATCH) {
     const batch = unique.slice(i, i + BATCH);
-    await Promise.all(batch.map(name => lookupCard(name)));
+    await Promise.all(batch.map(n => lookupCard(n)));
     done += batch.length;
     pb.style.width = Math.round(done / total * 100) + '%';
-    pt.textContent = `Résolution : ${done}/${total} cartes...`;
-
+    pt.textContent = `Résolution Blizzard : ${done}/${total} cartes...`;
     for (const name of batch) {
       const info = cardCache[name];
       const cp = parsed.find(p => p.name === name);
@@ -926,10 +2212,10 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn) {
       if (!el) continue;
       if (info) {
         el.className = 'dc ok';
-        el.innerHTML = `<div class="mc">${info.cost}</div><div class="cn" title="${info.blizzName||name}">${info.blizzName||name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:var(--grn)">✓</span>`;
+        el.innerHTML = `<div class="mc">${info.cost}</div><div class="cn" title="${info.blizzName||name}">${info.blizzName||name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:#4aad7a">✓</span>`;
       } else {
         el.className = 'dc bad';
-        el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:var(--red)">✗</span>`;
+        el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:#c94444">✗</span>`;
       }
     }
     if (i + BATCH < unique.length) await sleep(150);
@@ -946,11 +2232,11 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn) {
   });
   children.forEach(c => grid.appendChild(c));
 
-  // Stats
+  // Build results
   const res = [], miss = [];
   for (const {name, cnt} of parsed) {
     const info = cardCache[name];
-    if (info) res.push({name, cnt, d: info.dbfId, c: info.cost});
+    if (info) res.push({ name, cnt, d: info.dbfId, c: info.cost });
     else miss.push(name);
   }
 
@@ -962,64 +2248,32 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn) {
   if (miss.length) {
     document.getElementById('sbx').style.display = 'flex';
     document.getElementById('sm').textContent = miss.length;
+    document.getElementById('msdiv').style.display = 'block';
+    document.getElementById('mlst').innerHTML = miss.map(m => `• <b>${m}</b>`).join('<br>');
   } else {
     document.getElementById('sbx').style.display = 'none';
+    document.getElementById('msdiv').style.display = 'none';
   }
-  document.getElementById('cl').textContent = `${nTotal} cartes · ${nFound} résolues · ${selectedArc} ${cls}`;
+  document.getElementById('cl').textContent = `${nTotal} cartes · ${nFound} résolues · ${selectedArc} ${cls} ${fmtName}`;
 
-  // Display synergies
-  if (synergies) {
-    const synSection = document.getElementById('syn-section');
-    const synList = document.getElementById('syn-list');
-    synSection.classList.add('active');
-    const lines = synergies.split('\n').filter(l => l.trim());
-    synList.innerHTML = lines.map(line => {
-      // Highlight card names (before the colon)
-      const [cards, ...desc] = line.split(':');
-      if (desc.length > 0) {
-        const cardNames = cards.replace(/^[-•*\d.]+\s*/, '').split('+').map(c =>
-          `<span class="syn-combo">${c.trim()}</span>`
-        ).join(' + ');
-        return `<div style="margin-bottom:6px">⚡ ${cardNames} : ${desc.join(':').trim()}</div>`;
-      }
-      return `<div style="margin-bottom:4px">${line.replace(/^[-•*\d.]+\s*/,'')}</div>`;
-    }).join('');
-  }
-
-  // Build deck code
+  // Encode
   const dedup = {};
   for (const c of res) {
     if (dedup[c.d]) dedup[c.d].n = Math.min(2, dedup[c.d].n + c.cnt);
-    else dedup[c.d] = {d: c.d, n: c.cnt};
+    else dedup[c.d] = { d: c.d, n: c.cnt };
   }
-  const fmtName = fmt === 2 ? 'Standard' : 'Wild';
   const code = buildCode(HEROES[cls] || 274, fmt, Object.values(dedup));
 
   const cbox = document.getElementById('cbox');
   cbox.className = 'code-wrap';
   cbox.innerHTML = `<span style="color:var(--dim)">### ${dn}<br># Class: ${cls} Format: ${fmtName}<br>#</span><br><span id="tc">${code}</span>`;
   document.getElementById('cpb').disabled = false;
-
-  // HS Import link
-  const hsLinkBox = document.getElementById('hs-link-box');
-  const hsUrl = document.getElementById('hs-url');
-  hsLinkBox.classList.add('active');
-  hsUrl.textContent = code;
-
-  if (miss.length) {
-    document.getElementById('msdiv').style.display = 'block';
-    document.getElementById('mlst').innerHTML = miss.map(m => `• <b>${m}</b>`).join('<br>');
-  } else {
-    document.getElementById('msdiv').style.display = 'none';
-  }
-
-  document.getElementById('sb2').textContent = `✅ Deck ${selectedArc} généré ! ${nFound}/${nTotal} cartes trouvées`;
-  document.getElementById('ai-box').querySelector('#ai-content').innerHTML =
-    `✅ Deck <strong>${selectedArc} ${cls}</strong> prêt — ${nFound} cartes résolues via API Blizzard`;
+  document.getElementById('import-box').classList.add('active');
+  document.getElementById('sb2').textContent = `✅ Deck ${selectedArc} ${cls} généré ! ${nFound}/${nTotal} cartes Blizzard résolues`;
 
   isRunning = false;
   document.getElementById('gen-btn').disabled = false;
-  document.getElementById('gen-btn').textContent = '⚡ Générer le Deck';
+  document.getElementById('gen-btn').textContent = '⚡ Générer le Deck (30 cartes)';
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -1038,13 +2292,10 @@ function doCopy() {
 function regenerate() {
   if (selectedArc) {
     document.getElementById('out-panel').style.display = 'none';
-    document.getElementById('ai-box').classList.remove('active');
-    document.getElementById('syn-section').classList.remove('active');
     generateDeck();
   }
 }
 
-// Enter on secret → get token
 document.getElementById('csec').addEventListener('keydown', e => {
   if (e.key === 'Enter') getToken();
 });
