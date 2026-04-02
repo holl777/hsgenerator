@@ -229,30 +229,22 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
 
 <div class="main">
 
-  <!-- CONNEXION API BLIZZARD -->
+  <!-- BASE DE DONNÉES HEARTHSTONEJSON -->
   <div class="panel">
-    <div class="ph"><span>🔑 Connexion API Blizzard</span></div>
+    <div class="ph"><span>🃏 Base de données HearthstoneJSON</span></div>
     <div class="pb">
       <div class="cred-box">
-        <span class="lbl">📄 Identifiants Blizzard Developer</span>
-        <div class="cred-row">
-          <label>Client ID</label>
-          <input type="text" id="cid" placeholder="Votre client_id Blizzard" autocomplete="off">
-        </div>
-        <div class="cred-row">
-          <label>Client Secret</label>
-          <input type="password" id="csec" placeholder="Votre client_secret Blizzard" autocomplete="off">
-        </div>
+        <span class="lbl">📦 Source de données des cartes</span>
         <div class="cred-row" style="align-items:center">
           <div class="token-status">
             <div class="tok-dot" id="tok-dot"></div>
-            <span id="tok-txt">Non connecté</span>
+            <span id="tok-txt">Prêt — aucun token requis</span>
           </div>
-          <button class="btn-tok" id="tok-btn" onclick="getToken()">Obtenir le Token</button>
+          <button class="btn-tok" id="tok-btn" onclick="preloadDb()">Précharger les cartes</button>
         </div>
         <div class="hint">
-          Gratuit sur <a href="https://develop.battle.net/" target="_blank">develop.battle.net</a>
-          → Create Client → copiez Client ID &amp; Secret. Token valide ~24h.
+          Données fournies par <a href="https://hearthstonejson.com/" target="_blank">HearthstoneJSON.com</a>
+          — API publique gratuite, aucune clé requise. Les cartes se chargent automatiquement à la génération.
         </div>
       </div>
     </div>
@@ -2164,15 +2156,21 @@ function getFallbackDeck(cls) {
 
 // ─── CARD SEARCH (autocomplete for custom mode) ──────────────────────────────
 async function searchCards(query) {
-  if (!accessToken || query.length < 2) return [];
+  if (query.length < 2) return [];
   try {
-    const url = 'https://us.api.blizzard.com/hearthstone/cards'
-      + '?locale=en_US&textFilter=' + encodeURIComponent(query)
-      + '&collectible=1&pageSize=8&access_token=' + accessToken;
-    const resp = await fetch(url);
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return (data.cards || []).slice(0, 8);
+    const db = await loadHsJsonDb();
+    const q = query.toLowerCase().trim();
+    return Object.values(db)
+      .filter(c => c.name && c.name.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(c => ({
+        name: c.name,
+        manaCost: c.cost ?? 0,
+        attack: c.attack,
+        health: c.health,
+        cardTypeId: c.type === 'SPELL' ? 4 : c.type === 'WEAPON' ? 3 : 5,
+        id: c.dbfId
+      }));
   } catch { return []; }
 }
 
@@ -2334,12 +2332,12 @@ function detectSeedSynergies() {
 }
 
 function updateCustomGenBtn() {
-  document.getElementById('gen-btn2').disabled = !(accessToken && seedCards.length > 0);
+  document.getElementById('gen-btn2').disabled = !(seedCards.length > 0);
 }
 
 // ─── GENERATE CUSTOM DECK ────────────────────────────────────────────────────
 async function generateCustomDeck() {
-  if (isRunning || !accessToken || !seedCards.length) return;
+  if (isRunning || !seedCards.length) return;
   isRunning = true;
 
   const cls = document.getElementById('hc2').value;
@@ -2471,7 +2469,7 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   cbox.innerHTML = `<span style="color:var(--dim)">### ${dn}<br># Class: ${cls} Format: ${fmtName}<br>#</span><br><span id="tc">${code}</span>`;
   document.getElementById('cpb').disabled = false;
   document.getElementById('import-box').classList.add('active');
-  document.getElementById('sb2').textContent = `✅ Deck généré ! ${nFound}/${nTotal} cartes résolues via Blizzard`;
+  document.getElementById('sb2').textContent = `✅ Deck généré ! ${nFound}/${nTotal} cartes résolues via HearthstoneJSON`;
 }
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
@@ -2499,62 +2497,95 @@ function updateSynergies() {
 }
 
 function updateGenBtn() {
-  document.getElementById('gen-btn').disabled = !(accessToken && selectedArc);
+  document.getElementById('gen-btn').disabled = !selectedArc;
 }
 
-// ─── OAUTH TOKEN ─────────────────────────────────────────────────────────────
-async function getToken() {
-  const cid = document.getElementById('cid').value.trim();
-  const csec = document.getElementById('csec').value.trim();
-  if (!cid || !csec) { setTok('err', 'Entrez Client ID et Client Secret'); return; }
-  setTok('spin', 'Connexion en cours...');
+// ─── PRELOAD DB ───────────────────────────────────────────────────────────────
+async function preloadDb() {
+  setTok('spin', 'Chargement des cartes...');
   document.getElementById('tok-btn').disabled = true;
   try {
-    const creds = btoa(cid + ':' + csec);
-    const resp = await fetch('https://oauth.battle.net/token', {
-      method: 'POST',
-      headers: { 'Authorization': 'Basic ' + creds, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'grant_type=client_credentials'
-    });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    if (!data.access_token) throw new Error('Token absent');
-    accessToken = data.access_token;
-    const exp = Math.round(data.expires_in / 3600);
-    setTok('ok', `Connecté — token valide ~${exp}h`);
-    updateGenBtn();
-    document.getElementById('sb2').textContent = '✅ API Blizzard connectée — prêt à générer';
+    await loadHsJsonDb();
+    const count = Object.keys(hsJsonDb).length;
+    setTok('ok', `${count} cartes chargées — prêt à générer`);
+    document.getElementById('sb2').textContent = '✅ Base HearthstoneJSON chargée — prêt à générer';
   } catch(e) {
-    setTok('err', 'Erreur : ' + e.message);
-    accessToken = null;
+    setTok('err', 'Erreur de chargement : ' + e.message);
   }
   document.getElementById('tok-btn').disabled = false;
 }
+
+// ─── OAUTH TOKEN (conservé pour compatibilité mais non requis) ────────────────
+async function getToken() { await preloadDb(); }
 function setTok(state, msg) {
   document.getElementById('tok-dot').className = 'tok-dot ' + state;
   document.getElementById('tok-txt').textContent = msg;
 }
 
-// ─── BLIZZARD CARD LOOKUP ─────────────────────────────────────────────────
+// ─── HEARTHSTONEJSON CARD DATABASE ────────────────────────────────────────
+let hsJsonDb = null;
+let hsJsonLoading = false;
+let hsJsonReady = false;
+
+async function loadHsJsonDb() {
+  if (hsJsonDb) return hsJsonDb;
+  if (hsJsonLoading) {
+    // attendre que le chargement se termine
+    while (hsJsonLoading) await sleep(100);
+    return hsJsonDb;
+  }
+  hsJsonLoading = true;
+  try {
+    const resp = await fetch('https://api.hearthstonejson.com/v1/latest/enUS/cards.collectible.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const cards = await resp.json();
+    // Construire un index par nom (lowercase) pour recherche rapide
+    hsJsonDb = {};
+    for (const c of cards) {
+      if (c.name) {
+        hsJsonDb[c.name.toLowerCase()] = c;
+      }
+    }
+    hsJsonReady = true;
+  } catch(e) {
+    console.error('HearthstoneJSON load error:', e);
+    hsJsonDb = {};
+  }
+  hsJsonLoading = false;
+  return hsJsonDb;
+}
+
 async function lookupCard(name) {
   if (cardCache[name] !== undefined) return cardCache[name];
   try {
+    const db = await loadHsJsonDb();
     const nameLo = name.toLowerCase().trim();
-    // Try 1: exact name search, all sets, no gameMode filter
-    const url1 = 'https://us.api.blizzard.com/hearthstone/cards'
-      + '?locale=en_US&collectible=1&pageSize=20'
-      + '&access_token=' + accessToken
-      + '&textFilter=' + encodeURIComponent(name);
-    const r1 = await fetch(url1);
-    if (r1.ok) {
-      const d1 = await r1.json();
-      if (d1.cards && d1.cards.length > 0) {
-        const exact = d1.cards.find(c => c.name.toLowerCase() === nameLo);
-        const card = exact || d1.cards[0];
-        const result = { dbfId: card.id, cost: card.manaCost ?? 0, blizzName: card.name, atk: card.attack, hp: card.health, type: card.cardTypeId };
-        cardCache[name] = result;
-        return result;
-      }
+    const card = db[nameLo];
+    if (card) {
+      const result = {
+        dbfId: card.dbfId,
+        cost: card.cost ?? 0,
+        blizzName: card.name,
+        atk: card.attack,
+        hp: card.health,
+        type: card.type
+      };
+      cardCache[name] = result;
+      return result;
+    }
+    // Recherche partielle si pas de correspondance exacte
+    const partial = Object.values(db).find(c => c.name && c.name.toLowerCase().includes(nameLo));
+    if (partial) {
+      const result = {
+        dbfId: partial.dbfId,
+        cost: partial.cost ?? 0,
+        blizzName: partial.name,
+        atk: partial.attack,
+        hp: partial.health,
+        type: partial.type
+      };
+      cardCache[name] = result;
+      return result;
     }
     cardCache[name] = null;
     return null;
@@ -2566,7 +2597,7 @@ async function lookupCard(name) {
 
 // ─── GENERATE ───────────────────────────────────────────────────────────────
 async function generateDeck() {
-  if (isRunning || !accessToken || !selectedArc) return;
+  if (isRunning || !selectedArc) return;
   isRunning = true;
 
   const cls = document.getElementById('hc').value;
@@ -2608,9 +2639,6 @@ function regenerate() {
   }
 }
 
-document.getElementById('csec').addEventListener('keydown', e => {
-  if (e.key === 'Enter') getToken();
-});
 document.addEventListener('click', e => {
   if (!e.target.closest('.card-search-wrap')) {
     document.getElementById('ac-box')?.classList.remove('open');
