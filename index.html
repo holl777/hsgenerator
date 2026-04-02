@@ -431,7 +431,7 @@ select,input[type=text]{font-size:.96em;padding:9px 13px}
           <button class="fmt-btn active std" id="fmt-std-btn" onclick="setFormat(2,this)">
             <span class="fmt-icon">🔵</span>
             Standard
-            <span class="fmt-sub">Cartes vanilla &amp; Standard seulement — pas de Wild</span>
+            <span class="fmt-sub">Core · Emerald Dream · Un'Goro · Timeways · Cataclysm</span>
           </button>
           <button class="fmt-btn wld" id="fmt-wld-btn" onclick="setFormat(1,this)">
             <span class="fmt-icon">🟣</span>
@@ -604,6 +604,23 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
           <span id="coll-stat" style="font-family:'Crimson Pro',serif;font-size:.85em;font-style:italic;letter-spacing:0;color:var(--grn);text-transform:none"></span>
         </div>
         <div id="card-list-display" style="columns:2;column-gap:14px;background:var(--d3);border:1px solid var(--brd);border-radius:8px;padding:18px;font-size:.95em;line-height:2.5"></div>
+
+        <!-- CODE DE DECK -->
+        <div style="margin-top:16px">
+          <div style="font-family:'Cinzel',serif;font-size:.78em;color:var(--gold);letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+            📋 CODE DE DECK (importable dans Hearthstone)
+            <span style="flex:1;height:1px;background:var(--brd)"></span>
+          </div>
+          <div style="position:relative">
+            <textarea id="raw-code-ta" readonly style="width:100%;min-height:64px;background:var(--dark);border:1px solid var(--brd);border-left:3px solid var(--grn);color:#70d090;padding:10px 12px;border-radius:4px;font-family:monospace;font-size:.78em;line-height:1.7;word-break:break-all;resize:none;outline:none" placeholder="Le code apparaîtra ici après la génération..."></textarea>
+            <button id="cpb" onclick="doCopy()" disabled style="position:absolute;top:8px;right:8px;background:var(--d3);border:1px solid var(--brd);color:var(--dim);font-family:'Cinzel',serif;font-size:.6em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .2s"
+              onmouseover="if(!this.disabled){this.style.borderColor='var(--grn)';this.style.color='var(--grn)'}"
+              onmouseout="if(!this.disabled){this.style.borderColor='var(--brd)';this.style.color='var(--dim)'}">📋 Copier</button>
+          </div>
+          <div style="font-size:.74em;color:var(--dim);margin-top:6px;font-style:italic">
+            💡 Copiez ce code → Hearthstone → Collection → Mes Decks → Créer → Importer un deck
+          </div>
+        </div>
       </div>
 
       <div class="btn-row">
@@ -4536,26 +4553,16 @@ function setFormat(fmt, btn) {
   document.getElementById('fmt-wld-btn').classList.toggle('wld', !isStd);
 }
 
-// Standard sets - vanilla + standard (no wild)
-const STANDARD_SETS_VALID = new Set([
-  'CORE','VANILLA',
-  'TITANS','WHIZBANGS_WORKSHOP','FESTIVAL_OF_LEGENDS','MARCH_OF_THE_LICH_KING',
-  'RETURN_OF_THE_LICH_KING','MURDER_AT_CASTLE_NATHRIA','REVENDRETH',
-  'SUNKEN_CITY','ALTERAC_VALLEY','STORMWIND','DARKMOON_FAIRE','SCHOLOMANCE',
-  'DEMON_HUNTER_INITIATE','PATH_OF_ARTHAS','THE_GREAT_DARK_BEYOND',
-  'PERILS_IN_PARADISE','CAVERNS_OF_TIME','TWIST','EXPERT1'
-]);
-
+// Standard sets - standard only (no wild, no vanilla)
 function isCardValidForFormat(cardInfo, fmt) {
-  if (!cardInfo) return true; // unknown = allow
-  if (fmt === 1) return true; // wild = all allowed
-  // Standard: must be in valid standard sets
+  if (!cardInfo) return true;
+  if (fmt === 1) return true;
   const set = cardInfo.cardSet;
   if (!set) return true;
-  // Hero cards = not allowed (type check)
-  return STANDARD_SETS_VALID.has(set);
+  // STANDARD_SETS_GLOBAL est déclaré plus loin — accès runtime OK
+  const stdSets = typeof STANDARD_SETS_GLOBAL !== 'undefined' ? STANDARD_SETS_GLOBAL : new Set(['CORE','EMERALD_DREAM','THE_LOST_CITY','TIME_TRAVEL','CATACLYSM','EVENT']);
+  return stdSets.has(set);
 }
-
 function isInMyCollection(cardName) {
   return MY_COLLECTION.has(cardName);
 }
@@ -5077,7 +5084,7 @@ const DECKS = {
     DRUID: {
       cards: [
         {n:"Innervate",c:2},{n:"Wild Growth",c:2},{n:"Nourish",c:2},
-        {n:"Auctioneer",c:1},{n:"Gadgetzan Auctioneer",c:1},{n:"Naturalise",c:2},
+        {n:"Auctioneer",c:1},{n:"Gadgetzan Auctioneer",c:1},{n:"Naturalize",c:2},
         {n:"Savage Roar",c:2},{n:"Force of Nature",c:2},{n:"Living Roots",c:2},
         {n:"Fandral Staghelm",c:1},{n:"Malygos",c:1},{n:"Kun the Forgotten King",c:1},
         {n:"Flobbidinnous Floop",c:1},{n:"Overflow",c:2},{n:"Hidden Oasis",c:2}
@@ -5136,8 +5143,8 @@ const DECKS = {
     },
     SHAMAN: {
       cards: [
-        {n:"Shudderwock",c:1},{n:"Grumble Worldshaker",c:1},{n:"Zola the Gorgon",c:1},
-        {n:"Saronite Chain Gang",c:2},{n:"Murmuring Elemental",c:2},{n:"Lackey spells",c:2},
+        {n:"Shudderwock",c:1},{n:"Grumble, Worldshaker",c:1},{n:"Zola the Gorgon",c:1},
+        {n:"Saronite Chain Gang",c:2},{n:"Murmuring Elemental",c:2},{n:"Lackey",c:2},
         {n:"Hagatha the Witch",c:1},{n:"Far Sight",c:2},{n:"Omega Mind",c:2},
         {n:"Lifedrinker",c:2},{n:"Bog Slosher",c:2},{n:"Electra Stormsurge",c:1},
         {n:"Voltaic Burst",c:2},{n:"Bloodlust",c:2},{n:"Thing from Below",c:2}
@@ -5501,7 +5508,7 @@ const DECKS = {
     WARLOCK: {
       cards: [
         {n:"Mortal Coil",c:2},{n:"Kobold Librarian",c:2},{n:"Nether Dragon",c:2},
-        {n:"Mountain Giant",c:2},{n:"Twilight Drake",c:2},{n:"Handlock Giant",c:2},
+        {n:"Mountain Giant",c:2},{n:"Twilight Drake",c:2},{n:"Faceless Behemoth",c:2},
         {n:"Siphon Soul",c:2},{n:"Twisting Nether",c:2},{n:"Enhanced Dreadlord",c:2},
         {n:"Voidlord",c:2},{n:"Guldan",c:1},{n:"Mal'Ganis",c:1},
         {n:"N'Zoth the Corruptor",c:1},{n:"Emperor Thaurissan",c:1},{n:"Cataclysm",c:1}
@@ -6200,7 +6207,7 @@ const DECKS = {
       cards: [
         {n:"Swashburglar",c:2},{n:"Defias Ringleader",c:2},{n:"Blink Fox",c:2},
         {n:"EVIL Miscreant",c:2},{n:"Edwin VanCleef",c:1},{n:"Raiding Party",c:2},
-        {n:"Southsea Captain",c:2},{n:"Lackey Spells",c:2},{n:"Shark",c:2},
+        {n:"Southsea Captain",c:2},{n:"Waggle Pick",c:2},{n:"Shark",c:2},
         {n:"Fan of Knives",c:2},{n:"Backstab",c:2},{n:"Captain Hooktusk",c:1},
         {n:"Walk the Plank",c:2},{n:"Cannon Barrage",c:1},{n:"Sap",c:1}
       ],
@@ -6228,7 +6235,7 @@ const DECKS = {
     },
     DEATHKNIGHT: {
       cards: [
-        {n:"Plagued Grain",c:2},{n:"Ghoul Charge",c:2},{n:"Rotting Applies",c:2},
+        {n:"Plagued Grain",c:2},{n:"Ghoul Charge",c:2},{n:"Reap What You Sow",c:2},
         {n:"Blood Boil",c:2},{n:"Acolyte of Death",c:2},{n:"Army of the Dead",c:2},
         {n:"Corpse Explosion",c:2},{n:"Gnome Muncher",c:2},{n:"Necrotic Mortician",c:2},
         {n:"Chillfallen Baron",c:2},{n:"Construct Quarter",c:2},{n:"Death Strike",c:2},
@@ -6305,6 +6312,20 @@ const HEROES = {
   DRUID:274, WARLOCK:893, MAGE:637, PRIEST:813,
   DEMONHUNTER:56550, DEATHKNIGHT:78065
 };
+
+// Sets Standard légaux — Année du Scarabée (depuis le 17 mars 2026)
+// Source : HearthstoneJSON (champ "set") + HearthSim/python-hearthstone enums
+// Sets en rotation : Core 2026, Into the Emerald Dream,
+//   The Lost City of Un'Goro, Across the Timeways, CATACLYSM
+// Rotés en Wild : VANILLA, WHIZBANGS_WORKSHOP, ISLAND_VACATION, SPACE (Year of the Pegasus)
+const STANDARD_SETS_GLOBAL = new Set([
+  'CORE',          // Core 2026 (mis à jour le 17 mars 2026)
+  'EMERALD_DREAM', // Into the Emerald Dream (mars 2025)
+  'THE_LOST_CITY', // The Lost City of Un'Goro (juillet 2025)
+  'TIME_TRAVEL',   // Across the Timeways (novembre 2025)
+  'CATACLYSM',     // CATACLYSM (mars 2026)
+  'EVENT',         // Set Événement (cartes spéciales Standard)
+]);
 
 // ─── IMPORT DECK ─────────────────────────────────────────────────────────────
 let importedDeckData = null;
@@ -6394,21 +6415,17 @@ async function loadImportedDeck() {
 
   let parsedCards = cards;
 
-  // Si pas de cartes parsées depuis le texte, on charge via HearthstoneJSON et le code
   if (!parsedCards || parsedCards.length === 0) {
-    // On affiche le code brut quand même
-    parsedCards = [{ name: '(Deck chargé via code — noms non disponibles dans ce format)', cnt: 30 }];
+    parsedCards = [];
   }
 
   await resolveAndDisplay(parsedCards, [], cls, fmtNum, dn, `${dn} · ${cls} ${fmtName} · Importé`);
 
-  // Remplacer le code dans la boîte par le code original importé
-  const cbox = document.getElementById('cbox');
-  cbox.className = 'code-wrap';
-  cbox.style.display = 'none';
+  // Après resolveAndDisplay, écraser le code généré par le code original importé
   const rawTa = document.getElementById('raw-code-ta');
   if (rawTa) rawTa.value = importedDeckData.code;
-  document.getElementById('cpb').disabled = false;
+  const cpb = document.getElementById('cpb');
+  if (cpb) cpb.disabled = false;
 
   isRunning = false;
   document.getElementById('import-btn').disabled = false;
@@ -6561,6 +6578,14 @@ async function generateCustomDeck() {
   const fmt = currentFormat;
   const dn = document.getElementById('dn2').value.trim() || `Custom ${cls}`;
   const fmtName = fmt === 2 ? 'Standard' : 'Wild';
+  const isStd = fmt === 2;
+
+  document.getElementById('gen-btn2').disabled = true;
+  document.getElementById('gen-btn2').textContent = '⏳ Chargement des cartes...';
+  document.getElementById('out-panel').style.display = 'block';
+
+  // Charger la base au besoin
+  await loadHsJsonDb();
 
   // Determine best archetype from seed cards
   const avgCost = seedCards.reduce((s, c) => s + (c.cost || 0), 0) / seedCards.length;
@@ -6568,11 +6593,19 @@ async function generateCustomDeck() {
 
   // Try to find a matching deck template
   const templateData = (DECKS[bestArc] || {})[cls] || (DECKS['Midrange'] || {})[cls] || getFallbackDeck(cls);
-  const templateCards = templateData.cards.map(c => ({ name: c.n, cnt: c.c }));
+  let templateCards = templateData.cards.map(c => ({ name: c.n, cnt: c.c }));
+
+  // Filtre format Standard sur les cartes template
+  if (isStd) {
+    await Promise.all(templateCards.map(c => lookupCard(c.name)));
+    templateCards = templateCards.filter(c => {
+      const info = cardCache[c.name];
+      return !info || !info.cardSet || STANDARD_SETS_GLOBAL.has(info.cardSet);
+    });
+  }
 
   // Merge: seed cards (as 2x each) + fill from template (no duplicates)
   const seedNames = new Set(seedCards.map(c => c.name));
-  // In 'my collection' mode, filter seed cards too (they may not be in collection)
   const filteredSeed = cardSource === 'my'
     ? seedCards.filter(c => isInMyCollection(c.name))
     : seedCards;
@@ -6582,7 +6615,6 @@ async function generateCustomDeck() {
   for (const tc of templateCards) {
     if (count >= 30) break;
     if (seedNames.has(tc.name)) continue;
-    // In 'my collection' mode, only add if in collection
     if (cardSource === 'my' && !isInMyCollection(tc.name)) continue;
     const space = 30 - count;
     const cnt = Math.min(tc.cnt, space);
@@ -6590,11 +6622,13 @@ async function generateCustomDeck() {
     count += cnt;
   }
 
-  document.getElementById('gen-btn2').disabled = true;
-  document.getElementById('gen-btn2').textContent = '⏳ Chargement des cartes...';
-  document.getElementById('out-panel').style.display = 'block';
+  // Compléter jusqu'à 30 depuis la base si nécessaire
+  let finalParsed = merged;
+  if (count < 30) {
+    finalParsed = await fillDeckToThirty(merged, cls, fmt, cardSource);
+  }
 
-  await resolveAndDisplay(merged, templateData.synergies, cls, fmt, dn, `Custom ${bestArc} ${cls} ${fmtName}`);
+  await resolveAndDisplay(finalParsed, templateData.synergies, cls, fmt, dn, `Custom ${bestArc} ${cls} ${fmtName}`);
 
   isRunning = false;
   document.getElementById('gen-btn2').disabled = false;
@@ -6668,8 +6702,21 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   const res = [], miss = [];
   for (const {name, cnt} of parsed) {
     const info = cardCache[name];
-    if (info) res.push({ name, cnt, d: info.dbfId, c: info.cost, rarity: info.rarity, cardSet: info.cardSet });
-    else miss.push(name);
+    if (info && info.dbfId) {
+      const isLegendary = info.rarity === 'LEGENDARY';
+      res.push({
+        name,
+        cnt: isLegendary ? 1 : Math.min(cnt, 2),
+        d: info.dbfId,
+        c: info.cost ?? 0,
+        rarity: info.rarity,
+        cardSet: info.cardSet,
+        isLegendary,
+        blizzName: info.blizzName || name
+      });
+    } else {
+      miss.push(name);
+    }
   }
 
   const nFound = res.length, nTotal = parsed.length;
@@ -6692,57 +6739,30 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
     DEMONHUNTER:'Demon Hunter', DEATHKNIGHT:'Death Knight' };
 
   // Sets Standard et Vanilla seulement (pas Wild)
-  const STANDARD_SETS = new Set([
-    'CORE','VANILLA',
-    'TITANS','WHIZBANGS_WORKSHOP','FESTIVAL_OF_LEGENDS','MARCH_OF_THE_LICH_KING',
-    'RETURN_OF_THE_LICH_KING','MURDER_AT_CASTLE_NATHRIA','REVENDRETH',
-    'SUNKEN_CITY','ALTERAC_VALLEY','STORMWIND','DARKMOON_FAIRE','SCHOLOMANCE',
-    'DEMON_HUNTER_INITIATE','PATH_OF_ARTHAS','THE_GREAT_DARK_BEYOND',
-    'PERILS_IN_PARADISE','CAVERNS_OF_TIME','TWIST','EXPERT1'
-  ]);
-
-  // Appliquer règles de quantité : légendaires = max 1, autres = max 2
-  // Filter out hero cards (type HERO) - they are not playable in decks
-  const resNoHero = res.filter(c => {
-    const info = cardCache[c.name];
-    return !info || info.type !== 'HERO';
-  });
-  const resSorted = [...resNoHero]
-    .map(c => {
-      const info = cardCache[c.name];
-      const isLegendary = info && info.rarity === 'LEGENDARY';
-      return { ...c, cnt: isLegendary ? 1 : Math.min(c.cnt, 2), isLegendary, cardSet: info?.cardSet };
-    })
-    .sort((a,b) => a.c - b.c || a.name.localeCompare(b.name));
-  
-  // Filtrer les cartes Wild si le format est Standard
+  const STANDARD_SETS = STANDARD_SETS_GLOBAL;
   const isStandardFilter = fmt === 2;
-  const resSortedFiltered = isStandardFilter
-    ? resSorted.filter(c => !c.cardSet || STANDARD_SETS.has(c.cardSet))
-    : resSorted;
 
-  // Trim to 30 cards total (respecting legendary = 1, others = max 2)
+  // Filtrer les cartes hero + cartes Wild si Standard + trier par coût
+  const resSorted = res
+    .filter(c => {
+      const info = cardCache[c.name];
+      if (info && info.type === 'HERO') return false;
+      if (isStandardFilter && c.cardSet && !STANDARD_SETS.has(c.cardSet)) return false;
+      return true;
+    })
+    .sort((a,b) => (a.c||0) - (b.c||0) || a.name.localeCompare(b.name));
+
+  // Trim à exactement 30 cartes — c'est cette liste qui sera à la fois affichée ET encodée
   const trimmed = [];
   let trimTotal = 0;
-  for (const c of resSortedFiltered) {
+  for (const c of resSorted) {
     if (trimTotal >= 30) break;
     const space = 30 - trimTotal;
     const cnt = Math.min(c.cnt, space);
     trimmed.push({...c, cnt});
     trimTotal += cnt;
   }
-  // Pad to exactly 30 copies: bump non-legendary cards from x1 to x2 until total = 30
-  let padTotal = trimmed.reduce((s, c) => s + c.cnt, 0);
-  if (padTotal < 30) {
-    for (const c of trimmed) {
-      if (padTotal >= 30) break;
-      if (!c.isLegendary && c.cnt < 2) {
-        const add = Math.min(2 - c.cnt, 30 - padTotal);
-        c.cnt += add;
-        padTotal += add;
-      }
-    }
-  }
+
   const finalDeck = trimmed;
 
   // Validation format Standard vs Wild
@@ -6831,6 +6851,30 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
       collStatEl.textContent = `${inCollCount}/${totalCards} cartes dans votre collection`;
       collStatEl.style.color = inCollCount === totalCards ? 'var(--grn)' : 'var(--gold)';
     }
+  }
+
+  // ── GÉNÉRATION DU CODE DE DECK ───────────────────────────────────────────
+  // Utilise exactement finalDeck (= ce qui est affiché) pour encoder le code
+  const heroId = HEROES[cls] || 637;
+  const validPairs = finalDeck
+    .filter(c => c.d && c.d > 0)
+    .map(c => ({ d: c.d, n: c.cnt }));
+
+  const rawTa = document.getElementById('raw-code-ta');
+  const cpb = document.getElementById('cpb');
+
+  if (validPairs.length > 0) {
+    try {
+      const code = buildCode(heroId, fmt, validPairs);
+      if (rawTa) rawTa.value = code;
+      if (cpb) cpb.disabled = false;
+    } catch(e) {
+      if (rawTa) rawTa.value = '⚠ Erreur lors de la génération du code : ' + e.message;
+      if (cpb) cpb.disabled = true;
+    }
+  } else {
+    if (rawTa) rawTa.value = '⚠ Aucune carte avec DBF ID valide — impossible de générer le code.';
+    if (cpb) cpb.disabled = true;
   }
 }
 
@@ -6961,6 +7005,66 @@ async function lookupCard(name) {
   }
 }
 
+// ─── FILL DECK TO 30 FROM DB ─────────────────────────────────────────────────
+// Complète un deck jusqu'à exactement 30 cartes en piochant dans la base HearthstoneJSON
+// selon le format (Standard=2 ou Wild=1) et la source (all, my)
+async function fillDeckToThirty(parsedIn, cls, fmt, source) {
+  const db = await loadHsJsonDb();
+  if (!db || !Object.keys(db).length) return parsedIn;
+
+  const isStd = fmt === 2;
+  const clsLower = cls.toLowerCase();
+  const clsAlt = cls === 'DEMONHUNTER' ? 'demon hunter' : cls === 'DEATHKNIGHT' ? 'death knight' : clsLower;
+
+  // Cartes déjà dans le deck (noms normalisés)
+  const existingNames = new Set(parsedIn.map(c => c.name.toLowerCase()));
+
+  // Calculer le total actuel
+  let currentTotal = parsedIn.reduce((s, c) => s + c.cnt, 0);
+  if (currentTotal >= 30) return parsedIn;
+
+  const result = [...parsedIn];
+
+  // Construire le pool de cartes candidates depuis la DB
+  const pool = Object.values(db).filter(c => {
+    if (!c.name) return false;
+    if (c.type === 'HERO') return false;
+    if (existingNames.has(c.name.toLowerCase())) return false;
+    // Filtre format Standard
+    if (isStd && c.set && !STANDARD_SETS_GLOBAL.has(c.set)) return false;
+    // Filtre source "Ma collection"
+    if (source === 'my' && !MY_COLLECTION.has(c.name)) return false;
+    // Cartes de la classe OU neutres
+    const cardCls = (c.cardClass || '').toLowerCase();
+    const isNeutral = !c.cardClass || cardCls === 'neutral';
+    const isClassCard = cardCls === clsLower || cardCls === clsAlt ||
+      (cls === 'DEMONHUNTER' && (cardCls === 'demonhunter' || cardCls === 'demon hunter')) ||
+      (cls === 'DEATHKNIGHT' && (cardCls === 'deathknight' || cardCls === 'death knight'));
+    return isClassCard || isNeutral;
+  });
+
+  // Trier par coût de mana croissant pour une courbe équilibrée, puis par rareté (communes en premier)
+  const rarityOrder = { FREE: 0, COMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4 };
+  pool.sort((a, b) => {
+    const ca = a.cost ?? 0, cb = b.cost ?? 0;
+    if (ca !== cb) return ca - cb;
+    return (rarityOrder[a.rarity] || 0) - (rarityOrder[b.rarity] || 0);
+  });
+
+  for (const card of pool) {
+    if (currentTotal >= 30) break;
+    if (existingNames.has(card.name.toLowerCase())) continue;
+    const isLeg = card.rarity === 'LEGENDARY';
+    const cnt = isLeg ? 1 : Math.min(2, 30 - currentTotal);
+    if (cnt <= 0) break;
+    result.push({ name: card.name, cnt });
+    existingNames.add(card.name.toLowerCase());
+    currentTotal += cnt;
+  }
+
+  return result;
+}
+
 // ─── GENERATE ───────────────────────────────────────────────────────────────
 async function generateDeck() {
   if (isRunning || !selectedArc) return;
@@ -6970,26 +7074,52 @@ async function generateDeck() {
   const fmt = currentFormat;
   const dn = document.getElementById('dn').value.trim() || `${selectedArc} ${cls}`;
   const fmtName = fmt === 2 ? 'Standard' : 'Wild';
-
-  const data = (DECKS[selectedArc] || {})[cls] || getFallbackDeck(cls);
-  let parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
-
-  // If "Ma collection" mode, filter to only cards in MY_COLLECTION
-  if (cardSource === 'my') {
-    parsed = parsed.filter(c => isInMyCollection(c.name));
-    // Apply collection quantity rules (will be enforced by rarity in resolveAndDisplay too)
-    // legendaries capped at 1, others at 2 (enforced in resolveAndDisplay)
-    if (parsed.length === 0) {
-      // fallback: use all but mark for display
-      parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
-    }
-  }
+  const isStd = fmt === 2;
 
   document.getElementById('gen-btn').disabled = true;
   document.getElementById('gen-btn').textContent = '⏳ Chargement des cartes...';
   document.getElementById('out-panel').style.display = 'block';
 
-  await resolveAndDisplay(parsed, data.synergies, cls, fmt, dn, `${parsed.length} cartes · ${selectedArc} ${cls} ${fmtName}`);
+  // Charger la base complète en premier — tout le reste en dépend
+  await loadHsJsonDb();
+
+  const data = (DECKS[selectedArc] || {})[cls] || getFallbackDeck(cls);
+  let parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
+
+  // Étape 1 : résoudre TOUS les noms contre l'API pour détecter les cartes inexistantes
+  await Promise.all(parsed.map(c => lookupCard(c.name)));
+
+  // Étape 2 : retirer les cartes qui n'existent pas dans l'API (introuvables = nom invalide)
+  parsed = parsed.filter(c => cardCache[c.name] !== null && cardCache[c.name] !== undefined);
+
+  // Étape 3 : filtrer par format Standard si nécessaire
+  if (isStd) {
+    parsed = parsed.filter(c => {
+      const info = cardCache[c.name];
+      if (!info) return false;
+      return !info.cardSet || STANDARD_SETS_GLOBAL.has(info.cardSet);
+    });
+  }
+
+  // Étape 4 : filtrer par collection si mode "Ma collection"
+  if (cardSource === 'my') {
+    parsed = parsed.filter(c => MY_COLLECTION.has(c.name));
+  }
+
+  // Étape 5 : corriger les quantités (légendaires = max 1, autres = max 2)
+  parsed = parsed.map(c => {
+    const info = cardCache[c.name];
+    const maxCnt = (info && info.rarity === 'LEGENDARY') ? 1 : 2;
+    return { name: c.name, cnt: Math.min(c.cnt, maxCnt) };
+  });
+
+  // Étape 6 : compléter jusqu'à exactement 30 cartes depuis la base HearthstoneJSON
+  const currentTotal = parsed.reduce((s, c) => s + c.cnt, 0);
+  if (currentTotal < 30) {
+    parsed = await fillDeckToThirty(parsed, cls, fmt, cardSource);
+  }
+
+  await resolveAndDisplay(parsed, data.synergies, cls, fmt, dn, `30 cartes · ${selectedArc} ${cls} ${fmtName}`);
 
   isRunning = false;
   document.getElementById('gen-btn').disabled = false;
