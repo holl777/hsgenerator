@@ -2580,7 +2580,7 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   const res = [], miss = [];
   for (const {name, cnt} of parsed) {
     const info = cardCache[name];
-    if (info) res.push({ name, cnt, d: info.dbfId, c: info.cost });
+    if (info) res.push({ name, cnt, d: info.dbfId, c: info.cost, rarity: info.rarity, cardSet: info.cardSet });
     else miss.push(name);
   }
 
@@ -2602,17 +2602,72 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   const clsDisplay = { MAGE:'Mage', WARRIOR:'Warrior', HUNTER:'Hunter', PALADIN:'Paladin',
     ROGUE:'Rogue', PRIEST:'Priest', SHAMAN:'Shaman', WARLOCK:'Warlock', DRUID:'Druid',
     DEMONHUNTER:'Demon Hunter', DEATHKNIGHT:'Death Knight' };
-  const resSorted = [...res].sort((a,b) => a.c - b.c || a.name.localeCompare(b.name));
+
+  // Sets considérés Standard (approximation — les sets Wild sont les anciens)
+  const STANDARD_SETS = new Set([
+    'CORE','EXPERT1','TITANS','ULDUM','DALARAN','TROLL','BOOMSDAY','WITCHWOOD','KOBOLDS',
+    'LOOTAPALOOZA','UNGORO','GANGS','OG','KARA','DEMON_HUNTER_INITIATE',
+    'SCHOLOMANCE','DARKMOON_FAIRE','STORMWIND','ALTERAC_VALLEY','SUNKEN_CITY',
+    'REVENDRETH','MURDERS_AT_CASTLE_NATHRIA','PATH_OF_ARTHAS','MARCH_OF_THE_LICH_KING',
+    'RETURN_OF_THE_LICH_KING','FESTIVAL_OF_LEGENDS','TITANS','WHIZBANGS_WORKSHOP',
+    'CAVERNS_OF_TIME','TWIST','PERILS_IN_PARADISE','GREAT_DARK_BEYOND'
+  ]);
+
+  // Appliquer règles de quantité : légendaires = max 1, autres = max 2
+  const resSorted = [...res]
+    .map(c => {
+      const info = cardCache[c.name];
+      const isLegendary = info && info.rarity === 'LEGENDARY';
+      return { ...c, cnt: isLegendary ? 1 : Math.min(c.cnt, 2), isLegendary, cardSet: info?.cardSet };
+    })
+    .sort((a,b) => a.c - b.c || a.name.localeCompare(b.name));
+
+  // Validation format Standard vs Wild
+  const isStandard = fmt === 2;
+  const formatViolations = isStandard
+    ? resSorted.filter(c => c.cardSet && !STANDARD_SETS.has(c.cardSet))
+    : [];
+
+  const totalCards = resSorted.reduce((s, c) => s + c.cnt, 0);
 
   const listEl = document.getElementById('card-list-display');
-  listEl.innerHTML = resSorted.map(c => {
-    const qty = c.cnt >= 2 ? `<span style="color:var(--gold);font-weight:700">x${c.cnt}</span>` : `<span style="color:var(--dim)">x1</span>`;
+
+  // Badge format + avertissements
+  let headerHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd);flex-wrap:wrap">
+      <span style="font-family:'Cinzel',serif;font-size:.7em;font-weight:700;padding:3px 10px;border-radius:3px;
+        background:${isStandard ? 'rgba(90,127,192,.2)' : 'rgba(154,106,223,.2)'};
+        border:1px solid ${isStandard ? 'var(--blu)' : 'var(--pur)'};
+        color:${isStandard ? 'var(--blu)' : 'var(--pur)'}">
+        ${isStandard ? '🔵 STANDARD' : '🟣 WILD'}
+      </span>
+      <span style="font-size:.8em;color:var(--dim)">${totalCards} cartes · ${resSorted.filter(c=>c.isLegendary).length} légendaires</span>
+      ${totalCards !== 30 ? `<span style="font-size:.78em;color:var(--gold)">⚠ ${totalCards}/30 cartes</span>` : `<span style="font-size:.78em;color:var(--grn)">✅ 30/30</span>`}
+    </div>`;
+
+  if (formatViolations.length > 0) {
+    headerHtml += `<div style="background:rgba(201,68,68,.1);border:1px solid rgba(201,68,68,.4);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:.78em;color:var(--red);line-height:1.9">
+      ⚠ <strong>${formatViolations.length} carte(s) Wild dans un deck Standard :</strong><br>
+      ${formatViolations.map(c => `• ${c.name} <span style="color:var(--dim);font-size:.85em">(${c.cardSet})</span>`).join('<br>')}
+    </div>`;
+  }
+
+  listEl.innerHTML = headerHtml + resSorted.map(c => {
+    const isViolation = isStandard && c.cardSet && !STANDARD_SETS.has(c.cardSet);
+    const qtyColor = c.isLegendary ? 'var(--pur)' : 'var(--gold)';
+    const qtyLabel = c.isLegendary ? '★ x1' : `x${c.cnt}`;
+    const rowBg = isViolation ? 'background:rgba(201,68,68,.08);border-radius:3px;' : '';
     const cost = `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#1a3a7a,#0a1a4a);color:#90c0ff;font-size:.75em;font-weight:bold;border:1px solid #2a4a8a;flex-shrink:0">${c.c}</span>`;
-    return `<div style="display:flex;align-items:center;gap:7px;break-inside:avoid">${cost} <span style="flex:1;color:var(--txt)">${c.name}</span> ${qty}</div>`;
+    return `<div style="display:flex;align-items:center;gap:7px;break-inside:avoid;${rowBg}">
+      ${cost}
+      <span style="flex:1;color:${isViolation ? 'var(--red)' : 'var(--txt)'}">${c.name}${c.isLegendary ? ' <span style="color:var(--pur);font-size:.75em">★</span>' : ''}</span>
+      <span style="color:${qtyColor};font-weight:700;font-size:.85em">${qtyLabel}</span>
+      ${isViolation ? '<span style="color:var(--red);font-size:.75em">⚠Wild</span>' : ''}
+    </div>`;
   }).join('');
 
   document.getElementById('deck-code-section').style.display = 'block';
-  document.getElementById('sb2').textContent = `✅ ${resSorted.length} cartes — ajoute-les dans ta collection Hearthstone`;
+  document.getElementById('sb2').textContent = `✅ ${totalCards}/30 cartes · ${fmtName}${formatViolations.length ? ` · ⚠ ${formatViolations.length} carte(s) invalide(s)` : ' · Format OK'}`;
 }
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
@@ -2711,7 +2766,9 @@ async function lookupCard(name) {
         blizzName: card.name,
         atk: card.attack,
         hp: card.health,
-        type: card.type
+        type: card.type,
+        rarity: card.rarity,       // LEGENDARY, EPIC, RARE, COMMON, FREE
+        cardSet: card.set          // CORE, STANDARD, WILD, etc.
       };
       cardCache[name] = result;
       return result;
@@ -2725,7 +2782,9 @@ async function lookupCard(name) {
         blizzName: partial.name,
         atk: partial.attack,
         hp: partial.health,
-        type: partial.type
+        type: partial.type,
+        rarity: partial.rarity,
+        cardSet: partial.set
       };
       cardCache[name] = result;
       return result;
