@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HS Deck Forge — Générateur Intelligent</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+:root {
+  --gold:#c9a84c; --gold-l:#f0d080; --gold-d:#8a5a00;
+  --dark:#08060d; --d2:#0f0c18; --d3:#16122a;
+  --brd:#2e2450; --brd-l:#4a3d80;
+  --red:#c94444; --grn:#4aad7a; --blu:#5a7fc0; --pur:#9a6adf;
+  --txt:#cfc8e8; --dim:#6a6090;
+  --arc-aggro:#e05050; --arc-mid:#60b860; --arc-ctrl:#5090e0;
+  --arc-combo:#c060e0; --arc-tempo:#e08030; --arc-ramp:#60c0a0;
+  --arc-zoo:#d0a030; --arc-otk:#e040a0; --arc-big:#9060c0;
+  --arc-token:#a0d050;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family:'Crimson Pro',Georgia,serif;
+  background:var(--dark);
+  color:var(--txt);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* BACKGROUND TEXTURE */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(90,60,180,.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(200,120,40,.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(60,40,120,.1) 0%, transparent 40%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap { position:relative; z-index:1; }
+
+/* HEADER */
+.hdr {
+  text-align:center;
+  padding:36px 20px 24px;
+  border-bottom:1px solid var(--brd);
+  position:relative;
+}
+.hdr::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,transparent,var(--gold),var(--pur),var(--gold),transparent);
+}
+.hdr h1 {
+  font-family:'Cinzel',serif;
+  font-size:clamp(1.4em,4vw,2.4em);
+  font-weight:900;
+  color:var(--gold-l);
+  letter-spacing:.08em;
+  text-shadow:0 0 40px rgba(201,168,76,.3);
+}
+.hdr h1 span { color:var(--pur); }
+.hdr p { margin-top:6px; color:var(--dim); font-style:italic; font-size:.9em; }
+
+/* LAYOUT */
+.main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+
+/* PANELS */
+.panel {
+  background:var(--d2);
+  border:1px solid var(--brd);
+  border-radius:6px;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+.ph {
+  padding:11px 16px;
+  border-bottom:1px solid var(--brd);
+  font-family:'Cinzel',serif;
+  font-size:.72em;
+  font-weight:700;
+  color:var(--gold);
+  letter-spacing:.12em;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.pb { padding:16px; }
+
+/* CREDENTIALS */
+.cred-box {
+  background:var(--d3);
+  border:1px solid var(--brd);
+  border-left:3px solid var(--blu);
+  border-radius:4px;
+  padding:14px;
+  margin-bottom:14px;
+  font-size:.86em;
+}
+.cred-box .lbl { font-size:.7em; color:var(--blu); text-transform:uppercase; letter-spacing:.1em; display:block; margin-bottom:10px; font-weight:700; font-family:'Cinzel',serif; }
+.cred-row { display:flex; gap:8px; align-items:center; margin-bottom:7px; flex-wrap:wrap; }
+.cred-row label { width:90px; font-size:.8em; color:var(--dim); flex-shrink:0; }
+.cred-row input { flex:1; min-width:160px; background:var(--dark); border:1px solid var(--brd); color:var(--txt); padding:6px 10px; border-radius:4px; font-family:monospace; font-size:.83em; outline:none; }
+.cred-row input:focus { border-color:var(--blu); box-shadow:0 0 0 2px rgba(90,127,192,.2); }
+.hint { font-size:.74em; color:var(--dim); font-style:italic; margin-top:6px; line-height:1.6; }
+.hint a { color:var(--blu); text-decoration:none; }
+.hint a:hover { color:var(--gold-l); }
+.token-status { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:.8em; padding:5px 10px; border-radius:4px; background:rgba(0,0,0,.3); flex:1; }
+.tok-dot { width:8px; height:8px; border-radius:50%; background:var(--dim); flex-shrink:0; }
+.tok-dot.ok { background:var(--grn); box-shadow:0 0 6px var(--grn); }
+.tok-dot.err { background:var(--red); }
+.tok-dot.spin { background:var(--gold); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:.3}50%{opacity:1} }
+
+/* ARCHETYPE SELECTOR */
+.arc-section { margin-bottom:16px; }
+.arc-title {
+  font-family:'Cinzel',serif;
+  font-size:.78em;
+  color:var(--gold);
+  letter-spacing:.1em;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.arc-title::after { content:''; flex:1; height:1px; background:var(--brd); }
+
+.arc-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.arc-btn {
+  padding:10px 8px;
+  border-radius:5px;
+  border:1px solid var(--brd);
+  background:var(--d3);
+  color:var(--dim);
+  cursor:pointer;
+  font-family:'Cinzel',serif;
+  font-size:.65em;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  text-align:center;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.arc-btn::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  opacity:0;
+  transition:opacity .2s;
+}
+.arc-btn:hover { transform:translateY(-2px); color:var(--txt); border-color:var(--brd-l); }
+.arc-btn.sel { color:#fff; border-color:transparent; }
+.arc-btn .arc-icon { font-size:1.6em; display:block; margin-bottom:4px; }
+.arc-btn .arc-sub { font-size:.75em; color:inherit; opacity:.7; font-family:'Crimson Pro',serif; font-style:italic; text-transform:none; letter-spacing:0; margin-top:2px; display:block; }
+
+/* Archetype colors */
+.arc-aggro { --c:var(--arc-aggro); }
+.arc-mid { --c:var(--arc-mid); }
+.arc-ctrl { --c:var(--arc-ctrl); }
+.arc-combo { --c:var(--arc-combo); }
+.arc-tempo { --c:var(--arc-tempo); }
+.arc-ramp { --c:var(--arc-ramp); }
+.arc-zoo { --c:var(--arc-zoo); }
+.arc-otk { --c:var(--arc-otk); }
+.arc-big { --c:var(--arc-big); }
+.arc-token { --c:var(--arc-token); }
+
+[class*="arc-btn"]:hover { border-color:var(--c); color:var(--c); box-shadow:0 0 12px rgba(var(--c-rgb,.5,.3,.3),.15); }
+.arc-btn.sel { background:var(--c); border-color:var(--c); }
+
+/* CLASS / FORMAT ROW */
+.cf-row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px; }
+.fld { display:flex; flex-direction:column; gap:4px; }
+.fld label { font-size:.68em; color:var(--gold); text-transform:uppercase; letter-spacing:.1em; font-family:'Cinzel',serif; }
+select, input[type=text] {
+  background:var(--d3);
+  border:1px solid var(--brd);
+  color:var(--txt);
+  padding:7px 10px;
+  border-radius:4px;
+  font-family:'Crimson Pro',inherit;
+  font-size:.9em;
+  outline:none;
+  transition:border-color .2s;
+}
+select:focus, input[type=text]:focus { border-color:var(--gold); }
+
+/* GENERATE BUTTON — THE HERO */
+.btn-gen {
+  width:100%;
+  padding:14px;
+  background:linear-gradient(135deg,#3a2000,#6a4200,#3a2000);
+  border:1px solid var(--gold);
+  color:var(--gold-l);
+  font-family:'Cinzel',serif;
+  font-size:.9em;
+  font-weight:700;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  border-radius:5px;
+  cursor:pointer;
+  transition:all .25s;
+  position:relative;
+  overflow:hidden;
+}
+.btn-gen::before {
+  content:'';
+  position:absolute;
+  top:-50%; left:-60%;
+  width:40%; height:200%;
+  background:rgba(255,255,255,.06);
+  transform:skewX(-20deg);
+  transition:left .4s;
+}
+.btn-gen:hover:not(:disabled)::before { left:120%; }
+.btn-gen:hover:not(:disabled) {
+  background:linear-gradient(135deg,#5a3400,#9a6800,#5a3400);
+  box-shadow:0 0 30px rgba(201,168,76,.3);
+  transform:translateY(-1px);
+}
+.btn-gen:disabled { opacity:.3; cursor:not-allowed; }
+
+/* AI RESPONSE BOX */
+.ai-box {
+  background:var(--d3);
+  border:1px solid var(--brd);
+  border-left:3px solid var(--pur);
+  border-radius:4px;
+  padding:14px;
+  font-size:.88em;
+  line-height:1.8;
+  min-height:60px;
+  display:none;
+}
+.ai-box.active { display:block; }
+.ai-box .ai-lbl {
+  font-family:'Cinzel',serif;
+  font-size:.65em;
+  color:var(--pur);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.ai-thinking { color:var(--dim); font-style:italic; }
+.ai-thinking span { animation:blink 1.2s infinite; }
+.ai-thinking span:nth-child(2) { animation-delay:.2s; }
+.ai-thinking span:nth-child(3) { animation-delay:.4s; }
+@keyframes blink { 0%,80%,100%{opacity:.3}40%{opacity:1} }
+
+/* DECK CARDS DISPLAY */
+.deck-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+  gap:4px;
+  margin-top:12px;
+}
+.dc {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:4px 9px;
+  border-radius:4px;
+  border:1px solid transparent;
+  font-size:.8em;
+  transition:all .15s;
+  cursor:default;
+}
+.dc:hover { background:rgba(255,255,255,.04); }
+.dc.ok { border-color:rgba(74,173,122,.25); background:rgba(30,80,55,.12); }
+.dc.bad { border-color:rgba(201,68,68,.25); background:rgba(100,20,20,.12); }
+.dc.pend { border-color:rgba(201,168,76,.2); background:rgba(80,60,0,.1); }
+.mc {
+  background:linear-gradient(135deg,#1a3a7a,#0a1a4a);
+  color:#90c0ff;
+  border-radius:50%;
+  width:20px; height:20px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.7em; font-weight:bold; flex-shrink:0;
+  border:1px solid #2a4a8a;
+}
+.cn { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cq { color:var(--gold); font-size:.8em; }
+.synergy-badge {
+  font-size:.6em;
+  padding:1px 5px;
+  border-radius:10px;
+  background:rgba(154,106,223,.2);
+  border:1px solid rgba(154,106,223,.4);
+  color:var(--pur);
+  white-space:nowrap;
+}
+
+/* CODE OUTPUT */
+.code-wrap {
+  background:var(--dark);
+  border:1px solid var(--brd);
+  border-left:3px solid var(--grn);
+  border-radius:4px;
+  padding:12px;
+  font-family:monospace;
+  font-size:.78em;
+  color:#70d090;
+  word-break:break-all;
+  line-height:1.7;
+  min-height:56px;
+}
+.code-wrap.empty { color:var(--dim); font-family:'Crimson Pro',serif; font-style:italic; word-break:normal; }
+
+/* STATS ROW */
+.stats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.stat { background:var(--d3); border:1px solid var(--brd); border-radius:4px; padding:3px 10px; font-size:.8em; }
+.stat .n { font-weight:700; font-size:1.05em; }
+.ok .n { color:var(--grn); }
+.warn .n { color:var(--gold); }
+.bad .n { color:var(--red); }
+
+/* BUTTONS */
+.btn-row { display:flex; gap:8px; margin-top:10px; }
+.btn-sm {
+  flex:1;
+  padding:9px;
+  border-radius:4px;
+  border:1px solid var(--brd);
+  background:var(--d3);
+  color:var(--txt);
+  font-family:'Cinzel',serif;
+  font-size:.68em;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .2s;
+}
+.btn-sm:hover:not(:disabled) { border-color:var(--gold); color:var(--gold-l); }
+.btn-sm:disabled { opacity:.35; cursor:not-allowed; }
+.btn-sm.green { border-color:rgba(74,173,122,.5); color:var(--grn); }
+.btn-sm.green:hover:not(:disabled) { background:rgba(74,173,122,.12); border-color:var(--grn); }
+
+/* TOKEN BUTTON */
+.btn-tok {
+  background:var(--blu);
+  border:1px solid #7aa0d0;
+  color:#e0f0ff;
+  font-family:'Cinzel',serif;
+  font-size:.7em;
+  font-weight:700;
+  padding:5px 14px;
+  border-radius:4px;
+  cursor:pointer;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-left:auto;
+  transition:background .2s;
+}
+.btn-tok:hover { background:#6a90d0; }
+.btn-tok:disabled { opacity:.4; cursor:not-allowed; }
+
+/* PROGRESS */
+.prog-wrap { background:var(--d3); border:1px solid var(--brd); border-radius:4px; overflow:hidden; height:5px; margin-top:8px; display:none; }
+.prog-bar { height:100%; background:linear-gradient(90deg,var(--pur),var(--gold)); border-radius:4px; transition:width .3s; width:0; }
+.prog-txt { font-size:.72em; color:var(--dim); text-align:center; margin-top:4px; font-style:italic; display:none; }
+
+/* SYNERGY INFO */
+.syn-section {
+  background:var(--d3);
+  border:1px solid var(--brd);
+  border-left:3px solid var(--gold);
+  border-radius:4px;
+  padding:12px;
+  margin-top:12px;
+  font-size:.84em;
+  display:none;
+}
+.syn-section.active { display:block; }
+.syn-h { font-family:'Cinzel',serif; font-size:.7em; color:var(--gold); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
+.syn-list { line-height:1.9; color:var(--txt); }
+.syn-combo { color:var(--pur); font-weight:600; }
+.syn-tag { display:inline-block; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.25); border-radius:3px; padding:0 5px; font-size:.85em; color:var(--gold-l); margin:1px; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--dark); }
+::-webkit-scrollbar-thumb { background:var(--brd); border-radius:2px; }
+
+/* MISS LIST */
+.miss-t { font-size:.7em; color:var(--red); text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px; font-family:'Cinzel',serif; }
+.miss-l { font-size:.82em; color:var(--red); line-height:2.1; }
+.divider { height:1px; background:linear-gradient(90deg,transparent,var(--brd),transparent); margin:10px 0; }
+
+/* STATUS BAR */
+.sbar { text-align:center; padding:8px; font-size:.78em; font-style:italic; border-top:1px solid var(--brd); color:var(--grn); }
+
+/* CARD SCROLL */
+.cw { max-height:240px; overflow-y:auto; padding-right:3px; }
+
+/* FORMAT BOX */
+.fmt-note {
+  background:var(--d3);
+  border:1px solid var(--brd);
+  border-left:3px solid var(--gold-d);
+  border-radius:4px;
+  padding:10px 12px;
+  font-size:.82em;
+  line-height:1.8;
+  margin-bottom:14px;
+  color:var(--dim);
+}
+.fmt-note strong { color:var(--txt); }
+
+/* RESPONSIVE */
+@media(max-width:640px) {
+  .arc-grid { grid-template-columns:repeat(3,1fr); }
+  .cf-row { flex-direction:column; }
+}
+
+/* COPY HS LINK */
+.hs-link-box {
+  background:var(--d3);
+  border:1px solid rgba(74,173,122,.3);
+  border-radius:4px;
+  padding:10px 12px;
+  font-size:.8em;
+  color:var(--dim);
+  margin-top:8px;
+  display:none;
+}
+.hs-link-box.active { display:block; }
+.hs-link-box .lnk-h { font-family:'Cinzel',serif; font-size:.68em; color:var(--grn); letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
+.hs-url { font-family:monospace; font-size:.85em; color:#70d090; word-break:break-all; background:var(--dark); padding:5px 8px; border-radius:3px; border:1px solid var(--brd); margin-bottom:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hdr">
+  <h1>⚔️ HS Deck <span>Forge</span></h1>
+  <p>Génération intelligente par archétype &middot; Synergies &amp; Combos &middot; Code Hearthstone</p>
+</div>
+
+<div class="main">
+
+  <!-- API BLIZZARD -->
+  <div class="panel">
+    <div class="ph">🔑 Connexion API Blizzard</div>
+    <div class="pb">
+      <div class="cred-box">
+        <span class="lbl">📄 Identifiants Blizzard Developer</span>
+        <div class="cred-row">
+          <label>Client ID</label>
+          <input type="text" id="cid" placeholder="Votre client_id Blizzard" autocomplete="off">
+        </div>
+        <div class="cred-row">
+          <label>Client Secret</label>
+          <input type="text" id="csec" placeholder="Votre client_secret Blizzard" autocomplete="off" type="password">
+        </div>
+        <div class="cred-row" style="align-items:center">
+          <div class="token-status">
+            <div class="tok-dot" id="tok-dot"></div>
+            <span id="tok-txt">Non connecté</span>
+          </div>
+          <button class="btn-tok" id="tok-btn" onclick="getToken()">Obtenir le Token</button>
+        </div>
+        <div class="hint">
+          Gratuit sur <a href="https://develop.battle.net/" target="_blank">develop.battle.net</a>
+          → Create Client → copiez Client ID &amp; Secret. Token valide ~24h.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHETYPE SELECTOR -->
+  <div class="panel">
+    <div class="ph">⚡ Choisissez votre Archétype</div>
+    <div class="pb">
+
+      <div class="arc-title">Archétypes Principaux</div>
+      <div class="arc-grid" id="arc-main">
+        <button class="arc-btn arc-aggro" data-arc="Aggro" onclick="selectArc(this,'Aggro')">
+          <span class="arc-icon">⚡</span>Aggro
+          <span class="arc-sub">Tuer vite &amp; fort</span>
+        </button>
+        <button class="arc-btn arc-mid" data-arc="Midrange" onclick="selectArc(this,'Midrange')">
+          <span class="arc-icon">⚖️</span>Midrange
+          <span class="arc-sub">Équilibré &amp; solide</span>
+        </button>
+        <button class="arc-btn arc-ctrl" data-arc="Control" onclick="selectArc(this,'Control')">
+          <span class="arc-icon">🛡️</span>Control
+          <span class="arc-sub">Survivre &amp; dominer</span>
+        </button>
+        <button class="arc-btn arc-combo" data-arc="Combo" onclick="selectArc(this,'Combo')">
+          <span class="arc-icon">🎯</span>Combo
+          <span class="arc-sub">Assembler &amp; écraser</span>
+        </button>
+      </div>
+
+      <div class="arc-title">Variantes &amp; Sous-types</div>
+      <div class="arc-grid" id="arc-sub">
+        <button class="arc-btn arc-tempo" data-arc="Tempo" onclick="selectArc(this,'Tempo')">
+          <span class="arc-icon">🔥</span>Tempo
+          <span class="arc-sub">Board &amp; rythme</span>
+        </button>
+        <button class="arc-btn arc-ramp" data-arc="Ramp" onclick="selectArc(this,'Ramp')">
+          <span class="arc-icon">🌿</span>Ramp
+          <span class="arc-sub">Mana accéléré</span>
+        </button>
+        <button class="arc-btn arc-zoo" data-arc="Zoo" onclick="selectArc(this,'Zoo')">
+          <span class="arc-icon">🐾</span>Zoo
+          <span class="arc-sub">Submerger de board</span>
+        </button>
+        <button class="arc-btn arc-otk" data-arc="OTK" onclick="selectArc(this,'OTK')">
+          <span class="arc-icon">💥</span>OTK
+          <span class="arc-sub">One Turn Kill</span>
+        </button>
+        <button class="arc-btn arc-big" data-arc="Big" onclick="selectArc(this,'Big')">
+          <span class="arc-icon">🐉</span>Big
+          <span class="arc-sub">Grosses menaces</span>
+        </button>
+        <button class="arc-btn arc-token" data-arc="Token" onclick="selectArc(this,'Token')">
+          <span class="arc-icon">🪙</span>Token
+          <span class="arc-sub">Masse de tokens</span>
+        </button>
+      </div>
+
+      <!-- CLASS & FORMAT -->
+      <div class="cf-row">
+        <div class="fld">
+          <label>Classe</label>
+          <select id="hc">
+            <option value="WARRIOR">Warrior</option>
+            <option value="SHAMAN">Shaman</option>
+            <option value="ROGUE">Rogue</option>
+            <option value="PALADIN">Paladin</option>
+            <option value="HUNTER">Hunter</option>
+            <option value="DRUID" selected>Druid</option>
+            <option value="WARLOCK">Warlock</option>
+            <option value="MAGE">Mage</option>
+            <option value="PRIEST">Priest</option>
+            <option value="DEMONHUNTER">Demon Hunter</option>
+            <option value="DEATHKNIGHT">Death Knight</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Format</label>
+          <select id="hf">
+            <option value="2">Standard</option>
+            <option value="1">Wild</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Nom du Deck</label>
+          <input type="text" id="dn" placeholder="Mon Deck Légendaire" style="width:160px">
+        </div>
+      </div>
+
+      <div class="fmt-note">
+        <strong>Comment ça marche :</strong> Choisissez un archétype, une classe et le format. 
+        L'IA va analyser les meilleures synergies et combos disponibles, puis générer une liste de 30 cartes 
+        optimisée qui maximise vos chances de victoire.
+      </div>
+
+      <!-- AI RESPONSE -->
+      <div class="ai-box" id="ai-box">
+        <div class="ai-lbl">🤖 Analyse IA en cours</div>
+        <div id="ai-content" class="ai-thinking">
+          <span>●</span><span>●</span><span>●</span>
+        </div>
+      </div>
+
+      <button class="btn-gen" id="gen-btn" onclick="generateDeck()" disabled>
+        ⚡ Générer le Deck
+      </button>
+    </div>
+  </div>
+
+  <!-- CARD LOOKUP + OUTPUT (hidden until generated) -->
+  <div class="panel" id="out-panel" style="display:none">
+    <div class="ph" style="justify-content:space-between">
+      <span>🃏 Deck Généré</span>
+      <span id="cl" style="font-size:.77em;color:var(--dim);text-transform:none;letter-spacing:0;font-family:'Crimson Pro',serif"></span>
+    </div>
+    <div class="pb">
+
+      <div class="stats" id="sta" style="display:none">
+        <div class="stat ok"><span class="n" id="sf">0</span> résolues</div>
+        <div class="stat warn"><span class="n" id="sc">0</span> cartes</div>
+        <div class="stat bad" id="sbx" style="display:none"><span class="n" id="sm">0</span> manquantes</div>
+      </div>
+
+      <!-- SYNERGY DISPLAY -->
+      <div class="syn-section" id="syn-section">
+        <div class="syn-h">⚡ Synergies &amp; Combos détectés</div>
+        <div class="syn-list" id="syn-list"></div>
+      </div>
+
+      <!-- CARD GRID -->
+      <div class="cw" style="margin-top:12px">
+        <div class="deck-grid" id="cg">
+          <div style="color:var(--dim);font-style:italic;text-align:center;padding:18px;grid-column:1/-1">
+            En attente de génération…
+          </div>
+        </div>
+      </div>
+
+      <div id="msdiv" style="display:none">
+        <div class="divider"></div>
+        <div class="miss-t">⚠ Cartes non trouvées via l'API</div>
+        <div class="miss-l" id="mlst"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CODE OUTPUT -->
+      <div style="font-family:'Cinzel',serif;font-size:.7em;color:var(--gold);letter-spacing:.1em;margin-bottom:6px;">📋 Code du Deck</div>
+      <div class="code-wrap empty" id="cbox">Le code apparaîtra ici...</div>
+
+      <!-- HS IMPORT LINK -->
+      <div class="hs-link-box" id="hs-link-box">
+        <div class="lnk-h">🔗 Importer dans Hearthstone</div>
+        <div class="hs-url" id="hs-url"></div>
+        <p style="color:var(--dim);font-size:.85em;font-style:italic">
+          Copiez le code ci-dessus → ouvrez Hearthstone → Collection → Nouveau Deck → Coller le code.
+          Ou utilisez le bouton Copier ci-dessous.
+        </p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-sm green" id="cpb" onclick="doCopy()" disabled>📋 Copier le Code</button>
+        <button class="btn-sm" onclick="regenerate()">🔄 Régénérer</button>
+      </div>
+    </div>
+
+    <div class="sbar" id="sb2">En attente de connexion...</div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+  <div class="prog-txt" id="prog-txt"></div>
+
+</div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let accessToken = null;
+let selectedArc = null;
+let isRunning = false;
+let lastDeckList = [];
+let lastSynergies = '';
+const cardCache = {};
+
+// ─── ENCODER ─────────────────────────────────────────────────────────────────
+function writeVI(n, a) {
+  n = n >>> 0;
+  do { let b = n & 0x7F; n >>>= 7; if (n !== 0) b |= 0x80; a.push(b); } while (n !== 0);
+}
+function buildCode(heroId, fmt, pairs) {
+  const s = pairs.filter(p => p.n === 1).map(p => p.d).sort((a, b) => a - b);
+  const d = pairs.filter(p => p.n === 2).map(p => p.d).sort((a, b) => a - b);
+  const x = pairs.filter(p => p.n > 2).sort((a, b) => a.d - b.d);
+  const b = [];
+  writeVI(0,b); writeVI(1,b); writeVI(fmt,b);
+  writeVI(1,b); writeVI(heroId,b);
+  writeVI(s.length,b); s.forEach(i => writeVI(i,b));
+  writeVI(d.length,b); d.forEach(i => writeVI(i,b));
+  writeVI(x.length,b); x.forEach(o => { writeVI(o.d,b); writeVI(o.n,b); });
+  const u8 = new Uint8Array(b);
+  let bin = ''; u8.forEach(v => bin += String.fromCharCode(v));
+  return btoa(bin);
+}
+const HEROES = {
+  WARRIOR:7, SHAMAN:1066, ROGUE:930, PALADIN:671, HUNTER:31,
+  DRUID:274, WARLOCK:893, MAGE:637, PRIEST:813,
+  DEMONHUNTER:56550, DEATHKNIGHT:78065
+};
+
+// ─── ARCHETYPE SELECT ────────────────────────────────────────────────────────
+function selectArc(btn, arc) {
+  document.querySelectorAll('.arc-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  selectedArc = arc;
+  updateGenBtn();
+}
+
+function updateGenBtn() {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = !(accessToken && selectedArc);
+}
+
+// ─── OAUTH TOKEN ─────────────────────────────────────────────────────────────
+async function getToken() {
+  const cid = document.getElementById('cid').value.trim();
+  const csec = document.getElementById('csec').value.trim();
+  if (!cid || !csec) { setTok('err', 'Entrez Client ID et Client Secret'); return; }
+  setTok('spin', 'Connexion en cours...');
+  document.getElementById('tok-btn').disabled = true;
+  try {
+    const creds = btoa(cid + ':' + csec);
+    const resp = await fetch('https://oauth.battle.net/token', {
+      method: 'POST',
+      headers: { 'Authorization': 'Basic ' + creds, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=client_credentials'
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.access_token) throw new Error('Token absent');
+    accessToken = data.access_token;
+    const exp = Math.round(data.expires_in / 3600);
+    setTok('ok', `Connecté — token valide ~${exp}h`);
+    updateGenBtn();
+  } catch(e) {
+    setTok('err', 'Erreur : ' + e.message);
+    accessToken = null;
+  }
+  document.getElementById('tok-btn').disabled = false;
+}
+
+function setTok(state, msg) {
+  document.getElementById('tok-dot').className = 'tok-dot ' + state;
+  document.getElementById('tok-txt').textContent = msg;
+}
+
+// ─── BLIZZARD CARD LOOKUP ─────────────────────────────────────────────────────
+async function lookupCard(name) {
+  if (cardCache[name] !== undefined) return cardCache[name];
+  try {
+    const url = 'https://us.api.blizzard.com/hearthstone/cards'
+      + '?locale=en_US'
+      + '&name=' + encodeURIComponent(name)
+      + '&collectible=1'
+      + '&access_token=' + accessToken;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.cards || data.cards.length === 0) { cardCache[name] = null; return null; }
+    const nameLo = name.toLowerCase().trim();
+    const exact = data.cards.find(c => c.name.toLowerCase() === nameLo);
+    const card = exact || data.cards[0];
+    const result = { dbfId: card.id, cost: card.manaCost ?? 0, blizzName: card.name };
+    cardCache[name] = result;
+    return result;
+  } catch(e) {
+    cardCache[name] = null;
+    return null;
+  }
+}
+
+// ─── PARSE CARD LIST ─────────────────────────────────────────────────────────
+function parse(txt) {
+  return txt.split('\n')
+    .map(l => l.trim().replace(/^#+\s*/, '').replace(/\*+/g,'').trim())
+    .filter(l => l && !l.startsWith('#') && !l.startsWith('//') && !l.startsWith('###'))
+    .map(l => {
+      const m = l.match(/^(\d+)\s*[xX×]\s*(.+)/) || l.match(/^(\d+)\s+(.+)/);
+      return m
+        ? { name: m[2].trim().replace(/\s*\(.*\)\s*$/,'').trim(), cnt: Math.min(parseInt(m[1]), 2) }
+        : { name: l.replace(/\s*\(.*\)\s*$/,'').trim(), cnt: 1 };
+    })
+    .filter(c => c.name.length > 0);
+}
+
+// ─── AI DECK GENERATION ──────────────────────────────────────────────────────
+async function generateDeck() {
+  if (isRunning || !accessToken || !selectedArc) return;
+  isRunning = true;
+
+  const cls = document.getElementById('hc').value;
+  const fmt = document.getElementById('hf').value;
+  const fmtName = fmt === '2' ? 'Standard' : 'Wild';
+  const dn = document.getElementById('dn').value.trim() || `${selectedArc} ${cls}`;
+
+  // Show AI box
+  const aiBox = document.getElementById('ai-box');
+  const aiContent = document.getElementById('ai-content');
+  aiBox.classList.add('active');
+  aiContent.innerHTML = '<span class="ai-thinking"><span>●</span><span>●</span><span>●</span> L\'IA analyse les synergies pour ' + selectedArc + ' ' + cls + '...</span>';
+
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('gen-btn').textContent = '⏳ Génération en cours...';
+
+  // Build AI prompt
+  const arcDescriptions = {
+    Aggro: "très rapide, veut tuer le plus tôt possible avec une pression constante, courbe de mana 1-4",
+    Midrange: "équilibré, solide au milieu de partie, menaces efficaces aux tours 3-6",
+    Control: "survie, gestion du board, win condition tardive, beaucoup de sorts de contrôle",
+    Combo: "assembler des pièces pour un gros swing ou kill soudain, piocher et tenir jusqu'au combo",
+    Tempo: "prendre l'avantage du board immédiatement, garder le rythme et ne jamais le lâcher",
+    Ramp: "accélérer le mana pour jouer de grosses cartes beaucoup plus vite, mana génération",
+    Zoo: "plein de petits serviteurs efficaces pour submerger l'adversaire rapidement",
+    OTK: "One Turn Kill, tuer en un seul tour avec une séquence de cartes précise",
+    Big: "tricher ou invoquer rapidement de très grosses menaces, créatures 7+ mana",
+    Token: "remplir le board avec beaucoup de petites créatures, buff collectif"
+  };
+
+  const systemPrompt = `Tu es un expert Hearthstone qui connaît toutes les cartes du jeu par cœur.
+Tu dois générer un deck de 30 cartes compétitif pour le format ${fmtName} Hearthstone.
+RÈGLES ABSOLUES :
+- Exactement 30 cartes dans le deck (compter les doublons : 2x = 2 cartes)
+- Format de sortie strict : d'abord les synergies/combos, puis la liste de cartes
+- Utilise des cartes réelles qui existent dans Hearthstone ${fmtName}
+- Maximum 2 exemplaires d'une même carte (sauf cartes légendaires : max 1)
+- Optimise pour GAGNER le plus souvent possible avec l'archétype choisi
+- Inclus les meilleures synergies et combos disponibles pour cet archétype
+
+FORMAT DE RÉPONSE (respecte exactement) :
+
+SYNERGIES:
+[liste des 3-5 synergies/combos principaux du deck, format: "Carte A + Carte B : explication"]
+
+LISTE:
+2x Nom Carte
+2x Nom Carte
+1x Nom Légendaire
+[etc jusqu'à 30 cartes total]`;
+
+  const userPrompt = `Génère un deck ${selectedArc} pour ${cls} en format ${fmtName} Hearthstone.
+Archétype : ${arcDescriptions[selectedArc] || selectedArc}
+La liste doit avoir exactement 30 cartes total. Optimise pour le maximum de victoires.
+Nomme les cartes en ANGLAIS (noms officiels Hearthstone).`;
+
+  try {
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const aiData = await aiResp.json();
+    const rawText = aiData.content?.map(b => b.text || '').join('') || '';
+
+    // Parse synergies and card list
+    const synMatch = rawText.match(/SYNERGIES:\s*([\s\S]*?)(?=LISTE:|$)/i);
+    const listMatch = rawText.match(/LISTE:\s*([\s\S]*)/i);
+
+    lastSynergies = synMatch ? synMatch[1].trim() : '';
+    const cardListRaw = listMatch ? listMatch[1].trim() : rawText;
+
+    // Display AI synergies
+    if (lastSynergies) {
+      aiContent.innerHTML = '<strong style="color:var(--gold-l)">Archétype analysé</strong> — synergies identifiées, construction du deck...';
+    }
+
+    // Parse the card list
+    lastDeckList = parse(cardListRaw);
+
+    if (lastDeckList.length === 0) {
+      aiContent.innerHTML = '<span style="color:var(--red)">❌ L\'IA n\'a pas pu générer la liste. Réessayez.</span>';
+      isRunning = false;
+      document.getElementById('gen-btn').disabled = false;
+      document.getElementById('gen-btn').textContent = '⚡ Générer le Deck';
+      return;
+    }
+
+    // Now resolve cards via Blizzard API
+    aiContent.innerHTML = `✅ <strong>${lastDeckList.length} cartes identifiées</strong> — résolution via API Blizzard...`;
+    document.getElementById('out-panel').style.display = 'block';
+
+    await resolveAndDisplay(lastDeckList, lastSynergies, cls, parseInt(fmt), dn);
+
+  } catch(e) {
+    aiContent.innerHTML = '<span style="color:var(--red)">❌ Erreur IA : ' + e.message + '</span>';
+    isRunning = false;
+    document.getElementById('gen-btn').disabled = false;
+    document.getElementById('gen-btn').textContent = '⚡ Générer le Deck';
+  }
+}
+
+// ─── RESOLVE & DISPLAY ───────────────────────────────────────────────────────
+async function resolveAndDisplay(parsed, synergies, cls, fmt, dn) {
+  const unique = [...new Set(parsed.map(p => p.name))];
+  const total = unique.length;
+
+  const pw = document.getElementById('prog-wrap');
+  const pb = document.getElementById('prog-bar');
+  const pt = document.getElementById('prog-txt');
+  pw.style.display = 'block';
+  pt.style.display = 'block';
+  pb.style.width = '0%';
+
+  const grid = document.getElementById('cg');
+  grid.innerHTML = '';
+  const elMap = {};
+  for (const {name, cnt} of parsed) {
+    const el = document.createElement('div');
+    el.className = 'dc pend';
+    el.id = 'ci-' + name.replace(/\W/g,'_');
+    el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cnt}</span><span style="font-size:.8em">⏳</span>`;
+    grid.appendChild(el);
+    elMap[name] = el;
+  }
+
+  // Batch lookups
+  const BATCH = 3;
+  let done = 0;
+  for (let i = 0; i < unique.length; i += BATCH) {
+    const batch = unique.slice(i, i + BATCH);
+    await Promise.all(batch.map(name => lookupCard(name)));
+    done += batch.length;
+    pb.style.width = Math.round(done / total * 100) + '%';
+    pt.textContent = `Résolution : ${done}/${total} cartes...`;
+
+    for (const name of batch) {
+      const info = cardCache[name];
+      const cp = parsed.find(p => p.name === name);
+      const el = elMap[name];
+      if (!el) continue;
+      if (info) {
+        el.className = 'dc ok';
+        el.innerHTML = `<div class="mc">${info.cost}</div><div class="cn" title="${info.blizzName||name}">${info.blizzName||name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:var(--grn)">✓</span>`;
+      } else {
+        el.className = 'dc bad';
+        el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:var(--red)">✗</span>`;
+      }
+    }
+    if (i + BATCH < unique.length) await sleep(150);
+  }
+
+  pw.style.display = 'none';
+  pt.style.display = 'none';
+
+  // Sort by mana
+  const children = [...grid.children].sort((a, b) => {
+    const ma = parseInt(a.querySelector('.mc')?.textContent) || 99;
+    const mb = parseInt(b.querySelector('.mc')?.textContent) || 99;
+    return ma - mb;
+  });
+  children.forEach(c => grid.appendChild(c));
+
+  // Stats
+  const res = [], miss = [];
+  for (const {name, cnt} of parsed) {
+    const info = cardCache[name];
+    if (info) res.push({name, cnt, d: info.dbfId, c: info.cost});
+    else miss.push(name);
+  }
+
+  const nFound = res.length;
+  const nTotal = parsed.length;
+  document.getElementById('sta').style.display = 'flex';
+  document.getElementById('sf').textContent = nFound;
+  document.getElementById('sc').textContent = nTotal;
+  if (miss.length) {
+    document.getElementById('sbx').style.display = 'flex';
+    document.getElementById('sm').textContent = miss.length;
+  } else {
+    document.getElementById('sbx').style.display = 'none';
+  }
+  document.getElementById('cl').textContent = `${nTotal} cartes · ${nFound} résolues · ${selectedArc} ${cls}`;
+
+  // Display synergies
+  if (synergies) {
+    const synSection = document.getElementById('syn-section');
+    const synList = document.getElementById('syn-list');
+    synSection.classList.add('active');
+    const lines = synergies.split('\n').filter(l => l.trim());
+    synList.innerHTML = lines.map(line => {
+      // Highlight card names (before the colon)
+      const [cards, ...desc] = line.split(':');
+      if (desc.length > 0) {
+        const cardNames = cards.replace(/^[-•*\d.]+\s*/, '').split('+').map(c =>
+          `<span class="syn-combo">${c.trim()}</span>`
+        ).join(' + ');
+        return `<div style="margin-bottom:6px">⚡ ${cardNames} : ${desc.join(':').trim()}</div>`;
+      }
+      return `<div style="margin-bottom:4px">${line.replace(/^[-•*\d.]+\s*/,'')}</div>`;
+    }).join('');
+  }
+
+  // Build deck code
+  const dedup = {};
+  for (const c of res) {
+    if (dedup[c.d]) dedup[c.d].n = Math.min(2, dedup[c.d].n + c.cnt);
+    else dedup[c.d] = {d: c.d, n: c.cnt};
+  }
+  const fmtName = fmt === 2 ? 'Standard' : 'Wild';
+  const code = buildCode(HEROES[cls] || 274, fmt, Object.values(dedup));
+
+  const cbox = document.getElementById('cbox');
+  cbox.className = 'code-wrap';
+  cbox.innerHTML = `<span style="color:var(--dim)">### ${dn}<br># Class: ${cls} Format: ${fmtName}<br>#</span><br><span id="tc">${code}</span>`;
+  document.getElementById('cpb').disabled = false;
+
+  // HS Import link
+  const hsLinkBox = document.getElementById('hs-link-box');
+  const hsUrl = document.getElementById('hs-url');
+  hsLinkBox.classList.add('active');
+  hsUrl.textContent = code;
+
+  if (miss.length) {
+    document.getElementById('msdiv').style.display = 'block';
+    document.getElementById('mlst').innerHTML = miss.map(m => `• <b>${m}</b>`).join('<br>');
+  } else {
+    document.getElementById('msdiv').style.display = 'none';
+  }
+
+  document.getElementById('sb2').textContent = `✅ Deck ${selectedArc} généré ! ${nFound}/${nTotal} cartes trouvées`;
+  document.getElementById('ai-box').querySelector('#ai-content').innerHTML =
+    `✅ Deck <strong>${selectedArc} ${cls}</strong> prêt — ${nFound} cartes résolues via API Blizzard`;
+
+  isRunning = false;
+  document.getElementById('gen-btn').disabled = false;
+  document.getElementById('gen-btn').textContent = '⚡ Générer le Deck';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function doCopy() {
+  const el = document.getElementById('tc');
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const b = document.getElementById('cpb');
+    const p = b.textContent;
+    b.textContent = '✅ Copié !';
+    setTimeout(() => b.textContent = p, 2500);
+  });
+}
+
+function regenerate() {
+  if (selectedArc) {
+    document.getElementById('out-panel').style.display = 'none';
+    document.getElementById('ai-box').classList.remove('active');
+    document.getElementById('syn-section').classList.remove('active');
+    generateDeck();
+  }
+}
+
+// Enter on secret → get token
+document.getElementById('csec').addEventListener('keydown', e => {
+  if (e.key === 'Enter') getToken();
+});
+</script>
+</body>
+</html>
