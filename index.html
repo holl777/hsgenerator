@@ -6731,6 +6731,18 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
     trimmed.push({...c, cnt});
     trimTotal += cnt;
   }
+  // Pad to exactly 30 copies: bump non-legendary cards from x1 to x2 until total = 30
+  let padTotal = trimmed.reduce((s, c) => s + c.cnt, 0);
+  if (padTotal < 30) {
+    for (const c of trimmed) {
+      if (padTotal >= 30) break;
+      if (!c.isLegendary && c.cnt < 2) {
+        const add = Math.min(2 - c.cnt, 30 - padTotal);
+        c.cnt += add;
+        padTotal += add;
+      }
+    }
+  }
   const finalDeck = trimmed;
 
   // Validation format Standard vs Wild
