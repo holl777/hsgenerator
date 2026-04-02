@@ -612,13 +612,13 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
             <span style="flex:1;height:1px;background:var(--brd)"></span>
           </div>
           <div style="position:relative">
-            <textarea id="raw-code-ta" readonly style="width:100%;min-height:64px;background:var(--dark);border:1px solid var(--brd);border-left:3px solid var(--grn);color:#70d090;padding:10px 12px;border-radius:4px;font-family:monospace;font-size:.78em;line-height:1.7;word-break:break-all;resize:none;outline:none" placeholder="Le code apparaîtra ici après la génération..."></textarea>
+            <textarea id="raw-code-ta" readonly style="width:100%;min-height:120px;background:var(--dark);border:1px solid var(--brd);border-left:3px solid var(--grn);color:#70d090;padding:10px 12px;border-radius:4px;font-family:monospace;font-size:.78em;line-height:1.7;word-break:break-all;resize:none;outline:none" placeholder="Le code apparaîtra ici après la génération..."></textarea>
             <button id="cpb" onclick="doCopy()" disabled style="position:absolute;top:8px;right:8px;background:var(--d3);border:1px solid var(--brd);color:var(--dim);font-family:'Cinzel',serif;font-size:.6em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .2s"
               onmouseover="if(!this.disabled){this.style.borderColor='var(--grn)';this.style.color='var(--grn)'}"
               onmouseout="if(!this.disabled){this.style.borderColor='var(--brd)';this.style.color='var(--dim)'}">📋 Copier</button>
           </div>
           <div style="font-size:.74em;color:var(--dim);margin-top:6px;font-style:italic">
-            💡 Copiez ce code → Hearthstone → Collection → Mes Decks → Créer → Importer un deck
+            💡 Cliquez <strong style="color:var(--grn)">Copier</strong> → Hearthstone → Collection → Mes Decks → Nouveau deck → <strong style="color:var(--txt)">Importer un deck</strong> (coller avec Ctrl+V)
           </div>
         </div>
       </div>
@@ -4533,25 +4533,7 @@ let MY_COLLECTION = new Set([
 cardSource = 'all';
 currentFormat = 2;
 
-function setCardSource(src, btn) {
-  cardSource = src;
-  document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function setFormat(fmt, btn) {
-  currentFormat = fmt;
-  const hf = document.getElementById('hf');
-  if (hf) hf.value = fmt;
-  const hf2 = document.getElementById('hf2');
-  if (hf2) hf2.value = fmt;
-  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  // Update button style class
-  const isStd = fmt === 2;
-  document.getElementById('fmt-std-btn').classList.toggle('std', isStd);
-  document.getElementById('fmt-wld-btn').classList.toggle('wld', !isStd);
-}
+// setCardSource et setFormat sont définis comme window.* en haut du script
 
 // Standard sets - standard only (no wild, no vanilla)
 function isCardValidForFormat(cardInfo, fmt) {
@@ -6288,29 +6270,69 @@ async function searchCards(query) {
   } catch { return []; }
 }
 
-// ─── ENCODER ────────────────────────────────────────────────────────────────
+// ─── ENCODER DeckString (format officiel Hearthstone / python-hearthstone) ──
+// Référence : https://hearthsim.info/docs/deckstrings/
 function writeVI(n, a) {
-  n = n >>> 0;
-  do { let b = n & 0x7F; n >>>= 7; if (n !== 0) b |= 0x80; a.push(b); } while (n !== 0);
+  // Varint non-signé — encode au moins 1 octet (même pour 0)
+  n = (n >>> 0); // cast uint32
+  while (true) {
+    let b = n & 0x7F;
+    n >>>= 7;
+    if (n !== 0) b |= 0x80;
+    a.push(b);
+    if (n === 0) break;
+  }
 }
 function buildCode(heroId, fmt, pairs) {
-  const s = pairs.filter(p => p.n === 1).map(p => p.d).sort((a, b) => a - b);
-  const d = pairs.filter(p => p.n === 2).map(p => p.d).sort((a, b) => a - b);
-  const x = pairs.filter(p => p.n > 2).sort((a, b) => a.d - b.d);
+  // fmt doit être un entier strict : 1=Wild, 2=Standard
+  const fmtInt = parseInt(fmt, 10) || 2;
+  heroId = parseInt(heroId, 10);
+
+  // Séparer x1 et x2 — trier par DBF ID croissant (obligatoire pour la spec)
+  const singles = pairs.filter(p => p.n === 1).map(p => p.d).sort((a, b) => a - b);
+  const doubles = pairs.filter(p => p.n === 2).map(p => p.d).sort((a, b) => a - b);
+  // Les cartes n > 2 sont encodées en section "n-of" (rare mais supporté)
+  const nofs = pairs.filter(p => p.n > 2).sort((a, b) => a.d - b.d);
+
   const b = [];
-  writeVI(0,b); writeVI(1,b); writeVI(fmt,b);
-  writeVI(1,b); writeVI(heroId,b);
-  writeVI(s.length,b); s.forEach(i => writeVI(i,b));
-  writeVI(d.length,b); d.forEach(i => writeVI(i,b));
-  writeVI(x.length,b); x.forEach(o => { writeVI(o.d,b); writeVI(o.n,b); });
+  // Header : réservé=0, version=1, format
+  writeVI(0, b);
+  writeVI(1, b);
+  writeVI(fmtInt, b);
+  // Héros : toujours 1 élément
+  writeVI(1, b);
+  writeVI(heroId, b);
+  // Singles (x1)
+  writeVI(singles.length, b);
+  singles.forEach(id => writeVI(id, b));
+  // Doubles (x2)
+  writeVI(doubles.length, b);
+  doubles.forEach(id => writeVI(id, b));
+  // N-of (x3+) — paires [dbfId, count]
+  writeVI(nofs.length, b);
+  nofs.forEach(o => { writeVI(o.d, b); writeVI(o.n, b); });
+
+  // Encodage base64 — btoa attend des octets latin-1
   const u8 = new Uint8Array(b);
-  let bin = ''; u8.forEach(v => bin += String.fromCharCode(v));
+  let bin = '';
+  u8.forEach(v => { bin += String.fromCharCode(v); });
   return btoa(bin);
 }
+
+// DBF IDs officiels des héros de base — source : HearthstoneJSON / Hearthsim
+// Ces IDs correspondent aux héros par défaut (pas les héros alternatifs)
 const HEROES = {
-  WARRIOR:7, SHAMAN:1066, ROGUE:930, PALADIN:671, HUNTER:31,
-  DRUID:274, WARLOCK:893, MAGE:637, PRIEST:813,
-  DEMONHUNTER:56550, DEATHKNIGHT:78065
+  WARRIOR:     7,     // Garrosh Hellscream
+  SHAMAN:      1066,  // Thrall
+  ROGUE:       930,   // Valeera Sanguinar
+  PALADIN:     671,   // Uther Lightbringer
+  HUNTER:      31,    // Rexxar
+  DRUID:       274,   // Malfurion Stormrage
+  WARLOCK:     893,   // Gul'dan
+  MAGE:        637,   // Jaina Proudmoore
+  PRIEST:      813,   // Anduin Wrynn
+  DEMONHUNTER: 56550, // Illidan Stormrage
+  DEATHKNIGHT: 78065, // The Lich King
 };
 
 // Sets Standard légaux — Année du Scarabée (depuis le 17 mars 2026)
@@ -6433,14 +6455,7 @@ async function loadImportedDeck() {
 }
 
 // ─── MODE SWITCHING ──────────────────────────────────────────────────────────
-function switchMode(mode, tab) {
-  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.mode-section').forEach(s => s.classList.remove('active'));
-  tab.classList.add('active');
-  document.getElementById('mode-' + mode).classList.add('active');
-  currentMode = mode;
-  if (mode === 'archetype') updateGenBtn();
-}
+// switchMode est défini comme window.switchMode en haut du script
 
 // ─── CUSTOM CARD PICKER ──────────────────────────────────────────────────────
 const seedCards = []; // [{name, cost, atk, hp, blizzName, dbfId, type}]
@@ -6854,22 +6869,45 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   }
 
   // ── GÉNÉRATION DU CODE DE DECK ───────────────────────────────────────────
-  // Utilise exactement finalDeck (= ce qui est affiché) pour encoder le code
+  // Format complet attendu par Hearthstone :
+  // ### Nom du Deck
+  // # Class: Mage
+  // # Format: Standard
+  // #
+  // AAECAf0E... (code base64)
+  // #
+  // # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
   const heroId = HEROES[cls] || 637;
   const validPairs = finalDeck
-    .filter(c => c.d && c.d > 0)
-    .map(c => ({ d: c.d, n: c.cnt }));
+    .filter(c => c.d && parseInt(c.d, 10) > 0)
+    .map(c => ({ d: parseInt(c.d, 10), n: parseInt(c.cnt, 10) }))
+    .filter(p => p.d > 0 && p.n > 0);
 
   const rawTa = document.getElementById('raw-code-ta');
   const cpb = document.getElementById('cpb');
 
+  const clsName = clsDisplay[cls] || cls;
+  const fmtName2 = parseInt(fmt, 10) === 2 ? 'Standard' : 'Wild';
+  const deckName = dn || `${selectedArc || ''} ${clsName}`.trim();
+
   if (validPairs.length > 0) {
     try {
-      const code = buildCode(heroId, fmt, validPairs);
-      if (rawTa) rawTa.value = code;
-      if (cpb) cpb.disabled = false;
+      const fmtInt = parseInt(fmt, 10) || 2;
+      const b64 = buildCode(heroId, fmtInt, validPairs);
+      // Format texte complet — c'est ce que Hearthstone importe
+      const fullText = [
+        `### ${deckName}`,
+        `# Class: ${clsName}`,
+        `# Format: ${fmtName2}`,
+        `#`,
+        b64,
+        `#`,
+        `# To use this deck, copy it to your clipboard and create a new deck in Hearthstone`
+      ].join('\n');
+      if (rawTa) rawTa.value = fullText;
+      if (cpb) { cpb.disabled = false; cpb.style.opacity = '1'; }
     } catch(e) {
-      if (rawTa) rawTa.value = '⚠ Erreur lors de la génération du code : ' + e.message;
+      if (rawTa) rawTa.value = '⚠ Erreur encodage : ' + e.message;
       if (cpb) cpb.disabled = true;
     }
   } else {
@@ -6880,13 +6918,7 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
 // currentMode declared at top
-function selectArc(btn, arc) {
-  document.querySelectorAll('.arc-btn').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  selectedArc = arc;
-  updateSynergies();
-  updateGenBtn();
-}
+// selectArc est défini comme window.selectArc en haut du script
 
 function updateSynergies() {
   if (!selectedArc) return;
@@ -7454,26 +7486,48 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function doCopy() {
   const ta = document.getElementById('raw-code-ta');
-  if (!ta || !ta.value) return;
-  ta.select();
-  ta.setSelectionRange(0, 99999);
+  if (!ta || !ta.value || ta.value.startsWith('⚠')) return;
   const btn = document.getElementById('cpb');
   const orig = btn.textContent;
+  const text = ta.value.trim();
 
-  // Essai 1 : API Clipboard moderne
+  const success = () => {
+    btn.textContent = '✅ Copié !';
+    btn.style.borderColor = 'var(--grn)';
+    btn.style.color = 'var(--grn)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2500);
+  };
+  const fail = () => {
+    // Fallback ultime : sélectionner le textarea pour Ctrl+C manuel
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    btn.textContent = '👆 Ctrl+C';
+    setTimeout(() => { btn.textContent = orig; }, 3000);
+  };
+
+  // Méthode 1 : API Clipboard moderne (HTTPS requis)
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(ta.value).then(() => {
-      btn.textContent = '✅ Copié !';
-      btn.style.borderColor = 'var(--grn)';
-      setTimeout(() => { btn.textContent = orig; btn.style.borderColor = ''; }, 2500);
-    }).catch(() => {
-      // Essai 2 : execCommand
-      try { document.execCommand('copy'); btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2500); }
-      catch(e) { btn.textContent = '👆 Ctrl+C maintenant !'; setTimeout(() => btn.textContent = orig, 3000); }
+    navigator.clipboard.writeText(text).then(success).catch(() => {
+      // Méthode 2 : execCommand (ancienne méthode)
+      ta.select();
+      ta.setSelectionRange(0, 99999);
+      try {
+        const ok = document.execCommand('copy');
+        ok ? success() : fail();
+      } catch { fail(); }
     });
   } else {
-    try { document.execCommand('copy'); btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2500); }
-    catch(e) { btn.textContent = '👆 Ctrl+C maintenant !'; setTimeout(() => btn.textContent = orig, 3000); }
+    // Méthode 2 directe
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    try {
+      const ok = document.execCommand('copy');
+      ok ? success() : fail();
+    } catch { fail(); }
   }
 }
 
