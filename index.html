@@ -487,10 +487,10 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
       <div class="import-box" id="import-box">
         <div class="import-h">🎮 Comment importer dans Hearthstone</div>
         <div style="color:var(--dim);line-height:1.9">
-          1. Copiez le code avec le bouton ci-dessous<br>
-          2. Ouvrez <strong style="color:var(--txt)">Hearthstone</strong><br>
-          3. Allez dans <strong style="color:var(--txt)">Collection → Mes Decks → Nouveau Deck</strong><br>
-          4. Cliquez sur <strong style="color:var(--txt)">"Importer un Deck"</strong> (ou collez avec Ctrl+V)<br>
+          1. Cliquez dans le champ vert ci-dessus → tout est sélectionné<br>
+          2. Faites <strong style="color:var(--txt)">Ctrl+C</strong> (ou bouton Copier)<br>
+          3. Ouvrez <strong style="color:var(--txt)">Hearthstone → Collection → Nouveau Deck</strong><br>
+          4. Cliquez <strong style="color:var(--txt)">"Importer un Deck"</strong> puis <strong style="color:var(--txt)">Ctrl+V</strong><br>
           5. Le deck apparaît automatiquement ✅
         </div>
       </div>
@@ -2618,21 +2618,28 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   }
   document.getElementById('cl').textContent = label || `${nTotal} cartes · ${nFound} résolues`;
 
-  const dedup = {};
-  for (const c of res) {
-    if (dedup[c.d]) dedup[c.d].n = Math.min(2, dedup[c.d].n + c.cnt);
-    else dedup[c.d] = { d: c.d, n: c.cnt };
-  }
-  const code = buildCode(HEROES[cls] || 274, fmt, Object.values(dedup));
+  // Construire le texte d'import au format HS (liste de cartes)
+  const clsDisplay = { MAGE:'Mage', WARRIOR:'Warrior', HUNTER:'Hunter', PALADIN:'Paladin',
+    ROGUE:'Rogue', PRIEST:'Priest', SHAMAN:'Shaman', WARLOCK:'Warlock', DRUID:'Druid',
+    DEMONHUNTER:'Demon Hunter', DEATHKNIGHT:'Death Knight' };
+  const resSorted = [...res].sort((a,b) => a.c - b.c || a.name.localeCompare(b.name));
+  const lines = [
+    `### ${dn}`,
+    `# Class: ${clsDisplay[cls] || cls}`,
+    `# Format: ${fmtName}`,
+    `#`,
+    ...resSorted.map(c => `${c.cnt}x (${c.c}) ${c.name}`)
+  ];
+  const deckText = lines.join('\n');
+
   const cbox = document.getElementById('cbox');
   cbox.style.display = 'none';
   const rawTa = document.getElementById('raw-code-ta');
-  rawTa.value = code;
+  rawTa.value = deckText;
+  rawTa.style.height = Math.min(200, 20 + resSorted.length * 22) + 'px';
   document.getElementById('cpb').disabled = false;
   document.getElementById('import-box').classList.add('active');
   document.getElementById('sb2').textContent = `✅ Deck généré ! ${nFound}/${nTotal} cartes résolues via HearthstoneJSON`;
-  // Remplir le textarea de secours
-  if (rawTa) { document.getElementById('manual-copy-wrap') && (document.getElementById('manual-copy-wrap').style.display = 'block'); }
 }
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
