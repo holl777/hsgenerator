@@ -6894,14 +6894,20 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
     try {
       const fmtInt = parseInt(fmt, 10) || 2;
       const b64 = buildCode(heroId, fmtInt, validPairs);
+      // Générer les lignes de cartes triées par coût (format exact Hearthstone)
+      const cardLines = finalDeck
+        .sort((a, b) => (a.c||0) - (b.c||0) || a.name.localeCompare(b.name))
+        .map(c => `# ${c.cnt}x (${c.c}) ${c.name}`);
       // Format texte complet — c'est ce que Hearthstone importe
       const fullText = [
         `### ${deckName}`,
         `# Class: ${clsName}`,
         `# Format: ${fmtName2}`,
         `#`,
+        ...cardLines,
+        `# `,
         b64,
-        `#`,
+        `# `,
         `# To use this deck, copy it to your clipboard and create a new deck in Hearthstone`
       ].join('\n');
       if (rawTa) rawTa.value = fullText;
@@ -7502,32 +7508,57 @@ function doCopy() {
     }, 2500);
   };
   const fail = () => {
-    // Fallback ultime : sélectionner le textarea pour Ctrl+C manuel
-    ta.select();
-    ta.setSelectionRange(0, 99999);
-    btn.textContent = '👆 Ctrl+C';
+    // Fallback ultime : créer un textarea temporaire éditable (non-readonly) pour Ctrl+C
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    tmp.setSelectionRange(0, 99999);
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(tmp);
+    btn.textContent = '👆 Ctrl+C si ça n\'a pas marché';
     setTimeout(() => { btn.textContent = orig; }, 3000);
   };
 
-  // Méthode 1 : API Clipboard moderne (HTTPS requis)
+  // Méthode 1 : API Clipboard moderne (HTTPS requis, meilleure option)
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(success).catch(() => {
-      // Méthode 2 : execCommand (ancienne méthode)
-      ta.select();
-      ta.setSelectionRange(0, 99999);
+      // Méthode 2 : textarea temporaire éditable (contourne le readonly)
+      const tmp = document.createElement('textarea');
+      tmp.value = text;
+      tmp.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
+      document.body.appendChild(tmp);
+      tmp.focus();
+      tmp.select();
+      tmp.setSelectionRange(0, 99999);
       try {
         const ok = document.execCommand('copy');
+        document.body.removeChild(tmp);
         ok ? success() : fail();
-      } catch { fail(); }
+      } catch {
+        document.body.removeChild(tmp);
+        fail();
+      }
     });
   } else {
-    // Méthode 2 directe
-    ta.select();
-    ta.setSelectionRange(0, 99999);
+    // Méthode 2 directe — textarea temporaire éditable
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    tmp.setSelectionRange(0, 99999);
     try {
       const ok = document.execCommand('copy');
+      document.body.removeChild(tmp);
       ok ? success() : fail();
-    } catch { fail(); }
+    } catch {
+      document.body.removeChild(tmp);
+      fail();
+    }
   }
 }
 
