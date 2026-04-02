@@ -6742,21 +6742,31 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   const epicCount = finalDeck.filter(c=>c.rarity==='EPIC').length;
   const rareCount = finalDeck.filter(c=>c.rarity==='RARE').length;
   const commonCount = finalDeck.filter(c=>c.rarity==='COMMON'||c.rarity==='FREE').length;
-  let headerHtml = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--brd);flex-wrap:wrap">
-      <span style="font-family:'Cinzel',serif;font-size:.75em;font-weight:700;padding:5px 12px;border-radius:5px;
-        background:${isStandard ? 'rgba(90,127,192,.2)' : 'rgba(154,106,223,.2)'};
-        border:1px solid ${isStandard ? 'var(--blu)' : 'var(--pur)'};
-        color:${isStandard ? '#90c0ff' : '#c890ff'}">
-        ${isStandard ? '🔵 STANDARD' : '🟣 WILD'}
-      </span>
-      ${cardSource==='my' ? '<span style="font-family:'Cinzel',serif;font-size:.72em;font-weight:700;padding:5px 12px;border-radius:5px;background:rgba(74,173,122,.15);border:1px solid rgba(74,173,122,.4);color:var(--grn)">⭐ MA COLLECTION</span>' : ''}
-      <span style="font-size:.82em;color:var(--dim)">${totalCards} cartes</span>
-      ${legendCount > 0 ? '<span style="font-size:.78em;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);color:var(--gold-l);padding:2px 7px;border-radius:3px">★ '+legendCount+' légend.</span>' : ''}
-      ${epicCount > 0 ? '<span style="font-size:.78em;background:rgba(192,96,224,.12);border:1px solid rgba(192,96,224,.3);color:#c060e0;padding:2px 7px;border-radius:3px">'+epicCount+' épiques</span>' : ''}
-      ${rareCount > 0 ? '<span style="font-size:.78em;background:rgba(74,144,224,.12);border:1px solid rgba(74,144,224,.3);color:#4a90e0;padding:2px 7px;border-radius:3px">'+rareCount+' rares</span>' : ''}
-      ${totalCards !== 30 ? '<span style="font-size:.8em;color:var(--gold)">⚠ '+totalCards+'/30 cartes</span>' : '<span style="font-size:.8em;color:var(--grn)">✅ 30/30</span>'}
-    </div>`;
+  const fmtBg = isStandard ? 'rgba(90,127,192,.2)' : 'rgba(154,106,223,.2)';
+  const fmtBorder = isStandard ? 'var(--blu)' : 'var(--pur)';
+  const fmtColor = isStandard ? '#90c0ff' : '#c890ff';
+  const fmtLabel = isStandard ? '🔵 STANDARD' : '🟣 WILD';
+  const collBadgeHdr = cardSource === 'my'
+    ? '<span style="font-family:Cinzel,serif;font-size:.72em;font-weight:700;padding:5px 12px;border-radius:5px;background:rgba(74,173,122,.15);border:1px solid rgba(74,173,122,.4);color:var(--grn)">⭐ MA COLLECTION</span>'
+    : '';
+  const legendBadge = legendCount > 0
+    ? '<span style="font-size:.78em;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);color:var(--gold-l);padding:2px 7px;border-radius:3px">★ ' + legendCount + ' légend.</span>'
+    : '';
+  const epicBadge = epicCount > 0
+    ? '<span style="font-size:.78em;background:rgba(192,96,224,.12);border:1px solid rgba(192,96,224,.3);color:#c060e0;padding:2px 7px;border-radius:3px">' + epicCount + ' épiques</span>'
+    : '';
+  const rareBadge = rareCount > 0
+    ? '<span style="font-size:.78em;background:rgba(74,144,224,.12);border:1px solid rgba(74,144,224,.3);color:#4a90e0;padding:2px 7px;border-radius:3px">' + rareCount + ' rares</span>'
+    : '';
+  const countBadge = totalCards !== 30
+    ? '<span style="font-size:.8em;color:var(--gold)">⚠ ' + totalCards + '/30 cartes</span>'
+    : '<span style="font-size:.8em;color:var(--grn)">✅ 30/30</span>';
+  let headerHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--brd);flex-wrap:wrap">'
+    + '<span style="font-family:Cinzel,serif;font-size:.75em;font-weight:700;padding:5px 12px;border-radius:5px;background:' + fmtBg + ';border:1px solid ' + fmtBorder + ';color:' + fmtColor + '">' + fmtLabel + '</span>'
+    + collBadgeHdr
+    + '<span style="font-size:.82em;color:var(--dim)">' + totalCards + ' cartes</span>'
+    + legendBadge + epicBadge + rareBadge + countBadge
+    + '</div>';
 
   if (formatViolations.length > 0) {
     headerHtml += `<div style="background:rgba(201,68,68,.1);border:1px solid rgba(201,68,68,.4);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:.78em;color:var(--red);line-height:1.9">
