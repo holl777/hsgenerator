@@ -4543,7 +4543,7 @@ const STANDARD_SETS_VALID = new Set([
   'RETURN_OF_THE_LICH_KING','MURDER_AT_CASTLE_NATHRIA','REVENDRETH',
   'SUNKEN_CITY','ALTERAC_VALLEY','STORMWIND','DARKMOON_FAIRE','SCHOLOMANCE',
   'DEMON_HUNTER_INITIATE','PATH_OF_ARTHAS','THE_GREAT_DARK_BEYOND',
-  'PERILS_IN_PARADISE','CAVERNS_OF_TIME','TWIST'
+  'PERILS_IN_PARADISE','CAVERNS_OF_TIME','TWIST','EXPERT1'
 ]);
 
 function isCardValidForFormat(cardInfo, fmt) {
@@ -6715,10 +6715,16 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
     })
     .sort((a,b) => a.c - b.c || a.name.localeCompare(b.name));
   
+  // Filtrer les cartes Wild si le format est Standard
+  const isStandardFilter = fmt === 2;
+  const resSortedFiltered = isStandardFilter
+    ? resSorted.filter(c => !c.cardSet || STANDARD_SETS.has(c.cardSet))
+    : resSorted;
+
   // Trim to 30 cards total (respecting legendary = 1, others = max 2)
   const trimmed = [];
   let trimTotal = 0;
-  for (const c of resSorted) {
+  for (const c of resSortedFiltered) {
     if (trimTotal >= 30) break;
     const space = 30 - trimTotal;
     const cnt = Math.min(c.cnt, space);
