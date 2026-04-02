@@ -473,13 +473,15 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
       <div class="divider"></div>
 
       <div style="font-family:'Cinzel',serif;font-size:.7em;color:var(--gold);letter-spacing:.1em;margin-bottom:6px">📋 Code du Deck Hearthstone</div>
-      <div class="code-wrap empty" id="cbox">Le code apparaîtra ici...</div>
-      <div id="manual-copy-wrap" style="display:none;margin-top:6px">
-        <div style="font-size:.68em;color:var(--dim);font-style:italic;margin-bottom:4px">Si le bouton Copier ne fonctionne pas, sélectionnez tout le texte ci-dessous et faites Ctrl+C :</div>
-        <textarea id="raw-code-ta" readonly onclick="this.select()" style="
-          width:100%;height:52px;background:var(--dark);border:1px solid var(--brd-l);
-          color:#70d090;font-family:monospace;font-size:.75em;padding:8px 10px;
-          border-radius:4px;resize:none;outline:none;word-break:break-all;cursor:text"></textarea>
+      <div class="code-wrap empty" id="cbox" style="display:none"></div>
+      <textarea id="raw-code-ta" readonly
+        onclick="this.select()"
+        placeholder="Le code apparaîtra ici — cliquez pour tout sélectionner, puis Ctrl+C"
+        style="width:100%;height:64px;background:var(--dark);border:1px solid var(--brd);color:#70d090;font-family:monospace;font-size:.8em;padding:10px 12px;border-radius:4px;resize:none;outline:none;line-height:1.6;cursor:text;transition:border-color .2s"
+        onfocus="this.select();this.style.borderColor='var(--grn)'"
+        onblur="this.style.borderColor='var(--brd)'"></textarea>
+      <div style="font-size:.7em;color:var(--dim);font-style:italic;margin-top:4px;text-align:center">
+        👆 Cliquez dans le champ ci-dessus pour tout sélectionner, puis <strong style="color:var(--txt)">Ctrl+C</strong>
       </div>
 
       <div class="import-box" id="import-box">
@@ -2346,7 +2348,9 @@ async function loadImportedDeck() {
   // Remplacer le code dans la boîte par le code original importé
   const cbox = document.getElementById('cbox');
   cbox.className = 'code-wrap';
-  cbox.innerHTML = `<span style="color:var(--dim);user-select:none">### ${dn}<br># Class: ${importedDeckData.class} Format: ${fmtName}<br>#<br></span><span id="tc" style="word-break:break-all">${importedDeckData.code}</span>`;
+  cbox.style.display = 'none';
+  const rawTa = document.getElementById('raw-code-ta');
+  if (rawTa) rawTa.value = importedDeckData.code;
   document.getElementById('cpb').disabled = false;
 
   isRunning = false;
@@ -2621,14 +2625,14 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   }
   const code = buildCode(HEROES[cls] || 274, fmt, Object.values(dedup));
   const cbox = document.getElementById('cbox');
-  cbox.className = 'code-wrap';
-  cbox.innerHTML = `<span style="color:var(--dim);user-select:none">### ${dn}<br># Class: ${cls} Format: ${fmtName}<br>#<br></span><span id="tc" style="word-break:break-all">${code}</span>`;
+  cbox.style.display = 'none';
+  const rawTa = document.getElementById('raw-code-ta');
+  rawTa.value = code;
   document.getElementById('cpb').disabled = false;
   document.getElementById('import-box').classList.add('active');
   document.getElementById('sb2').textContent = `✅ Deck généré ! ${nFound}/${nTotal} cartes résolues via HearthstoneJSON`;
   // Remplir le textarea de secours
-  const rawTa = document.getElementById('raw-code-ta');
-  if (rawTa) { rawTa.value = code; document.getElementById('manual-copy-wrap').style.display = 'block'; }
+  if (rawTa) { document.getElementById('manual-copy-wrap') && (document.getElementById('manual-copy-wrap').style.display = 'block'); }
 }
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
@@ -2781,40 +2785,37 @@ async function generateDeck() {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function doCopy() {
-  const el = document.getElementById('tc');
-  if (!el) return;
-  const text = el.textContent.trim();
+  const ta = document.getElementById('raw-code-ta');
+  if (!ta || !ta.value) return;
+  ta.select();
+  ta.setSelectionRange(0, 99999);
   const btn = document.getElementById('cpb');
   const orig = btn.textContent;
 
-  function onSuccess() {
-    btn.textContent = '✅ Copié !';
-    btn.style.borderColor = 'var(--grn)';
-    setTimeout(() => { btn.textContent = orig; btn.style.borderColor = ''; }, 2500);
-  }
-
-  // Méthode 1 : API Clipboard moderne
+  // Essai 1 : API Clipboard moderne
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
+    navigator.clipboard.writeText(ta.value).then(() => {
+      btn.textContent = '✅ Copié !';
+      btn.style.borderColor = 'var(--grn)';
+      setTimeout(() => { btn.textContent = orig; btn.style.borderColor = ''; }, 2500);
+    }).catch(() => {
+      // Essai 2 : execCommand
+      try { document.execCommand('copy'); btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2500); }
+      catch(e) { btn.textContent = '👆 Ctrl+C maintenant !'; setTimeout(() => btn.textContent = orig, 3000); }
+    });
   } else {
-    fallbackCopy(text, onSuccess);
+    try { document.execCommand('copy'); btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2500); }
+    catch(e) { btn.textContent = '👆 Ctrl+C maintenant !'; setTimeout(() => btn.textContent = orig, 3000); }
   }
 }
 
 function fallbackCopy(text, onSuccess) {
-  // Méthode 2 : textarea temporaire (fonctionne partout)
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
   document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try {
-    document.execCommand('copy');
-    onSuccess();
-  } catch(e) {
-    alert('Copie automatique bloquée par le navigateur.\nSélectionnez le code manuellement et faites Ctrl+C.');
-  }
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); onSuccess(); } catch(e) {}
   document.body.removeChild(ta);
 }
 
