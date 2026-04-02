@@ -268,7 +268,7 @@ select,input[type=text]{font-size:.96em;padding:9px 13px}
 
 <div class="hdr">
   <h1>⚔️ HS Deck <span>Forge</span></h1>
-  <p>Source · Format · Archétype · Classe — Génère ton deck de 30 cartes Hearthstone</p>
+  <p>Source · Format · Archétype · Classe — 🎲 Deck unique à chaque génération via la vraie base HearthstoneJSON</p>
 </div>
 
 <div class="main">
@@ -466,7 +466,7 @@ select,input[type=text]{font-size:.96em;padding:9px 13px}
       </div>
 
       <button class="btn-gen" id="gen-btn" onclick="generateDeck()" disabled>
-        ⚡ Générer le Deck (30 cartes)
+        ⚡ Générer le Deck (30 cartes · Unique 🎲)
       </button>
       </div><!-- /mode-archetype -->
 
@@ -624,7 +624,7 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
       </div>
 
       <div class="btn-row">
-        <button class="btn-sm" onclick="regenerate()">🔄 Régénérer</button>
+        <button class="btn-sm" onclick="regenerate()">🎲 Nouveau Deck Aléatoire</button>
       </div>
     </div>
     <div class="sbar" id="sb2">En attente...</div>
@@ -6891,11 +6891,26 @@ function selectArc(btn, arc) {
 function updateSynergies() {
   if (!selectedArc) return;
   const cls = document.getElementById('hc').value;
-  const data = (DECKS[selectedArc] || {})[cls] || getFallbackDeck(cls);
   const box = document.getElementById('syn-box');
   const content = document.getElementById('syn-content');
-  if (data.synergies && data.synergies.length) {
-    content.innerHTML = data.synergies.join('<br>');
+  const arcProfile = ARC_PROFILES[selectedArc];
+
+  let lines = [];
+  if (arcProfile) {
+    lines.push(`🎯 <span class='syn-combo'>${selectedArc}</span> : ${arcProfile.label}`);
+    lines.push(`⚡ Courbe de mana optimisée pour cet archétype — coût max conseillé : <span class='syn-combo'>${arcProfile.maxCost} mana</span>`);
+    lines.push(`⚡ Mots-clés favorisés : <span class='syn-combo'>${arcProfile.bonusKeywords.slice(0,4).join(', ')}</span>`);
+    lines.push(`🔀 Chaque génération pioche dans la <span class='syn-combo'>vraie base HearthstoneJSON</span> — deck unique à chaque fois`);
+  }
+
+  // Aussi chercher les synergies statiques si disponibles
+  const data = (DECKS[selectedArc] || {})[cls];
+  if (data && data.synergies && data.synergies.length) {
+    lines = lines.concat(data.synergies.slice(0, 2));
+  }
+
+  if (lines.length) {
+    content.innerHTML = lines.join('<br>');
     box.classList.add('active');
   } else {
     box.classList.remove('active');
@@ -7043,12 +7058,14 @@ async function fillDeckToThirty(parsedIn, cls, fmt, source) {
     return isClassCard || isNeutral;
   });
 
-  // Trier par coût de mana croissant pour une courbe équilibrée, puis par rareté (communes en premier)
+  // Trier avec randomisation pour garantir des decks différents à chaque génération
   const rarityOrder = { FREE: 0, COMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4 };
   pool.sort((a, b) => {
     const ca = a.cost ?? 0, cb = b.cost ?? 0;
     if (ca !== cb) return ca - cb;
-    return (rarityOrder[a.rarity] || 0) - (rarityOrder[b.rarity] || 0);
+    const rarDiff = (rarityOrder[a.rarity] || 0) - (rarityOrder[b.rarity] || 0);
+    if (rarDiff !== 0) return rarDiff;
+    return Math.random() - 0.5;
   });
 
   for (const card of pool) {
@@ -7060,9 +7077,233 @@ async function fillDeckToThirty(parsedIn, cls, fmt, source) {
     result.push({ name: card.name, cnt });
     existingNames.add(card.name.toLowerCase());
     currentTotal += cnt;
+    // Pré-remplir le cache pour garantir les DBF IDs
+    if (cardCache[card.name] === undefined) {
+      cardCache[card.name] = {
+        dbfId: card.dbfId,
+        cost: card.cost ?? 0,
+        blizzName: card.name,
+        atk: card.attack,
+        hp: card.health,
+        type: card.type,
+        rarity: card.rarity,
+        cardSet: card.set
+      };
+    }
   }
 
   return result;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── MOTEUR DE GÉNÉRATION ALÉATOIRE INFINI ────────────────────────────────
+// Génère un deck unique à chaque appel en piochant directement dans la vraie
+// base HearthstoneJSON avec pondération par archétype et synergies détectées
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Profils d'archétype : mots-clés dans le texte des cartes → score bonus
+const ARC_PROFILES = {
+  Aggro: {
+    costCurve: [0,0,0,1,2,3,4,5,6,7,8,9,10], // indices = coût mana, valeur = poids
+    maxCost: 5,
+    keywords: ['charge','rush','battlecry','deal','damage','attack','face','divine shield','windfury','stealth','coin'],
+    bonusKeywords: ['rush','charge','windfury','stealth'],
+    lowCostBonus: true, // favorise cartes 1-3 mana
+    label: 'Aggro — frappe vite et fort'
+  },
+  Midrange: {
+    costCurve: [0,1,2,3,4,4,3,2,1,0,0,0,0],
+    maxCost: 7,
+    keywords: ['battlecry','deathrattle','rush','value','draw','beast','dragon','elemental','divine shield'],
+    bonusKeywords: ['deathrattle','battlecry','discover'],
+    lowCostBonus: false,
+    label: 'Midrange — courbe équilibrée'
+  },
+  Control: {
+    costCurve: [0,0,1,1,2,3,4,4,3,2,2,1,1],
+    maxCost: 12,
+    keywords: ['destroy','silence','freeze','deal','taunt','heal','draw','discover','counter','return','transform'],
+    bonusKeywords: ['taunt','destroy','silence','heal','aoe','all','each'],
+    lowCostBonus: false,
+    label: 'Control — survie et win condition tardive'
+  },
+  Combo: {
+    costCurve: [1,2,3,3,3,2,2,1,1,1,0,0,0],
+    maxCost: 8,
+    keywords: ['combo','whenever','each time','whenever you cast','draw','reduce','cost','mana crystal','spell','secret'],
+    bonusKeywords: ['combo','whenever','each time','draw','reduce','0'],
+    lowCostBonus: false,
+    label: 'Combo — assembler les pièces clés'
+  },
+  Tempo: {
+    costCurve: [0,1,2,3,4,4,3,2,1,0,0,0,0],
+    maxCost: 6,
+    keywords: ['rush','charge','deal','battlecry','divine shield','windfury','overload','discover','draw'],
+    bonusKeywords: ['rush','battlecry','discover','overload'],
+    lowCostBonus: true,
+    label: 'Tempo — contrôle du board chaque tour'
+  },
+  Ramp: {
+    costCurve: [1,1,2,2,2,2,2,2,2,2,2,2,2],
+    maxCost: 12,
+    keywords: ['mana crystal','gain','add an extra','innervate','wild growth','overload','reduce','cost'],
+    bonusKeywords: ['mana crystal','gain an empty','extra mana','innervate','wild growth'],
+    lowCostBonus: false,
+    label: 'Ramp — mana accéléré pour grosses cartes'
+  },
+  Zoo: {
+    costCurve: [0,0,0,2,3,4,4,3,2,1,0,0,0],
+    maxCost: 5,
+    keywords: ['summon','token','whenever','each','battlecry','deathrattle','imp','beast','murloc','pirate','elemental'],
+    bonusKeywords: ['summon','whenever you','each time a','token','imp','beast','murloc'],
+    lowCostBonus: true,
+    label: 'Zoo — flood le board de serviteurs'
+  },
+  OTK: {
+    costCurve: [1,2,2,3,3,2,2,2,1,1,1,1,1],
+    maxCost: 10,
+    keywords: ['deal','damage','double','copy','cost','0','charge','draw','combo','whenever','spell'],
+    bonusKeywords: ['double','deal','0 mana','charge','copy','the same','restore','gain'],
+    lowCostBonus: false,
+    label: 'OTK — One Turn Kill en un seul tour'
+  },
+  Big: {
+    costCurve: [0,0,0,0,0,1,2,3,4,4,4,3,3],
+    maxCost: 12,
+    keywords: ['taunt','divine shield','battlecry','recruit','discover','dragon','elemental','demon','giant'],
+    bonusKeywords: ['taunt','divine shield','recruit','10','12','8/8','7/7','battlecry','dragon'],
+    lowCostBonus: false,
+    label: 'Big — grosses menaces dès que possible'
+  },
+  Token: {
+    costCurve: [0,1,2,3,4,4,3,2,1,0,0,0,0],
+    maxCost: 6,
+    keywords: ['summon','token','add','generate','whenever','each','buff','+1/+1','divine shield','adjacent'],
+    bonusKeywords: ['summon a','token','whenever a','add a','generate','recruit','1/1'],
+    lowCostBonus: true,
+    label: 'Token — masse de serviteurs à buffs'
+  }
+};
+
+// Mots-clés de synergies pour détection auto sur vraies cartes
+const SYNERGY_GROUPS = [
+  { tag:'BEAST',      label:'Bête',        kw:['beast','wolf','raptor','hyena','cub','bear','snake','cat','spider','bat'] },
+  { tag:'DRAGON',     label:'Dragon',      kw:['dragon','breath','dragonfire','scaleworm','wyrmguard','nether','blackwing'] },
+  { tag:'MURLOC',     label:'Murloc',      kw:['murloc','tidecaller','warleader','tidehunter','tinyfin','tastyfin'] },
+  { tag:'PIRATE',     label:'Pirate',      kw:['pirate','captain','deckhand','raider','corsair','buccaneer','crew','ship'] },
+  { tag:'ELEMENTAL',  label:'Élémental',   kw:['elemental','flame','water','earth','fire','air','thunder','storm','blaze'] },
+  { tag:'MECH',       label:'Mécano',      kw:['mech','bot','machine','annoy-o','piloted','drone','module','cog','forge'] },
+  { tag:'DEMON',      label:'Démon',       kw:['demon','imp','void','nether','fel','eredar','doomguard','infernal'] },
+  { tag:'SPELL',      label:'Sort',        kw:['spell','cast','whenever you cast','spellpower','mystical','arcane','frost','fire'] },
+  { tag:'DEATHRATTLE',label:'Deathrattle', kw:['deathrattle','when this minion dies','when destroyed','nerubian','egg','piloted'] },
+  { tag:'RUSH',       label:'Rush',        kw:['rush','charge','windfury','divine shield','stealth'] },
+  { tag:'TAUNT',      label:'Provocation', kw:['taunt','defender','guardian','shield'] },
+  { tag:'DRAW',       label:'Pioche',      kw:['draw','discover','generate','add to your hand','put into your hand'] },
+  { tag:'HEAL',       label:'Soin',        kw:['restore','heal','lifesteal','divine shield'] },
+  { tag:'OVERLOAD',   label:'Surcharge',   kw:['overload','surcharge','thunderhead','tunnel trogg','feral spirit'] },
+  { tag:'BUFF',       label:'Buff',        kw:['+1/+1','+2/+2','give','gains','get +','get a +'] },
+  { tag:'ARMOR',      label:'Armure',      kw:['armor','armure','gain armor','gain 5','armorsmith'] },
+  { tag:'CORPSE',     label:'Corpse DK',   kw:['corpse','undead','scourge','death coil','death strike','army of the dead'] },
+];
+
+// Utility: weighted random pick from array
+function weightedPick(arr, weights) {
+  const total = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < arr.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return arr[i];
+  }
+  return arr[arr.length - 1];
+}
+
+// Détecte les groupes de synergies présents dans un ensemble de cartes
+function detectSynergyGroups(cards, db) {
+  const found = {};
+  for (const { name } of cards) {
+    const entry = db[name.toLowerCase()];
+    if (!entry) continue;
+    const text = ((entry.text || '') + ' ' + (entry.name || '')).toLowerCase();
+    const race = (entry.race || '').toLowerCase();
+    for (const grp of SYNERGY_GROUPS) {
+      for (const kw of grp.kw) {
+        if (text.includes(kw) || race.includes(kw.split(' ')[0])) {
+          found[grp.tag] = (found[grp.tag] || 0) + 1;
+          break;
+        }
+      }
+    }
+  }
+  // Retourner groupes avec au moins 3 cartes concernées
+  return Object.entries(found)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .map(([tag]) => SYNERGY_GROUPS.find(g => g.tag === tag));
+}
+
+// Génère les synergies affichées à partir des vraies cartes du deck
+function buildSynergyStrings(synergyGroups, deckCards, db) {
+  if (!synergyGroups.length) return ['⚡ Deck équilibré — pas de synergies thématiques dominantes'];
+  const lines = [];
+  for (const grp of synergyGroups.slice(0, 5)) {
+    // Trouver les cartes les plus représentatives du groupe
+    const matching = deckCards.filter(({ name }) => {
+      const entry = db[name.toLowerCase()];
+      if (!entry) return false;
+      const text = ((entry.text || '') + ' ' + (entry.name || '')).toLowerCase();
+      return grp.kw.some(kw => text.includes(kw));
+    }).slice(0, 3).map(c => c.name);
+    const examples = matching.length >= 2
+      ? `<span class='syn-combo'>${matching.slice(0,2).join(' + ')}</span>`
+      : `<span class='syn-combo'>${grp.label}</span>`;
+    lines.push(`⚡ ${examples} : synergie ${grp.label} — ${matching.length} cartes liées dans le deck`);
+  }
+  return lines;
+}
+
+// Score d'une carte selon l'archétype choisi
+function scoreCard(card, arcProfile, synergyTags) {
+  const text = ((card.text || '') + ' ' + (card.name || '')).toLowerCase();
+  const race = (card.race || '').toLowerCase();
+  const cost = card.cost ?? 0;
+
+  let score = 1.0;
+
+  // Score courbe de mana
+  const curve = arcProfile.costCurve;
+  const costIdx = Math.min(cost, curve.length - 1);
+  score += curve[costIdx] * 0.3;
+
+  // Filtre coût max
+  if (cost > arcProfile.maxCost) score *= 0.1;
+
+  // Bonus mots-clés archétype
+  for (const kw of arcProfile.keywords) {
+    if (text.includes(kw)) { score += 0.4; break; }
+  }
+  for (const kw of arcProfile.bonusKeywords) {
+    if (text.includes(kw)) { score += 0.6; break; }
+  }
+
+  // Favorise les cartes basses si Aggro/Zoo/Token
+  if (arcProfile.lowCostBonus && cost <= 3) score += 0.5;
+
+  // Bonus synergie détectée
+  for (const grp of synergyTags) {
+    for (const kw of grp.kw) {
+      if (text.includes(kw) || race.includes(kw.split(' ')[0])) { score += 0.8; break; }
+    }
+  }
+
+  // Bonus rareté (on veut un mélange naturel)
+  if (card.rarity === 'LEGENDARY') score *= 0.6; // pas trop de légendaires
+  if (card.rarity === 'EPIC') score *= 0.85;
+  if (card.rarity === 'COMMON' || card.rarity === 'FREE') score *= 1.1;
+
+  // Randomisation (c'est le coeur de l'infini !)
+  score *= (0.5 + Math.random() * 1.5);
+
+  return score;
 }
 
 // ─── GENERATE ───────────────────────────────────────────────────────────────
@@ -7075,51 +7316,134 @@ async function generateDeck() {
   const dn = document.getElementById('dn').value.trim() || `${selectedArc} ${cls}`;
   const fmtName = fmt === 2 ? 'Standard' : 'Wild';
   const isStd = fmt === 2;
+  const arcKey = selectedArc;
 
   document.getElementById('gen-btn').disabled = true;
   document.getElementById('gen-btn').textContent = '⏳ Chargement des cartes...';
   document.getElementById('out-panel').style.display = 'block';
 
-  // Charger la base complète en premier — tout le reste en dépend
+  // 1. Charger la vraie base HearthstoneJSON
   await loadHsJsonDb();
+  const db = hsJsonDb;
 
-  const data = (DECKS[selectedArc] || {})[cls] || getFallbackDeck(cls);
-  let parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
+  const arcProfile = ARC_PROFILES[arcKey] || ARC_PROFILES['Midrange'];
+  const clsLower = cls.toLowerCase();
+  const clsAlt = cls === 'DEMONHUNTER' ? 'demon hunter' : cls === 'DEATHKNIGHT' ? 'death knight' : clsLower;
 
-  // Étape 1 : résoudre TOUS les noms contre l'API pour détecter les cartes inexistantes
-  await Promise.all(parsed.map(c => lookupCard(c.name)));
+  document.getElementById('gen-btn').textContent = '⚡ Génération du deck...';
 
-  // Étape 2 : retirer les cartes qui n'existent pas dans l'API (introuvables = nom invalide)
-  parsed = parsed.filter(c => cardCache[c.name] !== null && cardCache[c.name] !== undefined);
-
-  // Étape 3 : filtrer par format Standard si nécessaire
-  if (isStd) {
-    parsed = parsed.filter(c => {
-      const info = cardCache[c.name];
-      if (!info) return false;
-      return !info.cardSet || STANDARD_SETS_GLOBAL.has(info.cardSet);
-    });
-  }
-
-  // Étape 4 : filtrer par collection si mode "Ma collection"
-  if (cardSource === 'my') {
-    parsed = parsed.filter(c => MY_COLLECTION.has(c.name));
-  }
-
-  // Étape 5 : corriger les quantités (légendaires = max 1, autres = max 2)
-  parsed = parsed.map(c => {
-    const info = cardCache[c.name];
-    const maxCnt = (info && info.rarity === 'LEGENDARY') ? 1 : 2;
-    return { name: c.name, cnt: Math.min(c.cnt, maxCnt) };
+  // 2. Construire le pool de cartes disponibles (classe + neutres, format, source)
+  const pool = Object.values(db).filter(c => {
+    if (!c.name) return false;
+    if (c.type === 'HERO') return false;
+    if (isStd && c.set && !STANDARD_SETS_GLOBAL.has(c.set)) return false;
+    if (cardSource === 'my' && !MY_COLLECTION.has(c.name)) return false;
+    const cardCls = (c.cardClass || '').toLowerCase();
+    const isNeutral = !c.cardClass || cardCls === 'neutral';
+    const isClassCard = cardCls === clsLower || cardCls === clsAlt ||
+      (cls === 'DEMONHUNTER' && (cardCls === 'demonhunter' || cardCls === 'demon hunter')) ||
+      (cls === 'DEATHKNIGHT' && (cardCls === 'deathknight' || cardCls === 'death knight'));
+    return isClassCard || isNeutral;
   });
 
-  // Étape 6 : compléter jusqu'à exactement 30 cartes depuis la base HearthstoneJSON
-  const currentTotal = parsed.reduce((s, c) => s + c.cnt, 0);
-  if (currentTotal < 30) {
+  if (pool.length === 0) {
+    // Fallback sur l'ancienne méthode si pas de cartes
+    const data = (DECKS[arcKey] || {})[cls] || getFallbackDeck(cls);
+    let parsed = data.cards.map(c => ({ name: c.n, cnt: c.c }));
     parsed = await fillDeckToThirty(parsed, cls, fmt, cardSource);
+    await resolveAndDisplay(parsed, data.synergies, cls, fmt, dn, `30 cartes · ${arcKey} ${cls} ${fmtName}`);
+    isRunning = false;
+    document.getElementById('gen-btn').disabled = false;
+    document.getElementById('gen-btn').textContent = '⚡ Générer le Deck (30 cartes)';
+    return;
   }
 
-  await resolveAndDisplay(parsed, data.synergies, cls, fmt, dn, `30 cartes · ${selectedArc} ${cls} ${fmtName}`);
+  // 3. Passe 1 — identifier les synergies dominantes avec un premier échantillon aléatoire
+  //    On prend 20 cartes aléatoires pour "prendre le pouls" du pool
+  const sample = pool.sort(() => Math.random() - 0.5).slice(0, 40);
+  const dominantSynergies = detectSynergyGroups(
+    sample.map(c => ({ name: c.name })),
+    db
+  );
+
+  // 4. Scorer toutes les cartes du pool
+  const scored = pool.map(c => ({
+    card: c,
+    score: scoreCard(c, arcProfile, dominantSynergies)
+  }));
+  scored.sort((a, b) => b.score - a.score);
+
+  // 5. Sélection avec probabilité pondérée — garantit résultat différent à chaque fois
+  const selected = [];
+  const usedNames = new Set();
+  let totalCards = 0;
+  const MAX_ATTEMPTS = scored.length;
+
+  // Prioriser le top 30% du pool (= les mieux scorées) mais avec une fenêtre aléatoire
+  const topPool = scored.slice(0, Math.max(60, Math.floor(scored.length * 0.4)));
+  const restPool = scored.slice(topPool.length);
+
+  // Combiner top + 15% du reste pour diversité
+  const candidatePool = [
+    ...topPool,
+    ...restPool.sort(() => Math.random() - 0.5).slice(0, Math.floor(restPool.length * 0.15))
+  ];
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS && totalCards < 30; attempt++) {
+    if (candidatePool.length === 0) break;
+    // Choisir dans le top de manière pondérée
+    const idx = Math.floor(Math.pow(Math.random(), 0.7) * Math.min(candidatePool.length, 80));
+    const pick = candidatePool[idx];
+    if (!pick) continue;
+    candidatePool.splice(idx, 1); // retirer pour éviter duplicate
+
+    const c = pick.card;
+    if (usedNames.has(c.name.toLowerCase())) continue;
+
+    const isLeg = c.rarity === 'LEGENDARY';
+    const maxCnt = isLeg ? 1 : 2;
+    const space = 30 - totalCards;
+    const cnt = Math.min(maxCnt, space);
+    if (cnt <= 0) break;
+
+    selected.push({ name: c.name, cnt });
+    usedNames.add(c.name.toLowerCase());
+    totalCards += cnt;
+  }
+
+  // 6. Remplir si nécessaire (cas bord — pool épuisé)
+  let parsed = selected;
+  if (totalCards < 30) {
+    parsed = await fillDeckToThirty(selected, cls, fmt, cardSource);
+  }
+
+  // ── PRÉ-REMPLIR le cardCache depuis la vraie DB pour garantir les DBF IDs ──
+  // Sans ça, lookupCard peut échouer sur les apostrophes typographiques, etc.
+  for (const { name } of parsed) {
+    if (cardCache[name] !== undefined) continue;
+    const entry = db[name.toLowerCase()];
+    if (entry) {
+      cardCache[name] = {
+        dbfId: entry.dbfId,
+        cost: entry.cost ?? 0,
+        blizzName: entry.name,
+        atk: entry.attack,
+        hp: entry.health,
+        type: entry.type,
+        rarity: entry.rarity,
+        cardSet: entry.set
+      };
+    }
+  }
+
+  // 7. Détecter les synergies RÉELLES sur le deck final généré
+  const finalSynergyGroups = detectSynergyGroups(parsed, db);
+  const synergies = buildSynergyStrings(finalSynergyGroups, parsed, db);
+
+  // Ajouter info archétype
+  synergies.unshift(`🎯 <span class='syn-combo'>${arcKey}</span> : ${arcProfile.label}`);
+
+  await resolveAndDisplay(parsed, synergies, cls, fmt, dn, `30 cartes · ${arcKey} ${cls} ${fmtName}`);
 
   isRunning = false;
   document.getElementById('gen-btn').disabled = false;
