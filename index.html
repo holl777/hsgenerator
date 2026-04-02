@@ -169,6 +169,53 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
 .import-box.active{display:block}
 .import-h{font-family:'Cinzel',serif;font-size:.68em;color:var(--grn);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
 
+/* CUSTOM CARD BUILDER */
+.mode-tabs{display:flex;gap:8px;margin-bottom:16px}
+.mode-tab{flex:1;padding:10px;border-radius:5px;border:1px solid var(--brd);background:var(--d3);
+  color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.7em;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;text-align:center;transition:all .2s}
+.mode-tab:hover{border-color:var(--gold);color:var(--gold-l)}
+.mode-tab.active{background:linear-gradient(135deg,#3a2000,#6a4200);border-color:var(--gold);color:var(--gold-l)}
+.mode-section{display:none}.mode-section.active{display:block}
+
+.card-search-wrap{position:relative;margin-bottom:10px}
+.card-search-inp{width:100%;background:var(--dark);border:1px solid var(--brd);color:var(--txt);
+  padding:8px 12px;border-radius:4px;font-family:'Crimson Pro',serif;font-size:.9em;outline:none;transition:border-color .2s}
+.card-search-inp:focus{border-color:var(--pur);box-shadow:0 0 0 2px rgba(154,106,223,.15)}
+.autocomplete-box{position:absolute;top:100%;left:0;right:0;background:var(--d3);border:1px solid var(--brd-l);
+  border-radius:0 0 4px 4px;z-index:100;max-height:220px;overflow-y:auto;display:none}
+.autocomplete-box.open{display:block}
+.ac-item{padding:8px 12px;cursor:pointer;font-size:.85em;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--brd);transition:background .1s}
+.ac-item:hover{background:rgba(154,106,223,.12)}
+.ac-item:last-child{border-bottom:none}
+.ac-cost{background:linear-gradient(135deg,#1a3a7a,#0a1a4a);color:#90c0ff;border-radius:50%;
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  font-size:.72em;font-weight:bold;flex-shrink:0;border:1px solid #2a4a8a}
+.ac-name{flex:1;font-weight:600}
+.ac-stats{font-size:.78em;color:var(--dim)}
+
+.seed-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px;min-height:50px}
+.seed-card{background:var(--d3);border:1px solid var(--brd-l);border-radius:5px;
+  padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:.82em;position:relative}
+.seed-card .sc-cost{background:linear-gradient(135deg,#2a3a8a,#0a1a5a);color:#90c0ff;
+  border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  font-size:.72em;font-weight:bold;flex-shrink:0;border:1px solid #3a5aaa}
+.seed-card .sc-info{flex:1;line-height:1.4}
+.seed-card .sc-name{font-weight:600;color:var(--gold-l)}
+.seed-card .sc-stats{font-size:.78em;color:var(--dim)}
+.seed-card .sc-del{position:absolute;top:4px;right:6px;cursor:pointer;color:var(--red);
+  font-size:.9em;opacity:.6;transition:opacity .15s;background:none;border:none;padding:2px 4px}
+.seed-card .sc-del:hover{opacity:1}
+.seed-placeholder{grid-column:1/-1;text-align:center;color:var(--dim);font-style:italic;
+  font-size:.84em;padding:14px;border:1px dashed var(--brd);border-radius:4px}
+
+.seed-synergy-box{background:var(--d3);border:1px solid var(--brd);border-left:3px solid var(--pur);
+  border-radius:4px;padding:12px;margin-bottom:12px;font-size:.84em;display:none}
+.seed-synergy-box.active{display:block}
+.ssyn-h{font-family:'Cinzel',serif;font-size:.68em;color:var(--pur);letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:8px}
+
 @media(max-width:640px){.arc-grid{grid-template-columns:repeat(3,1fr)}.cf-row{flex-direction:column}}
 </style>
 </head>
@@ -216,6 +263,14 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
     <div class="ph"><span>⚡ Construire un Deck</span></div>
     <div class="pb">
 
+      <!-- MODE TABS -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('archetype',this)">🃏 Par Archétype</button>
+        <button class="mode-tab" onclick="switchMode('custom',this)">✨ 5 Cartes Personnalisées</button>
+      </div>
+
+      <!-- MODE ARCHÉTYPE -->
+      <div class="mode-section active" id="mode-archetype">
       <div class="arc-section-title">Archétypes principaux</div>
       <div class="arc-grid">
         <button class="arc-btn arc-aggro" onclick="selectArc(this,'Aggro')">
@@ -254,7 +309,7 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
         </button>
       </div>
 
-      <!-- SYNERGIES DISPLAY (updated when archetype selected) -->
+      <!-- SYNERGIES DISPLAY -->
       <div class="syn-box" id="syn-box">
         <div class="syn-h">⚡ Synergies &amp; Combos de cet archétype</div>
         <div id="syn-content"></div>
@@ -293,6 +348,62 @@ select:focus,input[type=text]:focus{border-color:var(--gold)}
       <button class="btn-gen" id="gen-btn" onclick="generateDeck()" disabled>
         ⚡ Générer le Deck (30 cartes)
       </button>
+      </div><!-- /mode-archetype -->
+
+      <!-- MODE CUSTOM 5 CARTES -->
+      <div class="mode-section" id="mode-custom">
+        <div class="arc-section-title">Cherchez jusqu'à 5 cartes de base</div>
+
+        <div class="card-search-wrap">
+          <input type="text" class="card-search-inp" id="card-search-inp"
+            placeholder="Tapez un nom de carte (ex: Ragnaros, Frostbolt...)"
+            oninput="onSearchInput(this.value)" autocomplete="off">
+          <div class="autocomplete-box" id="ac-box"></div>
+        </div>
+
+        <div class="seed-cards" id="seed-cards">
+          <div class="seed-placeholder">Aucune carte sélectionnée — cherchez ci-dessus pour ajouter jusqu'à 5 cartes</div>
+        </div>
+
+        <div class="seed-synergy-box" id="seed-syn-box">
+          <div class="ssyn-h">🔮 Synergies &amp; Combos détectés</div>
+          <div id="seed-syn-content"></div>
+        </div>
+
+        <div class="cf-row" style="margin-top:4px">
+          <div class="fld">
+            <label>Classe</label>
+            <select id="hc2">
+              <option value="DRUID">Druid</option>
+              <option value="HUNTER">Hunter</option>
+              <option value="MAGE">Mage</option>
+              <option value="PALADIN">Paladin</option>
+              <option value="PRIEST">Priest</option>
+              <option value="ROGUE">Rogue</option>
+              <option value="SHAMAN">Shaman</option>
+              <option value="WARLOCK">Warlock</option>
+              <option value="WARRIOR">Warrior</option>
+              <option value="DEMONHUNTER">Demon Hunter</option>
+              <option value="DEATHKNIGHT">Death Knight</option>
+            </select>
+          </div>
+          <div class="fld">
+            <label>Format</label>
+            <select id="hf2">
+              <option value="2">Standard</option>
+              <option value="1">Wild</option>
+            </select>
+          </div>
+          <div class="fld">
+            <label>Nom du Deck</label>
+            <input type="text" id="dn2" placeholder="Mon Deck Custom" style="width:160px">
+          </div>
+        </div>
+
+        <button class="btn-gen" id="gen-btn2" onclick="generateCustomDeck()" disabled>
+          ✨ Compléter à 30 cartes avec synergies
+        </button>
+      </div><!-- /mode-custom -->
 
       <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
       <div class="prog-txt" id="prog-txt"></div>
@@ -2051,6 +2162,20 @@ function getFallbackDeck(cls) {
   return { cards: generics, synergies: ["Deck générique de secours — essayez une autre classe/archétype"] };
 }
 
+// ─── CARD SEARCH (autocomplete for custom mode) ──────────────────────────────
+async function searchCards(query) {
+  if (!accessToken || query.length < 2) return [];
+  try {
+    const url = 'https://us.api.blizzard.com/hearthstone/cards'
+      + '?locale=en_US&textFilter=' + encodeURIComponent(query)
+      + '&collectible=1&pageSize=8&access_token=' + accessToken;
+    const resp = await fetch(url);
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.cards || []).slice(0, 8);
+  } catch { return []; }
+}
+
 // ─── ENCODER ────────────────────────────────────────────────────────────────
 function writeVI(n, a) {
   n = n >>> 0;
@@ -2076,7 +2201,281 @@ const HEROES = {
   DEMONHUNTER:56550, DEATHKNIGHT:78065
 };
 
-// ─── ARCHETYPE SELECT ───────────────────────────────────────────────────────
+// ─── MODE SWITCHING ──────────────────────────────────────────────────────────
+function switchMode(mode, tab) {
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mode-section').forEach(s => s.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('mode-' + mode).classList.add('active');
+  currentMode = mode;
+}
+
+// ─── CUSTOM CARD PICKER ──────────────────────────────────────────────────────
+const seedCards = []; // [{name, cost, atk, hp, blizzName, dbfId, type}]
+let searchTimer = null;
+
+function onSearchInput(val) {
+  clearTimeout(searchTimer);
+  const box = document.getElementById('ac-box');
+  if (val.length < 2) { box.classList.remove('open'); return; }
+  searchTimer = setTimeout(async () => {
+    const results = await searchCards(val);
+    if (!results.length) { box.classList.remove('open'); return; }
+    box.innerHTML = results.map(c => {
+      const atk = c.attack !== undefined ? c.attack : '-';
+      const hp = c.health !== undefined ? c.health : '-';
+      const type = c.cardTypeId === 4 ? 'Sort' : c.cardTypeId === 3 ? 'Arme' : `${atk}/${hp}`;
+      return `<div class="ac-item" onclick="addSeedCard(${JSON.stringify({
+        name: c.name, cost: c.manaCost ?? 0, atk: c.attack, hp: c.health,
+        blizzName: c.name, dbfId: c.id, type: c.cardTypeId
+      }).replace(/"/g,'&quot;')})">
+        <div class="ac-cost">${c.manaCost ?? 0}</div>
+        <div class="ac-name">${c.name}</div>
+        <div class="ac-stats">${type}</div>
+      </div>`;
+    }).join('');
+    box.classList.add('open');
+  }, 300);
+}
+
+function addSeedCard(card) {
+  if (seedCards.length >= 5) return;
+  if (seedCards.find(c => c.name === card.name)) return; // no dupe seeds
+  seedCards.push(card);
+  // also cache it
+  cardCache[card.name] = { dbfId: card.dbfId, cost: card.cost, blizzName: card.blizzName, atk: card.atk, hp: card.hp, type: card.type };
+  document.getElementById('card-search-inp').value = '';
+  document.getElementById('ac-box').classList.remove('open');
+  renderSeedCards();
+  detectSeedSynergies();
+  updateCustomGenBtn();
+}
+
+function removeSeedCard(name) {
+  const idx = seedCards.findIndex(c => c.name === name);
+  if (idx >= 0) seedCards.splice(idx, 1);
+  renderSeedCards();
+  detectSeedSynergies();
+  updateCustomGenBtn();
+}
+
+function renderSeedCards() {
+  const grid = document.getElementById('seed-cards');
+  if (!seedCards.length) {
+    grid.innerHTML = '<div class="seed-placeholder">Aucune carte sélectionnée — cherchez ci-dessus pour ajouter jusqu\'à 5 cartes</div>';
+    return;
+  }
+  grid.innerHTML = seedCards.map(c => {
+    const typeLabel = c.type === 4 ? '📜 Sort' : c.type === 3 ? '⚔️ Arme' : `⚔${c.atk !== undefined ? c.atk : '?'} / ❤${c.hp !== undefined ? c.hp : '?'}`;
+    const safeName = c.name.replace(/'/g, "\\'");
+    return `<div class="seed-card">
+      <div class="sc-cost">${c.cost}</div>
+      <div class="sc-info">
+        <div class="sc-name">${c.blizzName || c.name}</div>
+        <div class="sc-stats">${typeLabel}</div>
+      </div>
+      <button class="sc-del" onclick="removeSeedCard('${safeName}')">✕</button>
+    </div>`;
+  }).join('');
+  if (seedCards.length < 5) {
+    grid.innerHTML += `<div class="seed-placeholder" style="border-style:dashed;padding:8px;font-size:.78em">${5 - seedCards.length} carte(s) restante(s)</div>`;
+  }
+}
+
+// Synergy detection based on card names and common HS patterns
+function detectSeedSynergies() {
+  const box = document.getElementById('seed-syn-box');
+  const content = document.getElementById('seed-syn-content');
+  if (seedCards.length < 2) { box.classList.remove('active'); return; }
+
+  const names = seedCards.map(c => c.name.toLowerCase());
+  const synergies = [];
+
+  // keyword synergy detection
+  const checks = [
+    { keys: ['ragnaros','alexstrasza','ysera','deathwing'], label: 'Legendaires massifs', syn: 'Ces légendes sont des win conditions — construire autour de la survie pour les atteindre' },
+    { keys: ['divine spirit','inner fire'], label: 'Divine Spirit + Inner Fire', syn: '<span class="syn-combo">Divine Spirit + Inner Fire</span> : OTK classique — doubler la Santé puis convertir en Attaque' },
+    { keys: ['antonidas','sorcerer'], label: 'Antonidas + Sorcerer', syn: '<span class="syn-combo">Antonidas + Sorcerer\'s Apprentice</span> : sorts à 0 mana = Fireballs infinies' },
+    { keys: ['grommash','inner rage'], label: 'Grommash OTK', syn: '<span class="syn-combo">Grommash + Inner Rage</span> : 12 dégâts de face = OTK pour 8+0 mana' },
+    { keys: ['malygos'], label: 'Malygos combo', syn: '<span class="syn-combo">Malygos</span> : tous vos sorts gagnent +5 dégâts — prévoir sorts de dégâts pour le combo' },
+    { keys: ['knife juggler'], label: 'Knife Juggler + tokens', syn: '<span class="syn-combo">Knife Juggler</span> : lancer des missiles par token invoqué — besoin de générateurs de serviteurs' },
+    { keys: ['edwin vancleef','preparation'], label: 'Edwin + Preparation', syn: '<span class="syn-combo">Edwin VanCleef + Preparation</span> : géant 6/6+ pour 3 mana combinés tour 2-3' },
+    { keys: ['shudderwock','grumble'], label: 'Shudderwock OTK', syn: '<span class="syn-combo">Shudderwock + Grumble</span> : boucle de battlecries potentiellement infinie' },
+    { keys: ['violet teacher'], label: 'Violet Teacher + sorts', syn: '<span class="syn-combo">Violet Teacher</span> : génère un 1/1 à chaque sort — idéal avec sorts peu coûteux' },
+    { keys: ['gadgetzan auctioneer'], label: 'Gadgetzan pioche', syn: '<span class="syn-combo">Gadgetzan Auctioneer</span> : pioche une carte par sort — besoin de sorts à 0-1 mana' },
+    { keys: ['patches the pirate'], label: 'Patches rush', syn: '<span class="syn-combo">Patches the Pirate</span> : invoqué gratuitement quand un pirate est joué — charge immédiate' },
+    { keys: ['leeroy jenkins'], label: 'Leeroy burst', syn: '<span class="syn-combo">Leeroy Jenkins</span> : 6 dégâts Charge — pairer avec Cold Blood / Shadowstep pour OTK' },
+    { keys: ['spreading plague','malfurion'], label: 'Druid control wall', syn: '<span class="syn-combo">Spreading Plague + Malfurion</span> : mur de scarabées + empoisonnement = control total' },
+    { keys: ['tirion fordring'], label: 'Tirion finisher', syn: '<span class="syn-combo">Tirion Fordring</span> : 6/6 Prov Divine Shield + arme 5/3 à la mort — win condition solide' },
+    { keys: ['frostbolt','fireball'], label: 'Mage burst', syn: '<span class="syn-combo">Frostbolt + Fireball</span> : 7 dégâts sur 2 tours pour 6 mana — combo Mage classique' },
+    { keys: ['wild growth','innervate'], label: 'Druid ramp', syn: '<span class="syn-combo">Wild Growth + Innervate</span> : mana explosif dès le tour 1-3' },
+    { keys: ['savannah highmane'], label: 'Highmane value', syn: '<span class="syn-combo">Savannah Highmane</span> : 6/5 + 2x 2/2 à la mort — pairer avec Rexxar ou Nine Lives' },
+    { keys: ['voidlord','guldan'], label: 'Warlock demon engine', syn: '<span class="syn-combo">Voidlord + Gul\'dan</span> : ressuscite les Voidlords indéfiniment' },
+  ];
+
+  for (const check of checks) {
+    const matched = check.keys.filter(k => names.some(n => n.includes(k)));
+    if (matched.length >= Math.min(2, check.keys.length)) {
+      synergies.push('⚡ ' + check.syn);
+    } else if (matched.length === 1 && check.keys.length === 1) {
+      synergies.push('⚡ ' + check.syn);
+    }
+  }
+
+  // Cost-based suggestions
+  const avgCost = seedCards.reduce((s, c) => s + (c.cost || 0), 0) / seedCards.length;
+  if (avgCost <= 2.5 && seedCards.length >= 2) synergies.push('⚡ Courbe de mana très basse → deck <span class="syn-combo">Aggro/Zoo</span> recommandé — ajouter des buffs et du face damage');
+  else if (avgCost >= 5 && seedCards.length >= 2) synergies.push('⚡ Cartes coûteuses → besoin de <span class="syn-combo">Ramp/Control</span> — ajouter des générateurs de mana et de la survie');
+
+  if (!synergies.length) synergies.push('⚡ Sélectionnez plus de cartes pour détecter les synergies automatiquement');
+
+  content.innerHTML = synergies.join('<br>');
+  box.classList.add('active');
+}
+
+function updateCustomGenBtn() {
+  document.getElementById('gen-btn2').disabled = !(accessToken && seedCards.length > 0);
+}
+
+// ─── GENERATE CUSTOM DECK ────────────────────────────────────────────────────
+async function generateCustomDeck() {
+  if (isRunning || !accessToken || !seedCards.length) return;
+  isRunning = true;
+
+  const cls = document.getElementById('hc2').value;
+  const fmt = parseInt(document.getElementById('hf2').value);
+  const dn = document.getElementById('dn2').value.trim() || `Custom ${cls}`;
+  const fmtName = fmt === 2 ? 'Standard' : 'Wild';
+
+  // Determine best archetype from seed cards
+  const avgCost = seedCards.reduce((s, c) => s + (c.cost || 0), 0) / seedCards.length;
+  let bestArc = avgCost <= 2.5 ? 'Aggro' : avgCost >= 5 ? 'Control' : 'Midrange';
+
+  // Try to find a matching deck template
+  const templateData = (DECKS[bestArc] || {})[cls] || (DECKS['Midrange'] || {})[cls] || getFallbackDeck(cls);
+  const templateCards = templateData.cards.map(c => ({ name: c.n, cnt: c.c }));
+
+  // Merge: seed cards (as 2x each) + fill from template (no duplicates)
+  const seedNames = new Set(seedCards.map(c => c.name));
+  const merged = seedCards.map(c => ({ name: c.name, cnt: 2 }));
+  let count = merged.reduce((s, c) => s + c.cnt, 0);
+
+  for (const tc of templateCards) {
+    if (count >= 30) break;
+    if (seedNames.has(tc.name)) continue;
+    const space = 30 - count;
+    const cnt = Math.min(tc.cnt, space);
+    merged.push({ name: tc.name, cnt });
+    count += cnt;
+  }
+
+  document.getElementById('gen-btn2').disabled = true;
+  document.getElementById('gen-btn2').textContent = '⏳ Chargement des cartes...';
+  document.getElementById('out-panel').style.display = 'block';
+
+  await resolveAndDisplay(merged, templateData.synergies, cls, fmt, dn, `Custom ${bestArc} ${cls} ${fmtName}`);
+
+  isRunning = false;
+  document.getElementById('gen-btn2').disabled = false;
+  document.getElementById('gen-btn2').textContent = '✨ Compléter à 30 cartes avec synergies';
+}
+
+// ─── SHARED RESOLVE & DISPLAY ───────────────────────────────────────────────
+async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
+  const unique = [...new Set(parsed.map(p => p.name))];
+  const total = unique.length;
+  const fmtName = fmt === 2 ? 'Standard' : 'Wild';
+
+  const pw = document.getElementById('prog-wrap');
+  const pb = document.getElementById('prog-bar');
+  const pt = document.getElementById('prog-txt');
+  pw.style.display = 'block';
+  pt.style.display = 'block';
+  pb.style.width = '0%';
+
+  const grid = document.getElementById('cg');
+  grid.innerHTML = '';
+  const elMap = {};
+  for (const {name, cnt} of parsed) {
+    const el = document.createElement('div');
+    el.className = 'dc pend';
+    el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cnt}</span><span style="font-size:.8em">⏳</span>`;
+    grid.appendChild(el);
+    elMap[name] = el;
+  }
+
+  const BATCH = 3;
+  let done = 0;
+  for (let i = 0; i < unique.length; i += BATCH) {
+    const batch = unique.slice(i, i + BATCH);
+    await Promise.all(batch.map(n => lookupCard(n)));
+    done += batch.length;
+    pb.style.width = Math.round(done / total * 100) + '%';
+    pt.textContent = `Résolution Blizzard : ${done}/${total} cartes...`;
+    for (const name of batch) {
+      const info = cardCache[name];
+      const cp = parsed.find(p => p.name === name);
+      const el = elMap[name];
+      if (!el) continue;
+      if (info) {
+        el.className = 'dc ok';
+        el.innerHTML = `<div class="mc">${info.cost}</div><div class="cn" title="${info.blizzName||name}">${info.blizzName||name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:#4aad7a">✓</span>`;
+      } else {
+        el.className = 'dc bad';
+        el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:#c94444">✗</span>`;
+      }
+    }
+    if (i + BATCH < unique.length) await sleep(150);
+  }
+
+  pw.style.display = 'none';
+  pt.style.display = 'none';
+
+  const children = [...grid.children].sort((a, b) => {
+    const ma = parseInt(a.querySelector('.mc')?.textContent) || 99;
+    const mb = parseInt(b.querySelector('.mc')?.textContent) || 99;
+    return ma - mb;
+  });
+  children.forEach(c => grid.appendChild(c));
+
+  const res = [], miss = [];
+  for (const {name, cnt} of parsed) {
+    const info = cardCache[name];
+    if (info) res.push({ name, cnt, d: info.dbfId, c: info.cost });
+    else miss.push(name);
+  }
+
+  const nFound = res.length, nTotal = parsed.length;
+  document.getElementById('sta').style.display = 'flex';
+  document.getElementById('sf').textContent = nFound;
+  document.getElementById('sc').textContent = nTotal;
+  if (miss.length) {
+    document.getElementById('sbx').style.display = 'flex';
+    document.getElementById('sm').textContent = miss.length;
+    document.getElementById('msdiv').style.display = 'block';
+    document.getElementById('mlst').innerHTML = miss.map(m => `• <b>${m}</b>`).join('<br>');
+  } else {
+    document.getElementById('sbx').style.display = 'none';
+    document.getElementById('msdiv').style.display = 'none';
+  }
+  document.getElementById('cl').textContent = label || `${nTotal} cartes · ${nFound} résolues`;
+
+  const dedup = {};
+  for (const c of res) {
+    if (dedup[c.d]) dedup[c.d].n = Math.min(2, dedup[c.d].n + c.cnt);
+    else dedup[c.d] = { d: c.d, n: c.cnt };
+  }
+  const code = buildCode(HEROES[cls] || 274, fmt, Object.values(dedup));
+  const cbox = document.getElementById('cbox');
+  cbox.className = 'code-wrap';
+  cbox.innerHTML = `<span style="color:var(--dim)">### ${dn}<br># Class: ${cls} Format: ${fmtName}<br>#</span><br><span id="tc">${code}</span>`;
+  document.getElementById('cpb').disabled = false;
+  document.getElementById('import-box').classList.add('active');
+  document.getElementById('sb2').textContent = `✅ Deck généré ! ${nFound}/${nTotal} cartes résolues via Blizzard`;
+}
+
+// ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
+let currentMode = 'archetype';
 function selectArc(btn, arc) {
   document.querySelectorAll('.arc-btn').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
@@ -2140,19 +2539,25 @@ function setTok(state, msg) {
 async function lookupCard(name) {
   if (cardCache[name] !== undefined) return cardCache[name];
   try {
-    const url = 'https://us.api.blizzard.com/hearthstone/cards'
-      + '?locale=en_US&name=' + encodeURIComponent(name)
-      + '&collectible=1&access_token=' + accessToken;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    if (!data.cards || data.cards.length === 0) { cardCache[name] = null; return null; }
     const nameLo = name.toLowerCase().trim();
-    const exact = data.cards.find(c => c.name.toLowerCase() === nameLo);
-    const card = exact || data.cards[0];
-    const result = { dbfId: card.id, cost: card.manaCost ?? 0, blizzName: card.name };
-    cardCache[name] = result;
-    return result;
+    // Try 1: exact name search, all sets, no gameMode filter
+    const url1 = 'https://us.api.blizzard.com/hearthstone/cards'
+      + '?locale=en_US&collectible=1&pageSize=20'
+      + '&access_token=' + accessToken
+      + '&textFilter=' + encodeURIComponent(name);
+    const r1 = await fetch(url1);
+    if (r1.ok) {
+      const d1 = await r1.json();
+      if (d1.cards && d1.cards.length > 0) {
+        const exact = d1.cards.find(c => c.name.toLowerCase() === nameLo);
+        const card = exact || d1.cards[0];
+        const result = { dbfId: card.id, cost: card.manaCost ?? 0, blizzName: card.name, atk: card.attack, hp: card.health, type: card.cardTypeId };
+        cardCache[name] = result;
+        return result;
+      }
+    }
+    cardCache[name] = null;
+    return null;
   } catch(e) {
     cardCache[name] = null;
     return null;
@@ -2176,100 +2581,7 @@ async function generateDeck() {
   document.getElementById('gen-btn').textContent = '⏳ Chargement des cartes...';
   document.getElementById('out-panel').style.display = 'block';
 
-  const unique = [...new Set(parsed.map(p => p.name))];
-  const total = unique.length;
-
-  const pw = document.getElementById('prog-wrap');
-  const pb = document.getElementById('prog-bar');
-  const pt = document.getElementById('prog-txt');
-  pw.style.display = 'block';
-  pt.style.display = 'block';
-  pb.style.width = '0%';
-
-  const grid = document.getElementById('cg');
-  grid.innerHTML = '';
-  const elMap = {};
-  for (const {name, cnt} of parsed) {
-    const el = document.createElement('div');
-    el.className = 'dc pend';
-    el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cnt}</span><span style="font-size:.8em">⏳</span>`;
-    grid.appendChild(el);
-    elMap[name] = el;
-  }
-
-  const BATCH = 3;
-  let done = 0;
-  for (let i = 0; i < unique.length; i += BATCH) {
-    const batch = unique.slice(i, i + BATCH);
-    await Promise.all(batch.map(n => lookupCard(n)));
-    done += batch.length;
-    pb.style.width = Math.round(done / total * 100) + '%';
-    pt.textContent = `Résolution Blizzard : ${done}/${total} cartes...`;
-    for (const name of batch) {
-      const info = cardCache[name];
-      const cp = parsed.find(p => p.name === name);
-      const el = elMap[name];
-      if (!el) continue;
-      if (info) {
-        el.className = 'dc ok';
-        el.innerHTML = `<div class="mc">${info.cost}</div><div class="cn" title="${info.blizzName||name}">${info.blizzName||name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:#4aad7a">✓</span>`;
-      } else {
-        el.className = 'dc bad';
-        el.innerHTML = `<div class="mc">?</div><div class="cn" title="${name}">${name}</div><span class="cq">x${cp?.cnt||1}</span><span style="font-size:.9em;color:#c94444">✗</span>`;
-      }
-    }
-    if (i + BATCH < unique.length) await sleep(150);
-  }
-
-  pw.style.display = 'none';
-  pt.style.display = 'none';
-
-  // Sort by mana
-  const children = [...grid.children].sort((a, b) => {
-    const ma = parseInt(a.querySelector('.mc')?.textContent) || 99;
-    const mb = parseInt(b.querySelector('.mc')?.textContent) || 99;
-    return ma - mb;
-  });
-  children.forEach(c => grid.appendChild(c));
-
-  // Build results
-  const res = [], miss = [];
-  for (const {name, cnt} of parsed) {
-    const info = cardCache[name];
-    if (info) res.push({ name, cnt, d: info.dbfId, c: info.cost });
-    else miss.push(name);
-  }
-
-  const nFound = res.length;
-  const nTotal = parsed.length;
-  document.getElementById('sta').style.display = 'flex';
-  document.getElementById('sf').textContent = nFound;
-  document.getElementById('sc').textContent = nTotal;
-  if (miss.length) {
-    document.getElementById('sbx').style.display = 'flex';
-    document.getElementById('sm').textContent = miss.length;
-    document.getElementById('msdiv').style.display = 'block';
-    document.getElementById('mlst').innerHTML = miss.map(m => `• <b>${m}</b>`).join('<br>');
-  } else {
-    document.getElementById('sbx').style.display = 'none';
-    document.getElementById('msdiv').style.display = 'none';
-  }
-  document.getElementById('cl').textContent = `${nTotal} cartes · ${nFound} résolues · ${selectedArc} ${cls} ${fmtName}`;
-
-  // Encode
-  const dedup = {};
-  for (const c of res) {
-    if (dedup[c.d]) dedup[c.d].n = Math.min(2, dedup[c.d].n + c.cnt);
-    else dedup[c.d] = { d: c.d, n: c.cnt };
-  }
-  const code = buildCode(HEROES[cls] || 274, fmt, Object.values(dedup));
-
-  const cbox = document.getElementById('cbox');
-  cbox.className = 'code-wrap';
-  cbox.innerHTML = `<span style="color:var(--dim)">### ${dn}<br># Class: ${cls} Format: ${fmtName}<br>#</span><br><span id="tc">${code}</span>`;
-  document.getElementById('cpb').disabled = false;
-  document.getElementById('import-box').classList.add('active');
-  document.getElementById('sb2').textContent = `✅ Deck ${selectedArc} ${cls} généré ! ${nFound}/${nTotal} cartes Blizzard résolues`;
+  await resolveAndDisplay(parsed, data.synergies, cls, fmt, dn, `${parsed.length} cartes · ${selectedArc} ${cls} ${fmtName}`);
 
   isRunning = false;
   document.getElementById('gen-btn').disabled = false;
@@ -2298,6 +2610,11 @@ function regenerate() {
 
 document.getElementById('csec').addEventListener('keydown', e => {
   if (e.key === 'Enter') getToken();
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.card-search-wrap')) {
+    document.getElementById('ac-box')?.classList.remove('open');
+  }
 });
 </script>
 </body>
