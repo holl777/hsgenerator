@@ -472,31 +472,12 @@ AAECAf0EBMXLAxDTywMQ1MsDENbLAxDYywMQ..." style="
 
       <div class="divider"></div>
 
-      <div style="font-family:'Cinzel',serif;font-size:.7em;color:var(--gold);letter-spacing:.1em;margin-bottom:6px">📋 Code du Deck Hearthstone</div>
-      <div class="code-wrap empty" id="cbox" style="display:none"></div>
-      <textarea id="raw-code-ta" readonly
-        onclick="this.select()"
-        placeholder="Le code apparaîtra ici — cliquez pour tout sélectionner, puis Ctrl+C"
-        style="width:100%;height:64px;background:var(--dark);border:1px solid var(--brd);color:#70d090;font-family:monospace;font-size:.8em;padding:10px 12px;border-radius:4px;resize:none;outline:none;line-height:1.6;cursor:text;transition:border-color .2s"
-        onfocus="this.select();this.style.borderColor='var(--grn)'"
-        onblur="this.style.borderColor='var(--brd)'"></textarea>
-      <div style="font-size:.7em;color:var(--dim);font-style:italic;margin-top:4px;text-align:center">
-        👆 Cliquez dans le champ ci-dessus pour tout sélectionner, puis <strong style="color:var(--txt)">Ctrl+C</strong>
-      </div>
-
-      <div class="import-box" id="import-box">
-        <div class="import-h">🎮 Comment importer dans Hearthstone</div>
-        <div style="color:var(--dim);line-height:1.9">
-          1. Cliquez dans le champ vert ci-dessus → tout est sélectionné<br>
-          2. Faites <strong style="color:var(--txt)">Ctrl+C</strong> (ou bouton Copier)<br>
-          3. Ouvrez <strong style="color:var(--txt)">Hearthstone → Collection → Nouveau Deck</strong><br>
-          4. Cliquez <strong style="color:var(--txt)">"Importer un Deck"</strong> puis <strong style="color:var(--txt)">Ctrl+V</strong><br>
-          5. Le deck apparaît automatiquement ✅
-        </div>
+      <div id="deck-code-section" style="display:none">
+        <div style="font-family:'Cinzel',serif;font-size:.72em;color:var(--gold);letter-spacing:.1em;margin-bottom:10px">🃏 LISTE DES CARTES — Ajoute-les dans ta collection Hearthstone</div>
+        <div id="card-list-display" style="columns:2;column-gap:12px;background:var(--d3);border:1px solid var(--brd);border-radius:6px;padding:14px;font-size:.88em;line-height:2.2"></div>
       </div>
 
       <div class="btn-row">
-        <button class="btn-sm green" id="cpb" onclick="doCopy()" disabled>📋 Copier le Code</button>
         <button class="btn-sm" onclick="regenerate()">🔄 Régénérer</button>
       </div>
     </div>
@@ -2618,28 +2599,20 @@ async function resolveAndDisplay(parsed, synergies, cls, fmt, dn, label) {
   }
   document.getElementById('cl').textContent = label || `${nTotal} cartes · ${nFound} résolues`;
 
-  // Construire le texte d'import au format HS (liste de cartes)
   const clsDisplay = { MAGE:'Mage', WARRIOR:'Warrior', HUNTER:'Hunter', PALADIN:'Paladin',
     ROGUE:'Rogue', PRIEST:'Priest', SHAMAN:'Shaman', WARLOCK:'Warlock', DRUID:'Druid',
     DEMONHUNTER:'Demon Hunter', DEATHKNIGHT:'Death Knight' };
   const resSorted = [...res].sort((a,b) => a.c - b.c || a.name.localeCompare(b.name));
-  const lines = [
-    `### ${dn}`,
-    `# Class: ${clsDisplay[cls] || cls}`,
-    `# Format: ${fmtName}`,
-    `#`,
-    ...resSorted.map(c => `${c.cnt}x (${c.c}) ${c.name}`)
-  ];
-  const deckText = lines.join('\n');
 
-  const cbox = document.getElementById('cbox');
-  cbox.style.display = 'none';
-  const rawTa = document.getElementById('raw-code-ta');
-  rawTa.value = deckText;
-  rawTa.style.height = Math.min(200, 20 + resSorted.length * 22) + 'px';
-  document.getElementById('cpb').disabled = false;
-  document.getElementById('import-box').classList.add('active');
-  document.getElementById('sb2').textContent = `✅ Deck généré ! ${nFound}/${nTotal} cartes résolues via HearthstoneJSON`;
+  const listEl = document.getElementById('card-list-display');
+  listEl.innerHTML = resSorted.map(c => {
+    const qty = c.cnt >= 2 ? `<span style="color:var(--gold);font-weight:700">x${c.cnt}</span>` : `<span style="color:var(--dim)">x1</span>`;
+    const cost = `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#1a3a7a,#0a1a4a);color:#90c0ff;font-size:.75em;font-weight:bold;border:1px solid #2a4a8a;flex-shrink:0">${c.c}</span>`;
+    return `<div style="display:flex;align-items:center;gap:7px;break-inside:avoid">${cost} <span style="flex:1;color:var(--txt)">${c.name}</span> ${qty}</div>`;
+  }).join('');
+
+  document.getElementById('deck-code-section').style.display = 'block';
+  document.getElementById('sb2').textContent = `✅ ${resSorted.length} cartes — ajoute-les dans ta collection Hearthstone`;
 }
 
 // ─── ARCHETYPE GENERATE ──────────────────────────────────────────────────────
