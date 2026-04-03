@@ -1,0 +1,2837 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+:root{--gold:#c9a84c;--gold-l:#f0d080;--gold-d:#8a5a00;--dark:#08060d;--d2:#0f0c18;--d3:#16122a;--brd:#2e2450;--brd-l:#4a3d80;--red:#c94444;--grn:#4aad7a;--blu:#5a7fc0;--pur:#9a6adf;--txt:#cfc8e8;--dim:#6a6090;}
+*{box-sizing:border-box;margin:0;padding:0;}
+#app{font-family:'Crimson Pro',Georgia,serif;background:#08060d;color:var(--txt);}
+.hdr{text-align:center;padding:16px 14px 12px;border-bottom:1px solid var(--brd);position:relative;}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--pur),var(--gold),transparent);}
+.hdr h1{font-family:'Cinzel',serif;font-size:1.45em;font-weight:900;color:var(--gold-l);letter-spacing:.07em;}
+.hdr h1 em{color:var(--pur);font-style:normal;}
+.hdr p{font-size:.75em;color:var(--dim);font-style:italic;margin-top:3px;}
+.main{max-width:960px;margin:0 auto;padding:14px 12px 40px;}
+.panel{background:var(--d2);border:1px solid var(--brd);border-radius:6px;overflow:hidden;margin-bottom:14px;}
+.ph{padding:10px 16px;border-bottom:1px solid var(--brd);font-family:'Cinzel',serif;font-size:.68em;font-weight:700;color:var(--gold);letter-spacing:.12em;display:flex;align-items:center;justify-content:space-between;}
+.pb{padding:14px 16px;}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;}
+.fld{display:flex;flex-direction:column;gap:3px;}
+.fld label{font-family:'Cinzel',serif;font-size:.6em;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;}
+select,input[type=text],textarea{background:var(--d3);border:1px solid var(--brd);color:var(--txt);padding:7px 10px;border-radius:4px;font-size:.86em;outline:none;font-family:inherit;transition:border-color .2s;}
+select:focus,input[type=text]:focus{border-color:var(--gold);}
+.mode-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.mode-tab{flex:1;padding:8px;border-radius:4px;border:1px solid var(--brd);background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.6em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;transition:all .18s;}
+.mode-tab:hover{border-color:var(--gold);color:var(--gold-l);}
+.mode-tab.active{background:linear-gradient(135deg,#3a2000,#6a4200);border-color:var(--gold);color:var(--gold-l);}
+.mode-sec{display:none;}.mode-sec.active{display:block;}
+.arc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:5px;margin-bottom:10px;}
+.arc-btn{padding:7px 3px 6px;border-radius:4px;border:1px solid var(--brd);background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.52em;font-weight:700;text-transform:uppercase;text-align:center;transition:all .15s;}
+.arc-btn:hover{transform:translateY(-1px);}
+.arc-btn.sel{color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(0,0,0,.4);}
+.arc-icon{font-size:1.4em;display:block;margin-bottom:2px;}
+.arc-sub{font-size:.82em;opacity:.6;font-family:'Crimson Pro',serif;font-style:italic;text-transform:none;letter-spacing:0;display:block;}
+.a-aggro{--c:#e05050}.a-mid{--c:#60b860}.a-ctrl{--c:#5090e0}.a-combo{--c:#c060e0}.a-tempo{--c:#e08030}.a-ramp{--c:#3abf9a}.a-zoo{--c:#d0a030}.a-otk{--c:#e040a0}.a-big{--c:#9060c0}.a-token{--c:#a0d050}
+.arc-btn:hover{border-color:var(--c,var(--brd-l));color:var(--c,var(--txt));}
+.arc-btn.sel{background:var(--c);border-color:var(--c);}
+.sec-title{font-family:'Cinzel',serif;font-size:.6em;color:var(--gold);letter-spacing:.1em;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--brd);}
+.src-toggle{display:flex;border-radius:6px;overflow:hidden;border:1px solid var(--brd);margin-bottom:10px;}
+.src-btn{flex:1;padding:9px 7px;border:none;background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.62em;font-weight:700;text-transform:uppercase;transition:all .2s;text-align:center;line-height:1.4;}
+.src-btn:hover:not(.active){background:rgba(255,255,255,.04);color:var(--txt);}
+.src-btn.active{background:linear-gradient(135deg,#3a2000,#7a5000);color:var(--gold-l);}
+.src-icon{font-size:1.2em;display:block;margin-bottom:2px;}
+.src-sub{font-size:.78em;opacity:.65;font-family:'Crimson Pro',serif;font-style:italic;text-transform:none;letter-spacing:0;}
+.fmt-toggle{display:flex;border-radius:6px;overflow:hidden;border:1px solid var(--brd);margin-bottom:10px;}
+.fmt-btn{flex:1;padding:10px;border:none;background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.72em;font-weight:700;text-transform:uppercase;transition:all .2s;text-align:center;}
+.fmt-btn.active.std{background:linear-gradient(135deg,#0a2050,#1a4090);color:#90c0ff;}
+.fmt-btn.active.wld{background:linear-gradient(135deg,#2a0060,#6a00c0);color:#c890ff;}
+.fmt-sub{font-size:.7em;opacity:.75;display:block;font-style:italic;text-transform:none;letter-spacing:0;margin-top:1px;}
+.syn-box{background:rgba(201,168,76,.05);border:1px solid var(--brd);border-left:3px solid var(--gold-d);border-radius:4px;padding:10px 12px;margin-bottom:10px;font-size:.8em;line-height:1.8;display:none;}
+.syn-box.on{display:block;}
+.syn-h{font-family:'Cinzel',serif;font-size:.62em;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.combo{color:var(--pur);font-weight:600;}
+.btn-gen{width:100%;padding:12px;background:linear-gradient(135deg,#3a2000,#6a4200,#3a2000);border:1px solid var(--gold);color:var(--gold-l);font-family:'Cinzel',serif;font-size:.78em;font-weight:700;letter-spacing:.12em;text-transform:uppercase;border-radius:5px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden;margin-top:6px;}
+.btn-gen::before{content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;background:rgba(255,255,255,.05);transform:skewX(-20deg);transition:left .4s;}
+.btn-gen:hover:not(:disabled)::before{left:120%;}
+.btn-gen:hover:not(:disabled){background:linear-gradient(135deg,#5a3400,#9a6800,#5a3400);box-shadow:0 0 18px rgba(201,168,76,.18);}
+.btn-gen:disabled{opacity:.3;cursor:not-allowed;}
+.coll-hint{background:rgba(74,173,122,.07);border:1px solid rgba(74,173,122,.25);border-radius:4px;padding:7px 10px;margin-bottom:8px;font-size:.76em;color:var(--grn);font-style:italic;display:none;}
+.deck-out{display:none;}.deck-out.on{display:block;}
+.deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:5px;max-height:300px;overflow-y:auto;margin:8px 0;}
+.dc{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:5px;border:1px solid rgba(74,173,122,.25);background:rgba(30,80,55,.12);font-size:.84em;}
+.dc.leg{border-color:rgba(201,168,76,.45);background:rgba(80,55,0,.18);}
+.mc{background:linear-gradient(135deg,#1a3a7a,#0a1a4a);color:#90c0ff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.7em;font-weight:bold;flex-shrink:0;border:1px solid #2a4a8a;font-family:'Cinzel',serif;}
+.mc.leg{background:linear-gradient(135deg,#5a3a00,#3a2000);color:var(--gold-l);border-color:#8a6a00;}
+.cn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cq{color:var(--gold);font-size:.8em;font-weight:700;flex-shrink:0;}
+.card-list-wrap{background:var(--d3);border:1px solid var(--brd);border-radius:6px;padding:14px;font-size:.86em;line-height:2.4;columns:2;column-gap:12px;margin-top:10px;}
+.code-wrap{position:relative;margin:10px 0;}
+.code-ta{width:100%;min-height:130px;max-height:200px;background:#060410;border:1px solid var(--brd);border-left:3px solid var(--grn);border-radius:4px;padding:10px 80px 10px 12px;font-family:monospace;font-size:.68em;color:#70d090;line-height:1.6;resize:none;outline:none;overflow-y:auto;word-break:break-all;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--d3);border:1px solid var(--brd);color:var(--dim);font-family:'Cinzel',serif;font-size:.6em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--grn);color:var(--grn);}
+.copy-btn.ok{border-color:var(--grn);color:var(--grn);background:rgba(74,173,122,.1);}
+.btn-row{display:flex;gap:6px;margin-top:8px;}
+.btn-sm{flex:1;padding:8px;border-radius:4px;border:1px solid var(--brd);background:var(--d3);color:var(--txt);font-family:'Cinzel',serif;font-size:.6em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold-l);}
+.btn-copy{border-color:rgba(74,173,122,.5);color:var(--grn);}
+.btn-copy:hover{background:rgba(74,173,122,.1);border-color:var(--grn);}
+.btn-copy.ok{border-color:var(--grn);color:var(--grn);background:rgba(74,173,122,.12);}
+.sbar{text-align:center;padding:6px;font-size:.72em;border-top:1px solid var(--brd);color:var(--grn);font-style:italic;}
+.stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.stat{background:var(--d3);border:1px solid var(--brd);border-radius:3px;padding:3px 10px;font-size:.76em;}
+.stat .n{font-weight:700;}
+.stat.leg .n{color:var(--gold-l);}
+.stat.ok .n{color:var(--grn);}
+.search-wrap{position:relative;margin-bottom:8px;}
+.search-inp{width:100%;background:#060410;border:1px solid var(--brd);color:var(--txt);padding:8px 12px;border-radius:4px;font-size:.88em;outline:none;font-family:inherit;}
+.search-inp:focus{border-color:var(--pur);}
+.ac-box{position:absolute;top:100%;left:0;right:0;background:var(--d3);border:1px solid var(--brd-l);border-radius:0 0 4px 4px;z-index:100;max-height:200px;overflow-y:auto;display:none;}
+.ac-box.open{display:block;}
+.ac-item{padding:7px 10px;cursor:pointer;font-size:.8em;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--brd);transition:background .1s;}
+.ac-item:hover,.ac-item.hi{background:rgba(154,106,223,.12);}
+.ac-cost{background:linear-gradient(135deg,#1a3a7a,#0a1a4a);color:#90c0ff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-weight:bold;flex-shrink:0;border:1px solid #2a4a8a;}
+.seed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:5px;margin:6px 0 10px;min-height:34px;}
+.seed-card{background:var(--d3);border:1px solid var(--brd-l);border-radius:4px;padding:5px 8px;display:flex;align-items:center;gap:6px;font-size:.78em;position:relative;}
+.sc-c{background:linear-gradient(135deg,#2a3a8a,#0a1a5a);color:#90c0ff;border-radius:50%;width:19px;height:19px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-weight:bold;flex-shrink:0;border:1px solid #3a5aaa;}
+.sc-del{position:absolute;top:2px;right:4px;cursor:pointer;color:var(--red);font-size:.8em;opacity:.6;background:none;border:none;padding:1px 3px;}
+.sc-del:hover{opacity:1;}
+.seed-ph{grid-column:1/-1;text-align:center;color:var(--dim);font-style:italic;font-size:.76em;padding:10px;border:1px dashed var(--brd);border-radius:4px;}
+.seed-syn{background:var(--d3);border:1px solid var(--brd);border-left:3px solid var(--pur);border-radius:4px;padding:9px 12px;margin-bottom:10px;font-size:.8em;line-height:1.8;display:none;}
+.seed-syn.on{display:block;}
+.tok-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.tok-status{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:4px;background:rgba(0,0,0,.3);flex:1;font-size:.76em;}
+.tok-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0;}
+.tok-dot.ok{background:var(--grn);box-shadow:0 0 5px var(--grn);}
+.tok-dot.err{background:var(--red);}
+.tok-dot.spin{background:var(--gold);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.btn-tok{background:var(--blu);border:1px solid #7aa0d0;color:#e0f0ff;font-family:'Cinzel',serif;font-size:.65em;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;letter-spacing:.07em;text-transform:uppercase;transition:background .2s;}
+.btn-tok:hover{background:#6a90d0;}.btn-tok:disabled{opacity:.4;cursor:not-allowed;}
+.coll-pb{background:var(--d3);border:1px solid var(--brd);border-radius:4px;padding:5px 10px;font-size:.78em;display:inline-flex;align-items:center;gap:8px;}
+.import-ta{width:100%;min-height:90px;font-family:monospace;font-size:.74em;resize:vertical;line-height:1.6;color:#70d090;background:#060410;border:1px solid var(--brd);border-radius:4px;padding:8px 10px;}
+.type-toggle{display:flex;gap:5px;margin-bottom:8px;}
+.type-btn{flex:1;padding:9px 6px 8px;border-radius:5px;border:1px solid var(--brd);background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.6em;font-weight:700;text-transform:uppercase;text-align:center;transition:all .18s;line-height:1.3;}
+.type-btn:hover{border-color:var(--gold);color:var(--gold-l);}
+.type-btn.active-srv{background:linear-gradient(135deg,#0a3020,#1a6040);border-color:var(--grn);color:#90ffcc;}
+.type-btn.active-spl{background:linear-gradient(135deg,#200a40,#501090);border-color:#c080ff;color:#e0b8ff;}
+.type-btn.active-both{background:linear-gradient(135deg,#2a1500,#6a3800);border-color:var(--gold);color:var(--gold-l);}
+.type-icon{font-size:1.5em;display:block;margin-bottom:3px;}
+.type-sub{font-size:.8em;opacity:.65;font-family:'Crimson Pro',serif;font-style:italic;text-transform:none;letter-spacing:0;}
+/* Grilles de sélection granulaire */
+.pick-panel{display:none;border:1px solid var(--brd);border-radius:6px;overflow:hidden;margin-bottom:10px;background:var(--d2);}
+.pick-panel.open{display:block;}
+.pick-ph{padding:7px 12px;font-family:'Cinzel',serif;font-size:.6em;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--brd);}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;padding:8px;}
+.pick-btn{padding:7px 4px 6px;border-radius:4px;border:1px solid var(--brd);background:var(--d3);color:var(--dim);cursor:pointer;font-family:'Cinzel',serif;font-size:.52em;font-weight:700;text-transform:uppercase;text-align:center;transition:all .15s;position:relative;}
+.pick-btn:hover{transform:translateY(-1px);border-color:var(--brd-l);}
+.pick-btn.sel{color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.4);}
+.pick-icon{font-size:1.5em;display:block;margin-bottom:2px;}
+.pick-sub{font-size:.78em;opacity:.6;font-family:'Crimson Pro',serif;font-style:italic;text-transform:none;letter-spacing:0;display:block;}
+/* Couleurs sort schools */
+.s-arcane{--pc:#a060e0}.s-fel{--pc:#20c050}.s-fire{--pc:#e06020}.s-frost{--pc:#40a0e0}.s-holy{--pc:#e0c040}.s-nature{--pc:#60c040}.s-shadow{--pc:#9040c0}.s-none{--pc:#8090a0}
+/* Couleurs races */
+.r-beast{--pc:#e07030}.r-demon{--pc:#9030c0}.r-dragon{--pc:#c04040}.r-elemental{--pc:#d07020}.r-mech{--pc:#4080c0}.r-murloc{--pc:#40b0d0}.r-naga{--pc:#30a070}.r-pirate{--pc:#e05050}.r-quilboar{--pc:#a06030}.r-totem{--pc:#50b080}.r-undead{--pc:#6080a0}.r-draenei{--pc:#c090e0}
+.pick-btn:hover{border-color:var(--pc,var(--brd-l));color:var(--pc,var(--txt));}
+.pick-btn.sel{background:var(--pc,var(--pur));border-color:var(--pc,var(--pur));}
+.pick-check{position:absolute;top:2px;right:3px;font-size:.8em;color:#fff;opacity:0;transition:opacity .15s;}
+.pick-btn.sel .pick-check{opacity:1;}
+/* ─── MÉTA TEMPLATES ────────────────────────────────────────────────────── */
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;margin-bottom:6px;}
+.meta-card{background:var(--d3);border:1px solid var(--brd);border-radius:6px;padding:8px 10px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
+.meta-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.3);}
+.meta-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.meta-card.cls-DRUID::before{background:linear-gradient(90deg,#2a6020,#50a040);}
+.meta-card.cls-HUNTER::before{background:linear-gradient(90deg,#6a4010,#c07020);}
+.meta-card.cls-MAGE::before{background:linear-gradient(90deg,#102860,#2050c0);}
+.meta-card.cls-PALADIN::before{background:linear-gradient(90deg,#604010,#c0900a);}
+.meta-card.cls-ROGUE::before{background:linear-gradient(90deg,#101820,#303850);}
+.meta-card.cls-SHAMAN::before{background:linear-gradient(90deg,#102040,#204080);}
+.meta-card.cls-WARLOCK::before{background:linear-gradient(90deg,#280828,#602868);}
+.meta-card.cls-WARRIOR::before{background:linear-gradient(90deg,#501010,#902020);}
+.meta-card.cls-DEATHKNIGHT::before{background:linear-gradient(90deg,#0a1828,#183060);}
+.meta-card.cls-DEMONHUNTER::before{background:linear-gradient(90deg,#200818,#601040);}
+.mc-name{font-family:'Cinzel',serif;font-size:.64em;font-weight:700;color:var(--gold-l);letter-spacing:.04em;margin-bottom:2px;}
+.mc-cls{font-size:.6em;color:var(--dim);margin-bottom:4px;}
+.mc-wr{font-size:.68em;font-weight:700;color:var(--grn);}
+.mc-games{font-size:.58em;color:var(--dim);}
+.mc-cards{font-size:.58em;color:rgba(180,180,180,.5);margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ─── CHAT IA ─────────────────────────────────────────────────────────────── */
+.chat-mode-btn{flex:1;padding:6px 4px;border-radius:5px;border:1px solid rgba(150,80,255,.2);
+  background:rgba(20,8,40,.5);color:rgba(180,140,255,.45);cursor:pointer;font-size:.58em;
+  font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;text-align:center;transition:all .15s;line-height:1.3;}
+.chat-mode-btn:hover{border-color:rgba(180,100,255,.4);color:rgba(200,160,255,.7);}
+.chat-mode-btn.sel{background:rgba(80,20,160,.5);border-color:rgba(180,100,255,.55);color:#d8b0ff;}
+.cmb-icon{display:block;font-size:1.4em;margin-bottom:2px;}
+.cm-user{align-self:flex-end;background:linear-gradient(135deg,#152a6a,#0a1840);
+  border:1px solid rgba(80,120,220,.35);border-radius:10px 10px 2px 10px;
+  padding:7px 11px;max-width:88%;font-size:.77em;color:#b8cef8;line-height:1.5;}
+.cm-bot{align-self:flex-start;background:linear-gradient(135deg,#200840,#100320);
+  border:1px solid rgba(150,80,255,.25);border-radius:10px 10px 10px 2px;
+  padding:8px 12px;max-width:94%;font-size:.77em;color:#d0b0ff;line-height:1.55;}
+.cm-actions{margin-top:7px;display:flex;flex-direction:column;gap:3px;}
+.cm-action-item{padding:4px 8px;background:rgba(100,50,180,.18);
+  border-left:2px solid rgba(150,100,255,.45);border-radius:3px;
+  font-size:.86em;color:#b890e8;font-style:italic;}
+.cm-action-item.add{border-left-color:rgba(80,200,120,.5);color:#80d8a0;}
+.cm-action-item.remove{border-left-color:rgba(220,80,80,.5);color:#e89090;}
+.cm-action-item.replace{border-left-color:rgba(220,160,40,.5);color:#e8c870;}
+.cm-action-item.newdeck{border-left-color:rgba(80,140,220,.5);color:#90b8f0;}
+.cm-thinking{align-self:flex-start;color:rgba(180,140,255,.45);font-size:.72em;font-style:italic;padding:4px 8px;}
+.cm-thinking span{animation:pulse 1.4s infinite;}
+.cm-thinking span:nth-child(2){animation-delay:.2s;}
+.cm-thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
+</style>
+
+<div id="app">
+<div class="hdr">
+  <h1>HS Deck <em>Forge</em></h1>
+  <p>⚡ Méta Templates Legend · Standard 🏆 Wild 🌀 · 12 races · 8 écoles · Forge Assistant IA</p>
+</div>
+<div class="main">
+
+<div class="panel">
+  <div class="ph"><span>MA COLLECTION</span><span id="coll-badge" style="font-family:'Crimson Pro',serif;font-size:.85em;font-weight:400;font-style:italic;color:var(--grn);letter-spacing:0;text-transform:none;"></span></div>
+  <div class="pb">
+    <div style="font-size:.76em;color:var(--dim);margin-bottom:10px;line-height:1.7;">
+      Importe ta collection pour que le deck utilise <strong style="color:var(--txt);">seulement tes cartes</strong>.<br>
+      <span style="color:var(--pur);font-size:.9em;">Formats acceptés :</span> <code style="background:var(--d3);padding:1px 5px;border-radius:3px;color:var(--grn);">cardlist.txt</code> · code de deck HS · liste de noms (une carte par ligne)
+    </div>
+
+```
+<!-- Fichier OU Coller du texte -->
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+  <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--d3);border:1px solid var(--brd);border-radius:4px;padding:8px 12px;cursor:pointer;min-width:140px;" onmouseenter="this.style.borderColor='var(--grn)'" onmouseleave="this.style.borderColor='var(--brd)'">
+    <span>📂</span><span style="font-family:'Cinzel',serif;font-size:.65em;color:var(--grn);font-weight:700;letter-spacing:.08em;">Choisir fichier .txt</span>
+    <input type="file" id="coll-file" accept=".txt,.text" style="display:none;" onchange="importColl(this)">
+  </label>
+  <button onclick="clearColl()" style="padding:8px 12px;background:rgba(201,68,68,.1);border:1px solid rgba(201,68,68,.3);border-radius:4px;color:var(--red);font-family:'Cinzel',serif;font-size:.62em;font-weight:700;text-transform:uppercase;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--red)'" onmouseleave="this.style.borderColor='rgba(201,68,68,.3)'">🗑 Vider</button>
+</div>
+
+<!-- Zone coller-coller texte -->
+<div style="margin-bottom:8px;">
+  <div style="font-family:'Cinzel',serif;font-size:.58em;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Ou coller une liste de cartes ici</div>
+  <textarea id="coll-paste" placeholder="Coller ici une liste de noms de cartes&#10;(une par ligne, ou code de deck HS complet)&#10;&#10;Ex :&#10;Frostbolt&#10;Fireball&#10;Archmage Antonidas&#10;..." style="width:100%;height:90px;background:#060410;border:1px solid var(--brd);color:var(--txt);padding:7px 10px;border-radius:4px;font-size:.76em;font-family:monospace;resize:vertical;outline:none;" oninput="onCollPaste(this.value)"></textarea>
+</div>
+
+<div id="coll-status" style="margin-top:4px;font-size:.76em;color:var(--grn);font-style:italic;display:none;"></div>
+
+<!-- Stats collection -->
+<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+  <div class="coll-pb"><span style="color:var(--dim)">Cartes uniques :</span><strong id="coll-n" style="color:var(--grn);">0</strong></div>
+  <div id="coll-sample" style="font-size:.72em;color:var(--dim);font-style:italic;"></div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════ MÉTA TEMPLATES — Decks Legend Avril 2026 ════════════════ -->
+
+<div class="panel">
+  <div class="ph"><span>⚡ MÉTA TEMPLATES</span><span style="font-family:'Crimson Pro',serif;font-size:.82em;font-weight:400;font-style:italic;color:var(--gold);letter-spacing:0;text-transform:none;">Legend · Avril 2026 · metastats.net</span></div>
+  <div class="pb" style="padding-bottom:10px;">
+    <div style="font-size:.74em;color:var(--dim);margin-bottom:8px;">Charge directement un deck méta complet — clique pour l'afficher avec code importable.</div>
+    <div class="meta-grid" id="meta-grid"></div>
+    <div style="font-size:.62em;color:rgba(120,120,140,.5);text-align:right;margin-top:2px;">Source : metastats.net · Legend Standard · Cataclysm</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ph"><span>CONSTRUIRE UN DECK</span></div>
+  <div class="pb">
+  <div class="tok-row">
+    <div class="tok-status"><div class="tok-dot" id="tok-dot"></div><span id="tok-txt">Précharger pour activer la génération légendaires-first (3-8 légendaires synergiques)</span></div>
+    <button class="btn-tok" id="tok-btn" onclick="loadDb(true)">Précharger cartes</button>
+  </div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('arc',this)">Par archétype</button>
+    <button class="mode-tab" onclick="switchMode('custom',this)">5 cartes custom</button>
+    <button class="mode-tab" onclick="switchMode('import',this)">Importer un code</button>
+  </div>
+
+  <div class="mode-sec active" id="mode-arc">
+    <div class="sec-title">Archétypes principaux</div>
+    <div class="arc-grid">
+      <button class="arc-btn a-aggro" onclick="selArc(this,'Aggro')"><span class="arc-icon">⚡</span>Aggro<span class="arc-sub">Tuer vite</span></button>
+      <button class="arc-btn a-mid" onclick="selArc(this,'Midrange')"><span class="arc-icon">⚖️</span>Midrange<span class="arc-sub">Équilibré</span></button>
+      <button class="arc-btn a-ctrl" onclick="selArc(this,'Control')"><span class="arc-icon">🛡️</span>Control<span class="arc-sub">Survivre</span></button>
+      <button class="arc-btn a-combo" onclick="selArc(this,'Combo')"><span class="arc-icon">🎯</span>Combo<span class="arc-sub">Assembler</span></button>
+      <button class="arc-btn a-tempo" onclick="selArc(this,'Tempo')"><span class="arc-icon">🔥</span>Tempo<span class="arc-sub">Board ctrl</span></button>
+      <button class="arc-btn a-ramp" onclick="selArc(this,'Ramp')"><span class="arc-icon">🌿</span>Ramp<span class="arc-sub">Mana+</span></button>
+      <button class="arc-btn a-zoo" onclick="selArc(this,'Zoo')"><span class="arc-icon">🐾</span>Zoo<span class="arc-sub">Submerger</span></button>
+      <button class="arc-btn a-otk" onclick="selArc(this,'OTK')"><span class="arc-icon">💥</span>OTK<span class="arc-sub">One Turn Kill</span></button>
+      <button class="arc-btn a-big" onclick="selArc(this,'Big')"><span class="arc-icon">🐉</span>Big<span class="arc-sub">Grosses menaces</span></button>
+      <button class="arc-btn a-token" onclick="selArc(this,'Token')"><span class="arc-icon">🪙</span>Token<span class="arc-sub">Masse tokens</span></button>
+    </div>
+    <div class="syn-box" id="syn-box"><div class="syn-h">Archétype sélectionné</div><div id="syn-txt"></div></div>
+
+```
+<div class="sec-title" style="margin-top:2px;">Type de cartes du deck</div>
+<div class="type-toggle">
+  <button class="type-btn active-srv" id="tt-srv" onclick="setMode('MINION',this)">
+    <span class="type-icon">⚔️</span>Serviteurs<span class="type-sub">Choisir une race</span>
+  </button>
+  <button class="type-btn" id="tt-spl" onclick="setMode('SPELL',this)">
+    <span class="type-icon">✨</span>Sorts<span class="type-sub">Choisir une école</span>
+  </button>
+  <button class="type-btn" id="tt-both" onclick="setMode('BOTH',this)">
+    <span class="type-icon">🎴</span>Les deux<span class="type-sub">Sorts + serviteurs</span>
+  </button>
+</div>
+
+<!-- PANNEAU SERVITEURS — sélection de race -->
+<div class="pick-panel open" id="panel-srv">
+  <div class="pick-ph">Choisir la race des serviteurs</div>
+  <div class="pick-grid" id="grid-race">
+    <button class="pick-btn r-beast" id="rb-BEAST" onclick="pickRace('BEAST',this)"><span class="pick-check">✓</span><span class="pick-icon">🐾</span>Bête<span class="pick-sub">Beast</span></button>
+    <button class="pick-btn r-demon" id="rb-DEMON" onclick="pickRace('DEMON',this)"><span class="pick-check">✓</span><span class="pick-icon">👿</span>Démon<span class="pick-sub">Demon</span></button>
+    <button class="pick-btn r-dragon" id="rb-DRAGON" onclick="pickRace('DRAGON',this)"><span class="pick-check">✓</span><span class="pick-icon">🐉</span>Dragon<span class="pick-sub">Dragon</span></button>
+    <button class="pick-btn r-elemental" id="rb-ELEMENTAL" onclick="pickRace('ELEMENTAL',this)"><span class="pick-check">✓</span><span class="pick-icon">🔥</span>Élémentaire<span class="pick-sub">Elemental</span></button>
+    <button class="pick-btn r-mech" id="rb-MECH" onclick="pickRace('MECH',this)"><span class="pick-check">✓</span><span class="pick-icon">⚙️</span>Méca<span class="pick-sub">Mech</span></button>
+    <button class="pick-btn r-murloc" id="rb-MURLOC" onclick="pickRace('MURLOC',this)"><span class="pick-check">✓</span><span class="pick-icon">🐟</span>Murloc<span class="pick-sub">Murloc</span></button>
+    <button class="pick-btn r-naga" id="rb-NAGA" onclick="pickRace('NAGA',this)"><span class="pick-check">✓</span><span class="pick-icon">🐍</span>Naga<span class="pick-sub">Naga</span></button>
+    <button class="pick-btn r-pirate" id="rb-PIRATE" onclick="pickRace('PIRATE',this)"><span class="pick-check">✓</span><span class="pick-icon">☠️</span>Pirate<span class="pick-sub">Pirate</span></button>
+    <button class="pick-btn r-quilboar" id="rb-QUILBOAR" onclick="pickRace('QUILBOAR',this)"><span class="pick-check">✓</span><span class="pick-icon">🐗</span>Quilboar<span class="pick-sub">Quilboar</span></button>
+    <button class="pick-btn r-totem" id="rb-TOTEM" onclick="pickRace('TOTEM',this)"><span class="pick-check">✓</span><span class="pick-icon">🪨</span>Totem<span class="pick-sub">Totem</span></button>
+    <button class="pick-btn r-undead" id="rb-UNDEAD" onclick="pickRace('UNDEAD',this)"><span class="pick-check">✓</span><span class="pick-icon">💀</span>Mort-vivant<span class="pick-sub">Undead</span></button>
+    <button class="pick-btn r-draenei" id="rb-DRAENEI" onclick="pickRace('DRAENEI',this)"><span class="pick-check">✓</span><span class="pick-icon">💎</span>Draeneï<span class="pick-sub">Draenei</span></button>
+  </div>
+</div>
+
+<!-- PANNEAU SORTS — sélection d'école -->
+<div class="pick-panel" id="panel-spl">
+  <div class="pick-ph">Choisir l'école des sorts</div>
+  <div class="pick-grid" id="grid-school">
+    <button class="pick-btn s-arcane" id="sb-ARCANE" onclick="pickSchool('ARCANE',this)"><span class="pick-check">✓</span><span class="pick-icon">🔮</span>Arcane<span class="pick-sub">Arcane</span></button>
+    <button class="pick-btn s-fel" id="sb-FEL" onclick="pickSchool('FEL',this)"><span class="pick-check">✓</span><span class="pick-icon">☣️</span>Gangrène<span class="pick-sub">Fel</span></button>
+    <button class="pick-btn s-fire" id="sb-FIRE" onclick="pickSchool('FIRE',this)"><span class="pick-check">✓</span><span class="pick-icon">🔥</span>Feu<span class="pick-sub">Fire</span></button>
+    <button class="pick-btn s-frost" id="sb-FROST" onclick="pickSchool('FROST',this)"><span class="pick-check">✓</span><span class="pick-icon">❄️</span>Givre<span class="pick-sub">Frost</span></button>
+    <button class="pick-btn s-holy" id="sb-HOLY" onclick="pickSchool('HOLY',this)"><span class="pick-check">✓</span><span class="pick-icon">✨</span>Sacré<span class="pick-sub">Holy</span></button>
+    <button class="pick-btn s-nature" id="sb-NATURE" onclick="pickSchool('NATURE',this)"><span class="pick-check">✓</span><span class="pick-icon">🌿</span>Nature<span class="pick-sub">Nature</span></button>
+    <button class="pick-btn s-shadow" id="sb-SHADOW" onclick="pickSchool('SHADOW',this)"><span class="pick-check">✓</span><span class="pick-icon">🌑</span>Ombre<span class="pick-sub">Shadow</span></button>
+    <button class="pick-btn s-none" id="sb-NONE" onclick="pickSchool('NONE',this)"><span class="pick-check">✓</span><span class="pick-icon">🃏</span>Sans école<span class="pick-sub">General</span></button>
+  </div>
+</div>
+
+<div id="type-hint" style="display:none;border-left:3px solid var(--gold);background:rgba(0,0,0,.25);border-radius:4px;padding:7px 10px;margin-bottom:8px;font-size:.76em;font-style:italic;"></div>
+
+<div class="sec-title" style="margin-top:2px;">Source des cartes</div>
+<div class="src-toggle">
+  <button class="src-btn active" id="src-all" onclick="setSrc('all',this)"><span class="src-icon">🃏</span>Toutes les cartes<span class="src-sub">Base méta complète</span></button>
+  <button class="src-btn" id="src-my" onclick="setSrc('my',this)"><span class="src-icon">⭐</span>Ma collection<span class="src-sub">Mes cartes uniquement</span></button>
+</div>
+<div class="coll-hint" id="coll-hint">Mode "Ma Collection" actif — deck filtré à vos cartes</div>
+
+<div class="sec-title">Format du deck</div>
+<div class="fmt-toggle" id="fmt-toggle">
+  <button class="fmt-btn active std" id="fs" onclick="setFmt(2,this)">
+    <span style="font-size:1.1em;display:block;margin-bottom:2px;">🏆</span>
+    Standard
+    <span class="fmt-sub">Core · Emerald Dream · Timeways · Lost City · Cataclysm</span>
+  </button>
+  <button class="fmt-btn wld" id="fw" onclick="setFmt(1,this)">
+    <span style="font-size:1.1em;display:block;margin-bottom:2px;">🌀</span>
+    Wild
+    <span class="fmt-sub">Toutes les extensions</span>
+  </button>
+</div>
+<div id="fmt-hint" style="padding:5px 10px;border-radius:4px;margin-bottom:8px;font-size:.74em;font-style:italic;background:rgba(0,0,0,.2);border-left:3px solid #1a4090;color:#90c0ff;">
+  🏆 Standard — Year of the Raptor (2025) + Year of the Scarab (2026)
+</div>
+<div class="row" style="margin-top:4px;">
+  <div class="fld"><label>Classe</label>
+    <select id="hc" onchange="if(ST.arc)showSyn()">
+      <option value="DRUID">Druid</option><option value="HUNTER">Hunter</option><option value="MAGE" selected>Mage</option>
+      <option value="PALADIN">Paladin</option><option value="PRIEST">Priest</option><option value="ROGUE">Rogue</option>
+      <option value="SHAMAN">Shaman</option><option value="WARLOCK">Warlock</option><option value="WARRIOR">Warrior</option>
+      <option value="DEMONHUNTER">Demon Hunter</option><option value="DEATHKNIGHT">Death Knight</option>
+    </select>
+  </div>
+  <div class="fld"><label>Nom du deck</label><input type="text" id="dn" placeholder="Mon Deck" style="width:160px;"></div>
+</div>
+<button class="btn-gen" id="gen-btn" onclick="genDeck()" disabled>GÉNÉRER LE DECK — 30 cartes · Code importable</button>
+```
+
+  </div>
+
+  <div class="mode-sec" id="mode-custom">
+    <div style="background:var(--d3);border:1px solid rgba(154,106,223,.3);border-radius:4px;padding:10px;margin-bottom:10px;font-size:.78em;color:var(--dim);line-height:1.7;">
+      <span style="font-family:'Cinzel',serif;font-size:.65em;color:var(--pur);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Deck depuis vos cartes favorites</span>
+      Choisissez jusqu'à <strong style="color:var(--txt);">5 cartes de base</strong> — le deck sera complété avec les meilleures synergies méta.
+    </div>
+    <div class="src-toggle" style="margin-bottom:8px;">
+      <button class="src-btn active" id="csrc-all" onclick="setCSrc('all',this)"><span class="src-icon">🃏</span>Toutes les cartes<span class="src-sub">Base complète</span></button>
+      <button class="src-btn" id="csrc-my" onclick="setCSrc('my',this)"><span class="src-icon">⭐</span>Ma collection<span class="src-sub">Chercher dans mes cartes</span></button>
+    </div>
+    <div class="sec-title">Chercher une carte <span id="coll-mode-lbl" style="color:var(--grn);font-size:.85em;display:none;">— MA COLLECTION</span></div>
+    <div class="search-wrap">
+      <input class="search-inp" id="csearch" placeholder="Frostbolt, Ragnaros, Zilliax..." oninput="onSearch(this.value)" onkeydown="onKey(event)" autocomplete="off">
+      <div class="ac-box" id="ac-box"></div>
+    </div>
+    <div class="seed-grid" id="seed-grid"><div class="seed-ph">Cherchez ci-dessus pour ajouter jusqu'à 5 cartes</div></div>
+    <div class="seed-syn" id="seed-syn"><div style="font-family:'Cinzel',serif;font-size:.62em;color:var(--pur);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;">Synergies détectées</div><div id="seed-syn-txt"></div></div>
+    <div class="row" style="margin-top:6px;">
+      <div class="fld"><label>Classe</label>
+        <select id="hc2"><option value="DRUID">Druid</option><option value="HUNTER">Hunter</option><option value="MAGE" selected>Mage</option><option value="PALADIN">Paladin</option><option value="PRIEST">Priest</option><option value="ROGUE">Rogue</option><option value="SHAMAN">Shaman</option><option value="WARLOCK">Warlock</option><option value="WARRIOR">Warrior</option><option value="DEMONHUNTER">Demon Hunter</option><option value="DEATHKNIGHT">Death Knight</option></select>
+      </div>
+      <div class="fld"><label>Format</label><select id="hf2"><option value="2">Standard</option><option value="1">Wild</option></select></div>
+      <div class="fld"><label>Nom</label><input type="text" id="dn2" placeholder="Mon Deck Custom" style="width:135px;"></div>
+    </div>
+    <button class="btn-gen" id="gen-btn2" onclick="genCustom()" disabled>COMPLÉTER À 30 CARTES — Meilleur deck possible</button>
+  </div>
+
+  <div class="mode-sec" id="mode-import">
+    <div style="background:var(--d3);border:1px solid rgba(74,173,122,.3);border-radius:4px;padding:10px;margin-bottom:10px;font-size:.78em;color:var(--dim);line-height:1.7;">
+      <span style="font-family:'Cinzel',serif;font-size:.65em;color:var(--grn);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Importer depuis Hearthstone</span>
+      Hearthstone → Collection → Mes Decks → Copier → Coller ici
+    </div>
+    <div style="position:relative;margin-bottom:10px;">
+      <textarea class="import-ta" id="import-ta" placeholder="Collez votre code de deck ici..." oninput="onImport(this.value)"></textarea>
+    </div>
+    <div id="import-preview" style="display:none;background:var(--d3);border:1px solid var(--brd-l);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:.78em;"></div>
+    <button class="btn-gen" id="import-btn" onclick="loadImport()" disabled>Charger ce Deck</button>
+  </div>
+  </div>
+</div>
+
+<div class="panel deck-out" id="deck-out">
+  <div class="ph"><span>DECK GÉNÉRÉ</span><span id="deck-lbl" style="font-family:'Crimson Pro',serif;font-size:.8em;font-weight:400;color:var(--dim);text-transform:none;letter-spacing:0;"></span></div>
+  <div class="pb">
+    <div class="stats-row" id="stats-row">
+      <div class="stat ok"><span class="n" id="s-total">0</span>/30 cartes</div>
+      <div class="stat leg"><span class="n" id="s-leg">0</span> légendaires</div>
+      <div class="stat" style="border-color:rgba(192,128,255,.35);"><span class="n" id="s-spell" style="color:#c080ff;">0</span> sorts</div>
+      <div class="stat" style="border-color:rgba(74,173,122,.35);"><span class="n" id="s-tribes" style="color:var(--grn);">0</span> tribus</div>
+      <div class="stat" id="s-type-badge" style="border-color:rgba(90,127,192,.5);"><span class="n" id="s-fmt" style="color:var(--blu);">—</span></div>
+      <div class="stat" id="s-fmt-badge" style="font-weight:700;font-size:.76em;padding:3px 10px;background:rgba(10,32,80,.6);border-color:rgba(26,64,144,.5);color:#90c0ff;">🏆 Standard</div>
+      <div class="stat"><span class="n" id="s-dbf">0</span> DBF IDs</div>
+    </div>
+    <div class="syn-box" id="out-syn"><div class="syn-h">Stratégie &amp; synergies</div><div id="out-syn-txt"></div></div>
+    <div class="deck-grid" id="deck-grid"></div>
+    <div style="font-family:'Cinzel',serif;font-size:.62em;color:var(--gold);letter-spacing:.1em;margin-top:12px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">LISTE DES CARTES<span style="flex:1;height:1px;background:var(--brd);"></span><span id="coll-stat" style="font-family:'Crimson Pro',serif;font-size:.85em;font-style:italic;letter-spacing:0;color:var(--grn);text-transform:none;"></span></div>
+    <div class="card-list-wrap" id="card-list"></div>
+    <div style="font-family:'Cinzel',serif;font-size:.62em;color:var(--gold);letter-spacing:.1em;margin-top:12px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+      CODE HEARTHSTONE — Sélectionne tout → Ctrl+C / Cmd+C
+      <span style="flex:1;height:1px;background:var(--brd);"></span>
+    </div>
+
+```
+<!-- CODE BASE64 : affiché seul, grand, clic = sélection totale automatique -->
+<div style="margin-bottom:8px;">
+  <div style="font-size:.66em;color:var(--dim);margin-bottom:4px;">
+    ① Clique sur le code ci-dessous → <strong style="color:var(--gold-l);">Ctrl+A</strong> pour tout sélectionner → <strong style="color:var(--grn);">Ctrl+C</strong> pour copier
+  </div>
+  <input id="code-b64"
+    type="text"
+    readonly
+    onclick="this.select();"
+    onfocus="this.select();"
+    placeholder="Le code apparaîtra ici..."
+    style="width:100%;background:#020108;border:2px solid var(--grn);border-radius:5px;
+           color:#70d090;font-family:monospace;font-size:.72em;padding:10px 12px;
+           outline:none;word-break:break-all;cursor:text;letter-spacing:.02em;">
+  <div style="font-size:.62em;color:var(--dim);margin-top:3px;font-style:italic;">
+    ↑ Code base64 seul — c'est celui-ci qui s'importe dans Hearthstone
+  </div>
+</div>
+
+<!-- BLOC COMPLET : format copier-coller HS standard -->
+<div style="margin-bottom:8px;">
+  <div style="font-size:.66em;color:var(--dim);margin-bottom:4px;">
+    ② Ou copie le bloc complet (format HS standard) :
+  </div>
+  <textarea id="code-ta"
+    readonly spellcheck="false"
+    onclick="this.select();"
+    onfocus="this.select();"
+    placeholder="Le bloc complet apparaîtra ici..."
+    style="width:100%;min-height:110px;max-height:180px;background:#060410;
+           border:1px solid var(--brd);border-left:3px solid rgba(74,173,122,.4);
+           border-radius:4px;padding:10px 12px;font-family:monospace;font-size:.64em;
+           color:rgba(112,208,144,.7);line-height:1.5;resize:none;outline:none;
+           overflow-y:auto;word-break:break-all;cursor:text;"></textarea>
+</div>
+
+<div style="font-size:.68em;color:var(--dim);font-style:italic;margin-bottom:8px;">
+  ③ Dans Hearthstone : <strong style="color:#cfc8e8;">Collection → Mes Decks → Nouveau Deck → Importer</strong> → Ctrl+V
+</div>
+<div class="btn-row">
+  <button class="btn-sm" onclick="regen()">🔁 Régénérer</button>
+</div>
+```
+
+  </div>
+  <div class="sbar" id="sbar"></div>
+</div>
+
+</div>
+
+<!-- ═══════════ FORGE ASSISTANT — CHAT IA INTÉGRÉ ════════════════════════ -->
+
+<div style="max-width:960px;margin:0 auto;padding:0 12px 40px;">
+  <div id="chat-wrapper" style="border:1px solid rgba(150,80,255,.35);border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#0c0420 0%,#060212 100%);box-shadow:0 4px 30px rgba(100,30,200,.3);">
+
+```
+<!-- En-tête cliquable pour réduire/agrandir -->
+<div id="chat-hdr" onclick="toggleChat()" style="padding:12px 18px;background:linear-gradient(90deg,rgba(80,20,160,.8),rgba(40,10,80,.7));cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;">
+  <span style="font-size:1.4em;">🧙‍♂️</span>
+  <div style="flex:1;">
+    <div style="font-family:'Cinzel',serif;font-size:.72em;color:#d0a0ff;letter-spacing:.1em;text-transform:uppercase;font-weight:700;">Forge Assistant — IA</div>
+    <div style="font-size:.62em;color:rgba(180,140,255,.6);font-style:italic;margin-top:1px;">Modifie ou crée un deck en langage naturel · Propulsé par Claude</div>
+  </div>
+  <span id="chat-toggle-icon" style="color:rgba(200,160,255,.6);font-size:.85em;transition:transform .2s;">▼</span>
+</div>
+
+<!-- Corps du chat (collapsible) -->
+<div id="chat-body" style="display:flex;flex-direction:column;">
+
+  <!-- Sélecteur de mode -->
+  <div style="display:flex;gap:5px;padding:10px 14px 0;">
+    <button class="chat-mode-btn sel" id="cmode-modify" onclick="setChatMode('modify',this)" style="flex:1;">
+      <span class="cmb-icon">✏️</span>Modifier<span style="display:block;font-size:.82em;opacity:.65;text-transform:none;font-style:italic;font-family:'Crimson Pro',serif;margin-top:1px;">deck actuel</span>
+    </button>
+    <button class="chat-mode-btn" id="cmode-new" onclick="setChatMode('new',this)" style="flex:1;">
+      <span class="cmb-icon">✨</span>Nouveau<span style="display:block;font-size:.82em;opacity:.65;text-transform:none;font-style:italic;font-family:'Crimson Pro',serif;margin-top:1px;">from scratch</span>
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <div id="chat-msgs" style="min-height:140px;max-height:340px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+    <div class="cm-bot">Salut! 👋 Je suis <strong style="color:#d8b0ff;">Forge Assistant</strong>. Dis-moi ce que tu veux faire avec ton deck :<br><br>
+      <span style="color:#c8a0f0;font-weight:600;">Modifier le deck actif :</span><br>
+      • <em>"Remplace les dragons par des élémentaux"</em><br>
+      • <em>"Enlève les cartes de plus de 7 mana et ajoute des cartes 1-2"</em><br>
+      • <em>"Ajoute 2x Fireball, retire Blizzard"</em><br><br>
+      <span style="color:#c8a0f0;font-weight:600;">Créer un nouveau deck :</span><br>
+      • <em>"Crée un deck Pirate Warrior Wild Aggro"</em><br>
+      • <em>"Fais-moi un deck Murloc Paladin Standard"</em>
+    </div>
+  </div>
+
+  <!-- Zone de saisie -->
+  <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(150,80,255,.15);">
+    <textarea id="chat-inp" rows="2"
+      placeholder="Ex: remplace les sorts coûteux par des cartes 1-3 mana..."
+      onkeydown="onChatKey(event)"
+      style="flex:1;background:#080218;border:1px solid rgba(150,80,255,.3);border-radius:7px;color:#d0b8ff;padding:9px 12px;font-size:.82em;outline:none;font-family:inherit;resize:none;line-height:1.45;min-height:54px;"></textarea>
+    <button id="chat-send" onclick="sendChat()"
+      style="padding:10px 18px;background:linear-gradient(135deg,#5a1aaa,#380880);border:1px solid rgba(150,80,255,.45);border-radius:7px;color:#d8b0ff;font-family:'Cinzel',serif;font-size:.66em;font-weight:700;text-transform:uppercase;cursor:pointer;white-space:nowrap;letter-spacing:.07em;align-self:flex-end;transition:all .15s;">
+      ⚡ Envoyer
+    </button>
+  </div>
+
+</div><!-- /chat-body -->
+```
+
+  </div><!-- /chat-wrapper -->
+</div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// MÉTA TEMPLATES — Decks Legend Standard · Avril 2026 · Source: metastats.net
+// ═══════════════════════════════════════════════════════════════════════════
+var META_DECKS = [
+  {
+    name:'Imbue Druid', cls:'DRUID', arc:'Imbue', fmt:2, wr:'57.4%', games:'931',
+    code:'AAECAcaLBwaB1ASqgQfigQeSgwfygwevhwcMh58Erp8E1voG4IEH94EHiIMHsIcHpIkHmJcHqq8HrK8H18AHAAA=',
+    cards:[
+      {n:'Innervate',q:2,c:0,r:'F'},{n:'Charred Chameleon',q:2,c:1,r:'C'},
+      {n:'Living Roots',q:1,c:1,r:'C'},{n:'Symbiosis',q:2,c:1,r:'C'},
+      {n:'Waveshaping',q:2,c:1,r:'C'},{n:'Bitterbloom Knight',q:2,c:2,r:'C'},
+      {n:'Ebb and Flow',q:2,c:2,r:'C'},{n:'Felwood Treant',q:2,c:2,r:'C'},
+      {n:'Horn of Plenty',q:2,c:2,r:'C'},{n:'Mark of the Wild',q:2,c:2,r:'C'},
+      {n:'Dreambound Disciple',q:2,c:3,r:'R'},{n:'Photosynthesis',q:1,c:3,r:'R'},
+      {n:'Flutterwing Guardian',q:2,c:4,r:'C'},
+      {n:'Amirdrassil',q:1,c:5,r:'L'},{n:'Hamuul Runetotem',q:1,c:5,r:'L'},
+      {n:'Hybridization',q:2,c:5,r:'C'},
+      {n:'Malorne the Waywatcher',q:1,c:8,r:'L'},{n:'Shaladrassil',q:1,c:8,r:'L'}
+    ]
+  },
+  {
+    name:'Herald Shaman', cls:'SHAMAN', arc:'Herald', fmt:2, wr:'55.7%', games:'4652',
+    code:'AAECAaoIBNC/B4LUB5vUB6/jBw3Tvgbmlgf1rAexsAe8sQePvgfDwAfGwAfJwAf3wAf5wAf2wQfm/QcAAA==',
+    cards:[
+      {n:'Static Shock',q:2,c:0,r:'C'},{n:"Witch's Apprentice",q:2,c:0,r:'C'},
+      {n:'Twilight Egg',q:2,c:1,r:'C'},{n:'Wailing Vapor',q:2,c:1,r:'C'},
+      {n:'Primordial Overseer',q:2,c:2,r:'R'},{n:'Ritual of Power',q:2,c:2,r:'R'},
+      {n:'Skywall Sentinel',q:2,c:2,r:'C'},{n:'Flight of the Firehawk',q:2,c:3,r:'C'},
+      {n:'Crackling Cloudstrider',q:2,c:3,r:'C'},{n:'Nightmare Lord Xavius',q:1,c:4,r:'L'},
+      {n:'Ceremonial Clash',q:2,c:4,r:'C'},{n:'Envoy of the End',q:2,c:5,r:'C'},
+      {n:'Muradin, High King',q:1,c:5,r:'L'},{n:"High King's Hammer",q:1,c:6,r:'C'},
+      {n:'Ultraxion',q:1,c:6,r:'L'},{n:"Al'Akir, Lord of Storms",q:1,c:8,r:'L'},
+      {n:"Muradin's Last Stand",q:2,c:9,r:'C'},{n:'Deathwing, Worldbreaker',q:1,c:10,r:'L'}
+    ]
+  },
+  {
+    name:'Aura Paladin', cls:'PALADIN', arc:'Aura', fmt:2, wr:'57.6%', games:'2394',
+    code:'AAECAYrlBgzHpAbNqQbh6wbw/gbDgwfblweCmAfuqAfvqAfwqAfrrAeKsQcJyaAElfUFzqkG0akGyP8GupYHy6kHxK4HvrIHAAED9bMGx6QG97MGx6QG6N4Gx6QGAAA=',
+    cards:[
+      {n:'Righteous Protector',q:2,c:1,r:'C'},{n:'Acceleration Aura',q:2,c:2,r:'C'},
+      {n:'Violet Treasuregill',q:2,c:2,r:'R'},{n:'Cardboard Golem',q:2,c:3,r:'C'},
+      {n:'Crusader Aura',q:2,c:4,r:'R'},{n:'Gnomish Aura',q:1,c:4,r:'L'},
+      {n:'Manifested Timeways',q:2,c:4,r:'C'},{n:'Nightmare Lord Xavius',q:1,c:4,r:'L'},
+      {n:'Tigress Plushy',q:2,c:4,r:'R'},{n:'Ursine Maul',q:2,c:4,r:'L'},
+      {n:'Chronological Aura',q:2,c:5,r:'R'},{n:'Toreth the Unbreaking',q:1,c:5,r:'L'},
+      {n:'Bob the Bartender',q:1,c:6,r:'L'},{n:"Gnomelia, S.A.F.E. Pilot",q:1,c:6,r:'L'},
+      {n:'Anachronos',q:1,c:7,r:'L'},{n:"Mekkatorque's Aura",q:1,c:5,r:'L'},
+      {n:'Gelbin of Tomorrow',q:1,c:8,r:'L'},{n:'Elise the Navigator',q:1,c:4,r:'L'},
+      {n:'Crafter\'s Aura',q:1,c:7,r:'L'}
+    ]
+  },
+  {
+    name:'Dragon Hunter', cls:'HUNTER', arc:'Dragon', fmt:2, wr:'53.8%', games:'219',
+    cards:[
+      {n:'Carrier Whelp',q:2,c:1,r:'C'},{n:'Earthen Roar',q:2,c:1,r:'C'},
+      {n:'Tracking',q:2,c:1,r:'C'},{n:'Petal Peddler',q:2,c:2,r:'C'},
+      {n:'Cloud Serpent',q:2,c:3,r:'C'},{n:'Darkscale Broodmother',q:2,c:3,r:'C'},
+      {n:'Niri of the Crater',q:1,c:3,r:'L'},{n:'Ranger General Sylvanas',q:1,c:3,r:'L'},
+      {n:'Stonetalon Striker',q:2,c:3,r:'R'},{n:"Tol'vir Carver",q:2,c:3,r:'C'},
+      {n:'Whelp of the Infinite',q:2,c:3,r:'C'},{n:'Nightmare Lord Xavius',q:1,c:4,r:'L'},
+      {n:'Supply Run',q:1,c:4,r:'R'},{n:'Ebonscale Scout',q:2,c:6,r:'R'},
+      {n:'Ebyssian',q:1,c:7,r:'L'}
+    ]
+  },
+  {
+    name:'Spell Demon Hunter', cls:'DEMONHUNTER', arc:'Spell', fmt:2, wr:'53.6%', games:'208',
+    cards:[
+      {n:'Illidari Studies',q:2,c:1,r:'C'},{n:'Sigil of the Seas',q:2,c:1,r:'R'},
+      {n:'Time-Lost Glaive',q:2,c:1,r:'C'},{n:'Broxigar',q:1,c:2,r:'L'},
+      {n:"Broxigar's Last Stand",q:2,c:2,r:'C'},{n:'Grim Harvest',q:2,c:2,r:'C'},
+      {n:'Infestation',q:2,c:2,r:'C'},{n:'Press the Advantage',q:2,c:2,r:'C'},
+      {n:'Coordinated Assault',q:2,c:3,r:'C'},{n:'Chaos Leech',q:2,c:4,r:'C'},
+      {n:'Xhilag of the Abyss',q:1,c:4,r:'L'},{n:'Jace Darkweaver',q:1,c:5,r:'L'},
+      {n:'Sigil of Time',q:2,c:6,r:'R'},{n:'Priestess of Fury',q:2,c:7,r:'C'}
+    ]
+  },
+  {
+    name:'Gladiator Warrior', cls:'WARRIOR', arc:'Gladiator', fmt:2, wr:'54.2%', games:'312',
+    cards:[
+      {n:'Shield Slam',q:2,c:1,r:'C'},{n:'Sword and Board',q:2,c:1,r:'C'},
+      {n:'Armorsmith',q:2,c:2,r:'R'},{n:'Needlerock Totem',q:2,c:2,r:'C'},
+      {n:'War Commands',q:2,c:3,r:'C'},{n:'Warbot',q:2,c:3,r:'C'},
+      {n:'Brass Knuckles',q:2,c:4,r:'C'},{n:'Outrider',q:2,c:4,r:'C'},
+      {n:'Ringmaster Whatley',q:1,c:4,r:'L'},{n:'Sizzle',q:2,c:5,r:'C'},
+      {n:'Ringmaster',q:1,c:5,r:'L'},{n:'Grommash Hellscream',q:1,c:8,r:'L'}
+    ]
+  },
+  {
+    name:'Quest Warrior', cls:'WARRIOR', arc:'Quest', fmt:2, wr:'55.1%', games:'410',
+    cards:[
+      {n:'Sanguine Depths',q:2,c:1,r:'C'},{n:'Time-Twisted Seer',q:2,c:1,r:'C'},
+      {n:'Torch',q:2,c:1,r:'C'},{n:'Brood Keeper',q:2,c:2,r:'C'},
+      {n:'Living Flame',q:2,c:2,r:'C'},{n:'Petal Peddler',q:2,c:2,r:'C'},
+      {n:'Precursory Strike',q:2,c:2,r:'C'},{n:'Shadowflame Suffusion',q:2,c:2,r:'R'},
+      {n:'Darkscale Broodmother',q:2,c:3,r:'C'},{n:'Erupting Volcano',q:2,c:3,r:'R'},
+      {n:'Stadium Announcer',q:1,c:3,r:'L'},{n:'Prescient Slitherdrake',q:1,c:4,r:'L'},
+      {n:'Windpeak Wyrm',q:2,c:5,r:'C'},{n:'Grommash Hellscream',q:1,c:8,r:'L'},
+      {n:'The Great Dracorex',q:1,c:9,r:'L'}
+    ]
+  },
+  {
+    name:'Herald Rogue', cls:'ROGUE', arc:'Herald', fmt:2, wr:'56.8%', games:'580',
+    cards:[
+      {n:'Preparation',q:2,c:0,r:'E'},{n:'Backstab',q:2,c:0,r:'F'},
+      {n:'Shadowstep',q:2,c:0,r:'C'},{n:'Serrated Bone Spike',q:2,c:1,r:'R'},
+      {n:'Shroud of Concealment',q:2,c:1,r:'C'},{n:'Ambush',q:2,c:2,r:'C'},
+      {n:'Eviscerate',q:2,c:2,r:'C'},{n:'Sap',q:2,c:2,r:'C'},
+      {n:'Necrium Apothecary',q:1,c:2,r:'L'},{n:'Wildpaw Gnoll',q:2,c:3,r:'R'},
+      {n:'Spectral Pillager',q:2,c:5,r:'C'},{n:'Heistbaron Togwaggle',q:1,c:6,r:'L'},
+      {n:'Tess Greymane',q:1,c:8,r:'L'}
+    ]
+  }
+];
+
+function renderMetaTemplates(){
+  var grid = document.getElementById('meta-grid');
+  if(!grid) return;
+  grid.innerHTML = META_DECKS.map((d,i) => {
+    var preview = d.cards.slice(0,3).map(c=>c.n).join(', ')+'…';
+    return '<div class="meta-card cls-'+d.cls+'" onclick="loadMetaDeck('+i+')" title="Charger : '+d.name+'">'
+      +'<div class="mc-name">'+d.name+'</div>'
+      +'<div class="mc-cls">'+CLS[d.cls]+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;">'
+      +'<span class="mc-wr">'+d.wr+' WR</span>'
+      +'<span class="mc-games">'+d.games+' parties</span>'
+      +'</div>'
+      +'<div class="mc-cards">'+preview+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function loadMetaDeck(idx){
+  var d = META_DECKS[idx];
+  if(!d) return;
+
+  var synHtml = '<strong style="color:var(--gold-l)">'+d.name+'<\/strong>'
+    +' \u2014 <span style="color:var(--grn)">'+d.wr+' WR<\/span>'
+    +' \xb7 '+d.games+' parties Legend'
+    +'<br><span style="color:var(--dim);font-size:.8em;">Source : metastats.net \xb7 Standard Cataclysm Avril 2026<\/span>';
+
+  ST.lastP = {mode:'arc', cls:d.cls, fmt:d.fmt, arc:d.arc, dn:d.name};
+
+  // Affichage initial (cartes sans DBF IDs pour l'instant)
+  var deckBasic = d.cards.map(function(c){
+    return {n:c.n, c:c.c, q:c.q, r:normRar(c.r||'C'), d:0, t:'MINION', race:'', spellSchool:''};
+  });
+  showDeck(deckBasic, synHtml, d.cls, d.fmt, d.name);
+
+  // Injecter le code hardcod\u00e9 imm\u00e9diatement si dispo
+  if(d.code){
+    var inp = document.getElementById('code-b64');
+    var ta  = document.getElementById('code-ta');
+    if(inp){ inp.value = d.code; inp.style.borderColor = 'var(--grn)'; }
+    if(ta){
+      var clsName = CLS[d.cls]||d.cls;
+      var lines = ['### '+d.name, '# Class: '+clsName, '# Format: Standard', '#'];
+      d.cards.forEach(function(c){ lines.push('# '+c.q+'x ('+c.c+') '+c.n); });
+      lines.push('# ', d.code, '#',
+        '# To use this deck, copy it to your clipboard and create a new deck in Hearthstone');
+      ta.value = lines.join('\n');
+    }
+    var tot = d.cards.reduce(function(a,c){return a+c.q;},0);
+    var sbar = document.getElementById('sbar');
+    if(sbar) sbar.textContent = tot+'/30 cartes \xb7 \u2713 Code importable';
+  }
+
+  // Toujours charger la DB en background pour enrichir CURRENT_DECK avec les DBF IDs
+  // => les modifications via le chat auront des IDs valides
+  function enrichCurrent(){
+    var deck2 = d.cards.map(function(c){
+      var norm = (c.n||''). toLowerCase().replace(/[\u2018\u2019\u02bc]/g,"'");
+      var h = ST.hsDb[norm];
+      if(!h && c.id) h = ST.hsDb['__id__'+c.id];
+      return Object.assign({}, c, {
+        r: normRar(h ? h.rarity : (c.r||'C')),
+        d: h ? (h.dbfId||0) : (c.d||0),
+        t: h ? (h.type||'MINION') : 'MINION',
+        race: h ? (h.race||(h.races&&h.races[0])||''). toUpperCase() : '',
+        spellSchool: h ? (h.spellSchool||''). toUpperCase() : ''
+      });
+    });
+    // Mettre \u00e0 jour CURRENT_DECK avec les DBF IDs
+    window.CURRENT_DECK = deck2.map(function(c){ return Object.assign({},c); });
+    // Si pas de code hardcod\u00e9, g\u00e9n\u00e9rer le code
+    if(!d.code){
+      showDeck(deck2, synHtml, d.cls, d.fmt, d.name);
+    }
+  }
+
+  if(ST.hsDb && Object.keys(ST.hsDb).length > 0){
+    enrichCurrent();
+  } else {
+    loadDb(false).then(enrichCurrent).catch(function(){});
+  }
+
+  setTimeout(function(){
+    var out = document.getElementById('deck-out');
+    if(out) out.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 200);
+}
+
+// Initialiser les templates au chargement
+document.addEventListener('DOMContentLoaded', function(){
+  renderMetaTemplates();
+});
+
+var ST={arc:null,fmt:2,src:'all',csrc:'all',seeds:[],acRes:[],acIdx:-1,hsDb:null,dbLoad:false,lastP:null,deckType:'BOTH',selectedRace:null,selectedSchool:null};
+var MY_COLL=new Set();
+var MY_COLL_RAW=new Set();
+var HEROES={WARRIOR:7,SHAMAN:1066,ROGUE:930,PALADIN:671,HUNTER:31,DRUID:274,WARLOCK:893,MAGE:637,PRIEST:813,DEMONHUNTER:56550,DEATHKNIGHT:78065};
+var CLS={MAGE:'Mage',WARRIOR:'Warrior',HUNTER:'Hunter',PALADIN:'Paladin',ROGUE:'Rogue',PRIEST:'Priest',SHAMAN:'Shaman',WARLOCK:'Warlock',DRUID:'Druid',DEMONHUNTER:'Demon Hunter',DEATHKNIGHT:'Death Knight'};
+
+// ─── HELPER CLÉ : normalise la rareté en short code ──────────────────────────
+// CORRIGE LE BUG PRINCIPAL : peu importe si c'est 'LEGENDARY', 'L', ou autre,
+// on ramène toujours à 'L', 'E', 'R', 'C', 'F'
+function normRar(r){
+  if(!r)return 'C';
+  var u=r.toUpperCase();
+  if(u==='LEGENDARY'||u==='L')return 'L';
+  if(u==='EPIC'||u==='E')return 'E';
+  if(u==='RARE'||u==='R')return 'R';
+  if(u==='FREE'||u==='F')return 'F';
+  return 'C';
+}
+var RC={F:'#aaa',C:'#ccc',R:'#4a90e0',E:'#c060e0',L:'#f0d080'};
+var RN={F:'Libre',C:'Commune',R:'Rare',E:'Épique',L:'Légendaire'};
+
+// ─── BASE MÉTA ───────────────────────────────────────────────────────────────
+// Chaque carte : n=nom, q=quantité EXACTE (légendaires déjà à 1), d=DBF ID, c=coût mana, r=rareté
+var META={
+  Aggro:{
+    MAGE:{label:'Spell Mage Aggro',strategy:'Sorts bas coût pour booster Mana Wyrm et Flamewaker. Burst Fireball face.',combos:['Mana Wyrm + sorts = +1/+1 chaque sort','Sorcerer\'s Apprentice + Flamewaker = missiles gratuits','Antonidas + sorts 0-mana = Fireballs infinis'],
+      cards:[{n:'Mana Wyrm',q:2,d:28364,c:1,r:'C'},{n:'Arcane Missiles',q:2,d:346,c:1,r:'F'},{n:'Shooting Star',q:2,d:48145,c:1,r:'C'},{n:'Mirror Image',q:2,d:554,c:1,r:'C'},{n:'Frostbolt',q:2,d:662,c:2,r:'C'},{n:'Sorcerer\'s Apprentice',q:2,d:4752,c:2,r:'C'},{n:'Arcane Intellect',q:2,d:555,c:3,r:'C'},{n:'Flamewaker',q:2,d:22267,c:3,r:'R'},{n:'Fireball',q:2,d:315,c:4,r:'C'},{n:'Polymorph',q:2,d:495,c:4,r:'C'},{n:'Blizzard',q:2,d:457,c:6,r:'R'},{n:'Magic Trick',q:2,d:55552,c:1,r:'R'},{n:'Archmage Antonidas',q:1,d:1064,c:7,r:'L'},{n:'Stargazer Luna',q:1,d:55546,c:3,r:'L'},{n:'Flamestrike',q:1,d:348,c:7,r:'C'}]},
+    HUNTER:{label:'Face Hunter',strategy:'Bêtes aggro. Phase Stalker + secrets. Kill Command face.',combos:['Scavenging Hyena + Beast death = +2/+1','Phase Stalker + secrets = secret gratuit','Kill Command + beast = 5 dégâts face'],
+      cards:[{n:'Tracking',q:2,d:683,c:1,r:'C'},{n:'Springpaw',q:2,d:55553,c:1,r:'C'},{n:'Scavenging Hyena',q:2,d:535,c:2,r:'C'},{n:'Phase Stalker',q:2,d:55490,c:2,r:'R'},{n:'Quick Shot',q:2,d:22359,c:2,r:'C'},{n:'Animal Companion',q:2,d:730,c:3,r:'F'},{n:'Kill Command',q:2,d:734,c:3,r:'C'},{n:'Unleash the Hounds',q:2,d:397,c:3,r:'C'},{n:'Flanking Strike',q:2,d:48099,c:4,r:'C'},{n:'Houndmaster',q:2,d:736,c:4,r:'C'},{n:'Tundra Rhino',q:2,d:543,c:5,r:'C'},{n:'Savannah Highmane',q:2,d:725,c:6,r:'R'},{n:'Swamp King Dred',q:1,d:47032,c:7,r:'L'},{n:'Kathrena Winterwisp',q:1,d:48625,c:8,r:'L'},{n:'Zul\'jin',q:1,d:55463,c:10,r:'L'}]},
+    WARRIOR:{label:'Pirate Warrior',strategy:'Pirates chaînés. Southsea Captain buff la flotte. Grommash OTK.',combos:['Southsea Captain + pirates = +1/+1','Ship\'s Cannon + pirates = 2 dégâts','Grommash + Whirlwind = 10 face OTK'],
+      cards:[{n:'N\'Zoth\'s First Mate',q:2,d:38734,c:1,r:'C'},{n:'Small-Time Buccaneer',q:2,d:42055,c:1,r:'R'},{n:'Bloodsail Raider',q:2,d:1187,c:2,r:'C'},{n:'Ship\'s Cannon',q:2,d:21151,c:2,r:'C'},{n:'Heroic Strike',q:2,d:667,c:2,r:'C'},{n:'Southsea Captain',q:2,d:680,c:3,r:'E'},{n:'Frothing Berserker',q:2,d:1915,c:3,r:'R'},{n:'Kor\'kron Elite',q:2,d:402,c:4,r:'C'},{n:'Death\'s Bite',q:2,d:7734,c:4,r:'C'},{n:'Arcanite Reaper',q:2,d:687,c:5,r:'C'},{n:'Golakka Crawler',q:2,d:45922,c:2,r:'C'},{n:'Bloodsail Cultist',q:2,d:35181,c:3,r:'R'},{n:'Patches the Pirate',q:1,d:38908,c:1,r:'L'},{n:'Skycap\'n Kragg',q:1,d:22271,c:5,r:'L'},{n:'Grommash Hellscream',q:1,d:604,c:8,r:'L'}]},
+    PALADIN:{label:'Silver Hand Aggro',strategy:'Recrues + buffs massifs. Quartermaster triple les dégâts. Tarim board tout 3/3.',combos:['Muster for Battle + Quartermaster = 9 dmg','Brazen Zealot + invocations = +1 atk','Sunkeeper Tarim + board = tout 3/3'],
+      cards:[{n:'Argent Squire',q:2,d:473,c:1,r:'C'},{n:'Righteous Protector',q:2,d:48753,c:1,r:'C'},{n:'Brazen Zealot',q:2,d:56652,c:1,r:'R'},{n:'Crystology',q:2,d:55960,c:1,r:'R'},{n:'Lightforged Blessing',q:2,d:56613,c:2,r:'C'},{n:'Micro Mummy',q:2,d:57745,c:2,r:'R'},{n:'Warhorse Trainer',q:2,d:22261,c:3,r:'C'},{n:'Muster for Battle',q:2,d:22346,c:3,r:'R'},{n:'Rallying Blade',q:2,d:22347,c:3,r:'R'},{n:'Equality',q:2,d:661,c:2,r:'R'},{n:'Consecration',q:2,d:670,c:4,r:'C'},{n:'Truesilver Champion',q:2,d:625,c:4,r:'C'},{n:'Quartermaster',q:1,d:22276,c:5,r:'E'},{n:'Tirion Fordring',q:1,d:391,c:8,r:'L'},{n:'Sunkeeper Tarim',q:1,d:45390,c:6,r:'L'}]},
+    ROGUE:{label:'Miracle Rogue',strategy:'Sorts cheap + Combo. Edwin géant. Leeroy + Shadowstep OTK.',combos:['Edwin VanCleef + combos = géant 2-3 mana','Preparation + Eviscerate = -3 mana','Leeroy + Shadowstep = burst x2 ou x3'],
+      cards:[{n:'Backstab',q:2,d:1005,c:0,r:'F'},{n:'Preparation',q:2,d:1017,c:0,r:'E'},{n:'Shadowstep',q:2,d:1094,c:0,r:'C'},{n:'Cold Blood',q:2,d:433,c:1,r:'C'},{n:'Deadly Poison',q:2,d:1098,c:1,r:'C'},{n:'Eviscerate',q:2,d:1097,c:2,r:'C'},{n:'Sap',q:2,d:1015,c:2,r:'C'},{n:'Fan of Knives',q:2,d:1086,c:3,r:'C'},{n:'SI:7 Agent',q:2,d:2812,c:3,r:'R'},{n:'Questing Adventurer',q:2,d:2054,c:3,r:'R'},{n:'Azure Drake',q:2,d:280,c:5,r:'R'},{n:'Edwin VanCleef',q:1,d:1019,c:3,r:'L'},{n:'Leeroy Jenkins',q:1,d:559,c:5,r:'L'},{n:'Gadgetzan Auctioneer',q:1,d:1915,c:6,r:'R'},{n:'Arcane Giant',q:1,d:38939,c:12,r:'E'}]},
+    WARLOCK:{label:'Zoo Warlock',strategy:'Imps + tokens. Darkshire Councilman grossit. Doomguard finisher.',combos:['Darkshire Councilman + tokens = +1 atk','Knife Juggler + imps = missiles aléatoires','Power Overwhelming burst + Doomguard swing'],
+      cards:[{n:'Flame Imp',q:2,d:672,c:1,r:'C'},{n:'Voidwalker',q:2,d:692,c:1,r:'F'},{n:'Possessed Villager',q:2,d:35196,c:1,r:'C'},{n:'Malchezaar\'s Imp',q:2,d:42047,c:1,r:'C'},{n:'Knife Juggler',q:2,d:488,c:2,r:'R'},{n:'Power Overwhelming',q:2,d:22,c:1,r:'C'},{n:'Soulfire',q:2,d:527,c:1,r:'C'},{n:'Imp Gang Boss',q:2,d:22349,c:3,r:'C'},{n:'Darkshire Councilman',q:2,d:38745,c:3,r:'C'},{n:'Void Terror',q:2,d:673,c:3,r:'R'},{n:'Doomguard',q:2,d:693,c:5,r:'R'},{n:'Leeroy Jenkins',q:1,d:559,c:5,r:'L'},{n:'Illidan Stormrage',q:1,d:818,c:6,r:'L'},{n:'Neeru Fireblade',q:1,d:64674,c:5,r:'L'},{n:'Mal\'Ganis',q:1,d:893,c:9,r:'L'}]},
+    DRUID:{label:'Token Druid',strategy:'Force of Nature + Savage Roar = 14 dégâts. Violet Teacher génère des tokens.',combos:['Force of Nature + Savage Roar = 14 lethal','Violet Teacher + sorts = 1/1 par sort','Mark of the Lotus + board = +1/+1 tous'],
+      cards:[{n:'Innervate',q:2,d:738,c:0,r:'F'},{n:'Living Roots',q:2,d:27084,c:1,r:'C'},{n:'Enchanted Raven',q:2,d:42028,c:1,r:'C'},{n:'Mark of the Lotus',q:2,d:42040,c:1,r:'C'},{n:'Power of the Wild',q:2,d:289,c:2,r:'C'},{n:'Wrath',q:2,d:278,c:2,r:'C'},{n:'Savage Roar',q:2,d:329,c:3,r:'C'},{n:'Soul of the Forest',q:2,d:526,c:4,r:'C'},{n:'Violet Teacher',q:2,d:461,c:4,r:'R'},{n:'Wisps of the Old Gods',q:2,d:33175,c:2,r:'C'},{n:'Force of Nature',q:2,d:33168,c:5,r:'E'},{n:'Cenarius',q:1,d:503,c:9,r:'L'},{n:'Flobbidinous Floop',q:1,d:55582,c:4,r:'L'},{n:'Twig of the World Tree',q:1,d:46568,c:4,r:'L'},{n:'Spreading Plague',q:1,d:46109,c:5,r:'R'}]},
+    SHAMAN:{label:'Overload Shaman',strategy:'Surcharge = grosses menaces tôt. Doomhammer burst. Bloodlust lethal.',combos:['Tunnel Trogg + surcharge = +1 atk par mana','Thunderhead + surcharge = 2 tokens Rush','Doomhammer + Rockbiter = 8 dégâts par tour'],
+      cards:[{n:'Lightning Bolt',q:2,d:10,c:1,r:'C'},{n:'Rockbiter Weapon',q:2,d:562,c:1,r:'C'},{n:'Tunnel Trogg',q:2,d:27257,c:1,r:'C'},{n:'Flametongue Totem',q:2,d:395,c:2,r:'C'},{n:'Maelstrom Portal',q:2,d:35209,c:2,r:'R'},{n:'Totem Golem',q:2,d:27229,c:2,r:'C'},{n:'Feral Spirit',q:2,d:587,c:3,r:'R'},{n:'Lava Burst',q:2,d:582,c:3,r:'C'},{n:'Thunderhead',q:2,d:55552,c:3,r:'R'},{n:'Flamewreathed Faceless',q:2,d:35251,c:4,r:'C'},{n:'Bloodlust',q:2,d:590,c:5,r:'C'},{n:'Doomhammer',q:1,d:604,c:5,r:'E'},{n:'Al\'Akir the Windlord',q:1,d:614,c:8,r:'L'},{n:'Kalimos, Primal Lord',q:1,d:45351,c:8,r:'L'},{n:'Overlord\'s Whip',q:2,d:63483,c:3,r:'C'}]},
+    PRIEST:{label:'Inner Fire OTK',strategy:'Divine Spirit + Inner Fire = serviteur géant OTK en un tour.',combos:['Divine Spirit + Inner Fire = OTK','Northshire Cleric + Circle = pioche massive','Auchenai Soulpriest + Circle = board clear'],
+      cards:[{n:'Power Word: Shield',q:2,d:471,c:0,r:'C'},{n:'Circle of Healing',q:2,d:489,c:0,r:'C'},{n:'Northshire Cleric',q:2,d:554,c:1,r:'C'},{n:'Inner Fire',q:2,d:477,c:1,r:'C'},{n:'Divine Spirit',q:2,d:479,c:2,r:'C'},{n:'Shadow Word: Pain',q:2,d:503,c:2,r:'C'},{n:'Radiant Elemental',q:2,d:48103,c:2,r:'R'},{n:'Shadow Visions',q:2,d:48094,c:2,r:'E'},{n:'Injured Blademaster',q:2,d:38,c:3,r:'R'},{n:'Auchenai Soulpriest',q:2,d:515,c:4,r:'R'},{n:'Shadow Word: Death',q:2,d:547,c:3,r:'C'},{n:'Holy Nova',q:2,d:503,c:5,r:'C'},{n:'Shadowreaper Anduin',q:1,d:45392,c:8,r:'L'},{n:'Lyra the Sunshard',q:1,d:43378,c:5,r:'L'},{n:'Cabal Shadow Priest',q:1,d:559,c:6,r:'E'}]},
+    DEMONHUNTER:{label:'Aggro Demon Hunter',strategy:'Twin Slice + Battlefiend = +2 atk pour 1 mana. Altruis AoE tous les ennemis.',combos:['Battlefiend + attaque héros = +1 atk','Twin Slice + Battlefiend = +2/0 pour 1 mana','Altruis + Outcast = dégâts AoE tous ennemis'],
+      cards:[{n:'Blur',q:2,d:61222,c:0,r:'C'},{n:'Twin Slice',q:2,d:61249,c:1,r:'C'},{n:'Consume Magic',q:2,d:61167,c:1,r:'C'},{n:'Battlefiend',q:2,d:61161,c:1,r:'C'},{n:'Ur\'zul Horror',q:2,d:61253,c:1,r:'C'},{n:'Crimson Sigil Runner',q:2,d:61179,c:1,r:'C'},{n:'Chaos Strike',q:2,d:61198,c:2,r:'C'},{n:'Immolation Aura',q:2,d:61221,c:2,r:'C'},{n:'Spectral Sight',q:2,d:61238,c:2,r:'C'},{n:'Coordinated Strike',q:2,d:61232,c:3,r:'C'},{n:'Eye Beam',q:2,d:61189,c:3,r:'E'},{n:'Warglaives of Azzinoth',q:2,d:61226,c:3,r:'R'},{n:'Altruis the Outcast',q:1,d:61150,c:4,r:'L'},{n:'Kayn Sunfury',q:1,d:61157,c:3,r:'L'},{n:'Metamorphosis',q:1,d:61216,c:5,r:'L'}]},
+    DEATHKNIGHT:{label:'Frost Death Knight',strategy:'Rush board avec Ghoul Charge + corpses. Baron Rivendare double tout.',combos:['Ghoul Charge + Corpse Explosion = board clear','Baron Rivendare + deathrattle = double trigger','Acolyte of Death + corpses = pioche par corpse'],
+      cards:[{n:'Acolyte of Death',q:2,d:79553,c:1,r:'C'},{n:'Ghoul Charge',q:2,d:79551,c:2,r:'C'},{n:'Plagued Grain',q:2,d:79579,c:2,r:'C'},{n:'Blood Boil',q:2,d:79555,c:3,r:'C'},{n:'Necrotic Mortician',q:2,d:79561,c:3,r:'C'},{n:'Vampiric Blood',q:2,d:79575,c:3,r:'R'},{n:'Dark Transformation',q:2,d:79559,c:3,r:'C'},{n:'Army of the Dead',q:2,d:79565,c:4,r:'R'},{n:'Corpse Explosion',q:2,d:79573,c:4,r:'R'},{n:'Chillfallen Baron',q:2,d:79569,c:4,r:'R'},{n:'Construct Quarter',q:2,d:79577,c:5,r:'C'},{n:'Death Strike',q:2,d:79583,c:5,r:'C'},{n:'Baron Rivendare',q:1,d:914,c:4,r:'L'},{n:'Deathbringer Saurfang',q:1,d:90617,c:6,r:'L'},{n:'The Lich King',q:1,d:38502,c:8,r:'L'}]}
+  },
+  Midrange:{
+    MAGE:{label:'Secret Mage',strategy:'Secrets empilés + synergies. Arcanologist pioche. Antonidas finisher.',combos:['Arcanologist pioche secret gratuit','Counterspell + secrets = protection','Antonidas + sorts 0-mana = Fireballs'],
+      cards:[{n:'Magic Trick',q:2,d:55552,c:1,r:'R'},{n:'Arcane Missiles',q:2,d:346,c:1,r:'F'},{n:'Arcanologist',q:2,d:42046,c:2,r:'C'},{n:'Frostbolt',q:2,d:662,c:2,r:'C'},{n:'Sorcerer\'s Apprentice',q:2,d:4752,c:2,r:'C'},{n:'Counterspell',q:2,d:27288,c:3,r:'R'},{n:'Explosive Runes',q:2,d:49340,c:3,r:'R'},{n:'Kirin Tor Mage',q:2,d:2638,c:3,r:'R'},{n:'Mirror Entity',q:2,d:32,c:3,r:'C'},{n:'Flamewaker',q:2,d:22267,c:3,r:'R'},{n:'Fireball',q:2,d:315,c:4,r:'C'},{n:'Polymorph',q:2,d:495,c:4,r:'C'},{n:'Stargazer Luna',q:1,d:55546,c:3,r:'L'},{n:'Archmage Antonidas',q:1,d:1064,c:7,r:'L'},{n:'Ysera, Unleashed',q:1,d:55834,c:9,r:'L'}]},
+    HUNTER:{label:'Midrange Hunter',strategy:'Bêtes enchaînées. Highmane value. Tundra Rhino + Beast = Charge.',combos:['Tundra Rhino + beast = Charge surprise','Savannah Highmane = 2 Hyenas deathrattle','Kill Command + beast = 5 dégâts'],
+      cards:[{n:'Tracking',q:2,d:683,c:1,r:'C'},{n:'Springpaw',q:2,d:55553,c:1,r:'C'},{n:'Scavenging Hyena',q:2,d:535,c:2,r:'C'},{n:'Pack Tactics',q:2,d:58476,c:2,r:'R'},{n:'Animal Companion',q:2,d:730,c:3,r:'F'},{n:'Kill Command',q:2,d:734,c:3,r:'C'},{n:'Eaglehorn Bow',q:2,d:363,c:3,r:'R'},{n:'Rat Pack',q:2,d:46011,c:3,r:'E'},{n:'Houndmaster',q:2,d:736,c:4,r:'C'},{n:'Dire Frenzy',q:2,d:48110,c:5,r:'C'},{n:'Tundra Rhino',q:2,d:543,c:5,r:'C'},{n:'Savannah Highmane',q:2,d:725,c:6,r:'R'},{n:'Voracious Reader',q:2,d:58491,c:2,r:'R'},{n:'Rexxar',q:1,d:267,c:6,r:'L'},{n:'Zul\'jin',q:1,d:55463,c:10,r:'L'}]},
+    PALADIN:{label:'Control Paladin',strategy:'Equality + Consecration board clear. Tarim + board = tout 3/3.',combos:['Equality + Consecration = board clear 6 mana','Sunkeeper Tarim + board = tout 3/3','Holy Wrath + Shirvallah = 25 dégâts pour 2'],
+      cards:[{n:'Equality',q:2,d:661,c:2,r:'R'},{n:'Aldor Peacekeeper',q:2,d:623,c:3,r:'R'},{n:'Shielded Minibot',q:2,d:22348,c:2,r:'R'},{n:'Muster for Battle',q:2,d:22346,c:3,r:'R'},{n:'Rallying Blade',q:2,d:22347,c:3,r:'R'},{n:'Truesilver Champion',q:2,d:625,c:4,r:'C'},{n:'Consecration',q:2,d:670,c:4,r:'C'},{n:'Bellringer Sentry',q:2,d:55993,c:4,r:'R'},{n:'Holy Wrath',q:2,d:35272,c:5,r:'R'},{n:'Prismatic Lens',q:2,d:58447,c:4,r:'E'},{n:'Sunkeeper Tarim',q:1,d:45390,c:6,r:'L'},{n:'Bolvar Fireblood',q:1,d:45775,c:5,r:'L'},{n:'Tirion Fordring',q:1,d:391,c:8,r:'L'},{n:'Libram of Hope',q:1,d:62904,c:9,r:'L'},{n:'Quartermaster',q:1,d:22276,c:5,r:'E'}]},
+    DRUID:{label:'Malygos Druid',strategy:'Ramp rapide. Malygos + sorts dégâts = burst OTK massif.',combos:['Malygos + Moonfire + Swipe = OTK','Innervate + gros serviteur tour 1','Kun the Forgotten King + combos = infinite'],
+      cards:[{n:'Innervate',q:2,d:738,c:0,r:'F'},{n:'Moonfire',q:2,d:331,c:0,r:'F'},{n:'Lightning Bloom',q:2,d:62908,c:0,r:'C'},{n:'Wrath',q:2,d:278,c:2,r:'C'},{n:'Wild Growth',q:2,d:282,c:3,r:'C'},{n:'Ferocious Howl',q:2,d:48127,c:3,r:'C'},{n:'Swipe',q:2,d:295,c:4,r:'C'},{n:'Branching Paths',q:2,d:48111,c:4,r:'C'},{n:'Arcane Tyrant',q:2,d:48154,c:5,r:'E'},{n:'Nourish',q:2,d:373,c:5,r:'C'},{n:'Starfire',q:2,d:273,c:6,r:'C'},{n:'Flobbidinous Floop',q:1,d:55582,c:4,r:'L'},{n:'Malygos',q:1,d:270,c:9,r:'L'},{n:'Kun the Forgotten King',q:1,d:35245,c:10,r:'L'},{n:'Ultimate Infestation',q:1,d:45726,c:10,r:'E'}]},
+    WARRIOR:{label:'Control Warrior',strategy:'Grommash + Whirlwind = 10 face. Armure pour tenir. Brawl board clear.',combos:['Grommash + Whirlwind = 10 face OTK','Frothing Berserker + Whirlwind = géant','Shield Slam + armure = removal gratuit'],
+      cards:[{n:'Whirlwind',q:2,d:547,c:1,r:'C'},{n:'Shield Slam',q:2,d:402,c:1,r:'C'},{n:'Execute',q:2,d:597,c:2,r:'C'},{n:'Fiery War Axe',q:2,d:632,c:2,r:'C'},{n:'Armorsmith',q:2,d:414,c:2,r:'R'},{n:'Shield Block',q:2,d:576,c:3,r:'C'},{n:'Bash',q:2,d:22353,c:3,r:'C'},{n:'Frothing Berserker',q:2,d:1915,c:3,r:'R'},{n:'Acolyte of Pain',q:2,d:456,c:3,r:'C'},{n:'Brawl',q:2,d:1993,c:5,r:'E'},{n:'Sludge Belcher',q:2,d:7749,c:5,r:'R'},{n:'Grommash Hellscream',q:1,d:604,c:8,r:'L'},{n:'Justicar Trueheart',q:1,d:27215,c:6,r:'L'},{n:'Dr. Boom',q:1,d:2949,c:7,r:'L'},{n:'Gorehowl',q:1,d:621,c:7,r:'E'}]},
+    SHAMAN:{label:'Totem Shaman',strategy:'Totems synergies. Thing from Below gratuit. Bloodlust = burst.',combos:['Thing from Below gratuit avec totems','Flametongue Totem + tokens = +2 atk adjacent','Bloodlust + board plein = lethal garanti'],
+      cards:[{n:'Lightning Bolt',q:2,d:10,c:1,r:'C'},{n:'Flametongue Totem',q:2,d:395,c:2,r:'C'},{n:'Ancestral Knowledge',q:2,d:27229,c:2,r:'C'},{n:'Totem Golem',q:2,d:27229,c:2,r:'C'},{n:'Feral Spirit',q:2,d:587,c:3,r:'R'},{n:'Lava Burst',q:2,d:582,c:3,r:'C'},{n:'Far Sight',q:2,d:607,c:3,r:'E'},{n:'Mana Tide Totem',q:2,d:613,c:3,r:'R'},{n:'Hex',q:2,d:669,c:4,r:'C'},{n:'Thing from Below',q:2,d:33155,c:6,r:'R'},{n:'Bloodlust',q:2,d:590,c:5,r:'C'},{n:'Tunnel Trogg',q:2,d:27257,c:1,r:'C'},{n:'White Eyes',q:1,d:35241,c:5,r:'L'},{n:'Kalimos, Primal Lord',q:1,d:45351,c:8,r:'L'},{n:'Al\'Akir the Windlord',q:1,d:614,c:8,r:'L'}]},
+    WARLOCK:{label:'Handlock',strategy:'Mountain Giant gratuit si vie basse. Jaraxxus = nouveau héros.',combos:['Mountain Giant + vie basse = gratuit','Twilight Drake + main pleine = +1/+1 par carte','Jaraxxus + infernals = 6/6 par tour'],
+      cards:[{n:'Mortal Coil',q:2,d:833,c:1,r:'C'},{n:'Darkbomb',q:2,d:22308,c:2,r:'C'},{n:'Sunfury Protector',q:2,d:764,c:2,r:'C'},{n:'Ancient Watcher',q:2,d:2757,c:2,r:'R'},{n:'Twilight Drake',q:2,d:360,c:4,r:'R'},{n:'Defender of Argus',q:2,d:473,c:4,r:'R'},{n:'Shadowflame',q:2,d:842,c:4,r:'E'},{n:'Siphon Soul',q:2,d:918,c:6,r:'R'},{n:'Mountain Giant',q:2,d:836,c:12,r:'E'},{n:'Molten Giant',q:2,d:2039,c:25,r:'E'},{n:'Earthen Ring Farseer',q:2,d:765,c:3,r:'C'},{n:'Lord Jaraxxus',q:1,d:878,c:9,r:'L'},{n:'Mal\'Ganis',q:1,d:893,c:9,r:'L'},{n:'Brann Bronzebeard',q:1,d:27214,c:3,r:'L'},{n:'Ragnaros the Firelord',q:1,d:503,c:8,r:'L'}]},
+    ROGUE:{label:'Deathrattle Rogue',strategy:'Necrium Blade déclenche deathrattles. Sonya recycle les Rush.',combos:['Necrium Blade + deathrattle = trigger en attaquant','Sonya Shadowdancer + Rush = copie 1 mana','Vilespine Slayer + combo = destroy silencieux'],
+      cards:[{n:'Backstab',q:2,d:1005,c:0,r:'F'},{n:'Preparation',q:2,d:1017,c:0,r:'E'},{n:'Shadowstep',q:2,d:1094,c:0,r:'C'},{n:'Eviscerate',q:2,d:1097,c:2,r:'C'},{n:'Sap',q:2,d:1015,c:2,r:'C'},{n:'Fan of Knives',q:2,d:1086,c:3,r:'C'},{n:'SI:7 Agent',q:2,d:2812,c:3,r:'R'},{n:'Necrium Blade',q:2,d:55598,c:3,r:'R'},{n:'Waggle Pick',q:2,d:55488,c:4,r:'E'},{n:'Necrium Apothecary',q:2,d:55548,c:4,r:'E'},{n:'Vilespine Slayer',q:2,d:46026,c:5,r:'E'},{n:'Sonya Shadowdancer',q:1,d:46930,c:2,r:'L'},{n:'Leeroy Jenkins',q:1,d:559,c:5,r:'L'},{n:'Tess Greymane',q:1,d:48734,c:7,r:'L'},{n:'Valeera the Hollow',q:1,d:37000,c:9,r:'L'}]},
+    PRIEST:{label:'Dragon Priest',strategy:'Duskbreaker AoE si dragon en main. Lyra + sorts = infinite value.',combos:['Duskbreaker + dragon en main = 3 dégâts AoE','Radiant Elemental + sorts = -2 mana chacun','Lyra the Sunshard + sorts = sort Priest gratuit'],
+      cards:[{n:'Power Word: Shield',q:2,d:471,c:0,r:'C'},{n:'Northshire Cleric',q:2,d:554,c:1,r:'C'},{n:'Twilight Whelp',q:2,d:22296,c:1,r:'C'},{n:'Shadow Word: Pain',q:2,d:503,c:2,r:'C'},{n:'Radiant Elemental',q:2,d:48103,c:2,r:'R'},{n:'Twilight Drake',q:2,d:360,c:4,r:'R'},{n:'Duskbreaker',q:2,d:48101,c:4,r:'R'},{n:'Shadow Word: Death',q:2,d:547,c:3,r:'C'},{n:'Cobalt Scalebane',q:2,d:46067,c:5,r:'C'},{n:'Holy Nova',q:2,d:503,c:5,r:'C'},{n:'Cabal Shadow Priest',q:2,d:559,c:6,r:'E'},{n:'Lyra the Sunshard',q:1,d:43378,c:5,r:'L'},{n:'Murozond',q:1,d:48096,c:8,r:'L'},{n:'Ysera',q:1,d:445,c:9,r:'L'},{n:'Nefarian',q:1,d:724,c:9,r:'L'}]},
+    DEMONHUNTER:{label:'Tempo Demon Hunter',strategy:'Tempo et removal. Altruis AoE face. Priestess of Fury finisher.',combos:['Altruis + Outcast = dégâts tous les ennemis','Crimson Runner + Outcast = pioche garantie','Priestess of Fury = 6 dégâts par tour héros'],
+      cards:[{n:'Blur',q:2,d:61222,c:0,r:'C'},{n:'Twin Slice',q:2,d:61249,c:1,r:'C'},{n:'Consume Magic',q:2,d:61167,c:1,r:'C'},{n:'Crimson Sigil Runner',q:2,d:61179,c:1,r:'C'},{n:'Chaos Strike',q:2,d:61198,c:2,r:'C'},{n:'Spectral Sight',q:2,d:61238,c:2,r:'C'},{n:'Immolation Aura',q:2,d:61221,c:2,r:'C'},{n:'Eye Beam',q:2,d:61189,c:3,r:'E'},{n:'Coordinated Strike',q:2,d:61232,c:3,r:'C'},{n:'Warglaives of Azzinoth',q:2,d:61226,c:3,r:'R'},{n:'Imprisoned Antaen',q:2,d:61183,c:5,r:'R'},{n:'Priestess of Fury',q:2,d:61203,c:6,r:'E'},{n:'Altruis the Outcast',q:1,d:61150,c:4,r:'L'},{n:'Kayn Sunfury',q:1,d:61157,c:3,r:'L'},{n:'Skull of Gul\'dan',q:1,d:41216,c:6,r:'C'}]},
+    DEATHKNIGHT:{label:'Unholy Death Knight',strategy:'The Lich King = cartes DK fin de tour. Baron double tout.',combos:['The Lich King = carte DK chaque fin de tour','Baron Rivendare + deathrattle = double trigger','Frostmourne + morts = ressuscite 5 serviteurs'],
+      cards:[{n:'Acolyte of Death',q:2,d:79553,c:1,r:'C'},{n:'Ghoul Charge',q:2,d:79551,c:2,r:'C'},{n:'Blood Tap',q:2,d:79555,c:2,r:'R'},{n:'Vampiric Blood',q:2,d:79575,c:3,r:'R'},{n:'Necrotic Mortician',q:2,d:79561,c:3,r:'C'},{n:'Army of the Dead',q:2,d:79565,c:4,r:'R'},{n:'Corpse Explosion',q:2,d:79573,c:4,r:'R'},{n:'Chillfallen Baron',q:2,d:79569,c:4,r:'R'},{n:'Death Strike',q:2,d:79583,c:5,r:'C'},{n:'Construct Quarter',q:2,d:79577,c:5,r:'C'},{n:'Gnome Muncher',q:2,d:79571,c:5,r:'E'},{n:'Baron Rivendare',q:1,d:914,c:4,r:'L'},{n:'Deathbringer Saurfang',q:1,d:90617,c:6,r:'L'},{n:'The Lich King',q:1,d:38502,c:8,r:'L'},{n:'Sindragosa',q:1,d:62908,c:8,r:'L'}]}
+  }
+};
+['Control','Combo','Tempo','Ramp','Zoo','OTK','Big','Token'].forEach(a=>{META[a]=META.Midrange;});
+
+var LOCAL=[
+  // Mage
+  {n:'Frostbolt',c:2,r:'C',d:662,t:'SPELL'},{n:'Fireball',c:4,r:'C',d:315,t:'SPELL'},{n:'Blizzard',c:6,r:'R',d:457,t:'SPELL'},{n:'Polymorph',c:4,r:'C',d:495,t:'SPELL'},{n:'Arcane Intellect',c:3,r:'C',d:555,t:'SPELL'},{n:'Flamestrike',c:7,r:'C',d:348,t:'SPELL'},{n:'Ice Block',c:3,r:'E',d:344,t:'SPELL'},{n:'Counterspell',c:3,r:'R',d:1597,t:'SPELL'},{n:'Mirror Image',c:1,r:'C',d:669,t:'SPELL'},{n:'Arcane Missiles',c:1,r:'C',d:559,t:'SPELL'},
+  // Mage serviteurs
+  {n:'Mana Wyrm',c:1,r:'C',d:28364},{n:'Sorcerer\'s Apprentice',c:2,r:'C',d:4752},{n:'Flamewaker',c:3,r:'R',d:22267},
+  // Paladin
+  {n:'Consecration',c:4,r:'C',d:670,t:'SPELL'},{n:'Truesilver Champion',c:4,r:'C',d:625},{n:'Holy Light',c:2,r:'C',d:415,t:'SPELL'},{n:'Blessing of Kings',c:4,r:'C',d:535,t:'SPELL'},{n:'Divine Favor',c:3,r:'R',d:435,t:'SPELL'},{n:'Hammer of Wrath',c:4,r:'C',d:623,t:'SPELL'},{n:'Equality',c:2,r:'R',d:428,t:'SPELL'},
+  // Rogue
+  {n:'Backstab',c:0,r:'F',d:1005,t:'SPELL'},{n:'Preparation',c:0,r:'E',d:1017,t:'SPELL'},{n:'Eviscerate',c:2,r:'C',d:1097,t:'SPELL'},{n:'Fan of Knives',c:3,r:'C',d:1086,t:'SPELL'},{n:'Shadowstep',c:0,r:'C',d:1094,t:'SPELL'},{n:'Sap',c:2,r:'C',d:1015,t:'SPELL'},{n:'Shiv',c:2,r:'C',d:2717,t:'SPELL'},
+  // Shaman
+  {n:'Lightning Bolt',c:1,r:'C',d:10,t:'SPELL'},{n:'Hex',c:4,r:'C',d:669,t:'SPELL'},{n:'Bloodlust',c:5,r:'C',d:590,t:'SPELL'},{n:'Lava Burst',c:3,r:'C',d:582,t:'SPELL'},{n:'Earth Shock',c:1,r:'C',d:331,t:'SPELL'},{n:'Far Sight',c:3,r:'E',d:607,t:'SPELL'},{n:'Feral Spirit',c:3,r:'R',d:587,t:'SPELL'},
+  // Druid
+  {n:'Innervate',c:0,r:'F',d:738,t:'SPELL'},{n:'Wild Growth',c:3,r:'C',d:282,t:'SPELL'},{n:'Swipe',c:4,r:'C',d:295,t:'SPELL'},{n:'Savage Roar',c:3,r:'C',d:329,t:'SPELL'},{n:'Wrath',c:2,r:'C',d:278,t:'SPELL'},{n:'Moonfire',c:0,r:'C',d:331,t:'SPELL'},{n:'Starfire',c:6,r:'C',d:273,t:'SPELL'},{n:'Nourish',c:5,r:'C',d:373,t:'SPELL'},
+  // Warrior
+  {n:'Whirlwind',c:1,r:'C',d:547,t:'SPELL'},{n:'Shield Slam',c:1,r:'C',d:402,t:'SPELL'},{n:'Execute',c:2,r:'C',d:597,t:'SPELL'},{n:'Brawl',c:5,r:'E',d:1993,t:'SPELL'},{n:'Shield Block',c:3,r:'C',d:576,t:'SPELL'},{n:'Fiery War Axe',c:2,r:'C',d:632},{n:'Battle Rage',c:2,r:'C',d:603,t:'SPELL'},
+  // Warlock
+  {n:'Mortal Coil',c:1,r:'C',d:833,t:'SPELL'},{n:'Darkbomb',c:2,r:'C',d:22308,t:'SPELL'},{n:'Shadowflame',c:4,r:'E',d:842,t:'SPELL'},{n:'Siphon Soul',c:6,r:'R',d:918,t:'SPELL'},{n:'Doomfire',c:7,r:'C',d:894,t:'SPELL'},
+  // Priest
+  {n:'Shadow Word: Death',c:3,r:'C',d:547,t:'SPELL'},{n:'Holy Nova',c:5,r:'C',d:503,t:'SPELL'},{n:'Power Word: Shield',c:0,r:'C',d:471,t:'SPELL'},{n:'Shadow Word: Pain',c:2,r:'C',d:503,t:'SPELL'},{n:'Thoughtsteal',c:3,r:'C',d:1064,t:'SPELL'},{n:'Mind Control',c:10,r:'C',d:584,t:'SPELL'},
+  // Hunter
+  {n:'Kill Command',c:3,r:'C',d:734,t:'SPELL'},{n:'Animal Companion',c:3,r:'F',d:730,t:'SPELL'},{n:'Tracking',c:1,r:'C',d:683,t:'SPELL'},{n:'Explosive Shot',c:5,r:'R',d:278,t:'SPELL'},{n:'Hunter\'s Mark',c:1,r:'C',d:685,t:'SPELL'},
+  // Démon Hunter
+  {n:'Blur',c:0,r:'C',d:61222,t:'SPELL'},{n:'Chaos Strike',c:2,r:'C',d:61198,t:'SPELL'},{n:'Spectral Sight',c:2,r:'C',d:61238,t:'SPELL'},{n:'Eye Beam',c:3,r:'E',d:61189,t:'SPELL'},{n:'Immolation Aura',c:2,r:'C',d:61221,t:'SPELL'},
+  // Death Knight
+  {n:'Death Strike',c:5,r:'C',d:79583,t:'SPELL'},{n:'Army of the Dead',c:4,r:'R',d:79565,t:'SPELL'},{n:'Corpse Explosion',c:4,r:'R',d:79573,t:'SPELL'},{n:'Vampiric Blood',c:3,r:'R',d:79575,t:'SPELL'},
+  // Légendaires neutres
+  {n:'Archmage Antonidas',c:7,r:'L',d:1064},{n:'Ragnaros the Firelord',c:8,r:'L',d:503},{n:'Leeroy Jenkins',c:5,r:'L',d:559},{n:'Tirion Fordring',c:8,r:'L',d:391},{n:'Sylvanas Windrunner',c:6,r:'L',d:50},{n:'Ysera',c:9,r:'L',d:445},{n:'Malygos',c:9,r:'L',d:270},{n:'The Lich King',c:8,r:'L',d:38502},{n:'Zilliax Deluxe 3000',c:4,r:'L',d:90749},{n:'Brann Bronzebeard',c:3,r:'L',d:27214},{n:'Edwin VanCleef',c:3,r:'L',d:1019},{n:'Savannah Highmane',c:6,r:'R',d:725},{n:'Baron Rivendare',c:4,r:'L',d:914},{n:'Dr. Boom',c:7,r:'L',d:2949},{n:'Cairne Bloodhoof',c:6,r:'L',d:2},{n:'Grommash Hellscream',c:8,r:'L',d:604},{n:'Bloodmage Thalnos',c:2,r:'L',d:1},{n:'Knife Juggler',c:2,r:'R',d:488},{n:'Acolyte of Pain',c:3,r:'C',d:456},{n:'Azure Drake',c:5,r:'R',d:280},{n:'Sunkeeper Tarim',c:6,r:'L',d:45390},{n:'Al\'Akir the Windlord',c:8,r:'L',d:614},{n:'Cenarius',c:9,r:'L',d:503},{n:'Lord Jaraxxus',c:9,r:'L',d:878},{n:'Mal\'Ganis',c:9,r:'L',d:893},{n:'Rexxar',c:6,r:'L',d:267},{n:'Zul\'jin',c:10,r:'L',d:55463},{n:'Deathwing',c:10,r:'L',d:834},{n:'Doomhammer',c:5,r:'E',d:604}
+];
+
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function setTok(s,m){document.getElementById('tok-dot').className='tok-dot '+s;document.getElementById('tok-txt').textContent=m;}
+function switchMode(m,tab){document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.mode-sec').forEach(s=>s.classList.remove('active'));tab.classList.add('active');document.getElementById('mode-'+m).classList.add('active');}
+function selArc(btn,arc){document.querySelectorAll('.arc-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');ST.arc=arc;showSyn();document.getElementById('gen-btn').disabled=false;}
+function showSyn(){
+  if(!ST.arc)return;
+  var cls=document.getElementById('hc').value,db=META[ST.arc]||META.Midrange,data=db[cls]||db.MAGE;
+  var d={Aggro:'Terminaison rapide — cartes 1-3 mana, face damage',Midrange:'Courbe équilibrée — valeur et tempo chaque tour',Control:'Survie et win condition tardive — removals et gros finishers',Combo:'Assembler les pièces pour un burst ou OTK massif',Tempo:'Contrôle du board chaque tour — efficacité mana',Ramp:'Mana accéléré pour poser de grosses menaces tôt',Zoo:'Submerger le board de serviteurs à coût bas',OTK:'One Turn Kill — assembler le combo en un seul tour',Big:'Grosses menaces dès que possible — 7+ mana',Token:'Masse de tokens avec buffs et synergies board'};
+  document.getElementById('syn-txt').innerHTML='<strong style="color:var(--gold-l)">'+data.label+'</strong> — '+(d[ST.arc]||'')+'<br><span style="color:var(--dim);font-size:.88em">Combos : '+data.combos.map(c=>'<span class="combo">'+c+'</span>').join(' · ')+'</span>';
+  document.getElementById('syn-box').classList.add('on');
+}
+function setSrc(s,btn){ST.src=s;document.querySelectorAll('#src-all,#src-my').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('coll-hint').style.display=s==='my'?'block':'none';}
+function setCSrc(s,btn){ST.csrc=s;document.querySelectorAll('#csrc-all,#csrc-my').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('coll-mode-lbl').style.display=s==='my'?'inline':'none';document.getElementById('csearch').value='';document.getElementById('ac-box').classList.remove('open');}
+function setFmt(f,btn){
+  ST.fmt=f;
+  document.querySelectorAll('#fs,#fw').forEach(b=>b.classList.remove('active','std','wld'));
+  btn.classList.add('active',f===2?'std':'wld');
+  // Mettre à jour le hint
+  var hint=document.getElementById('fmt-hint');
+  if(hint){
+    if(f===2){
+      hint.textContent='🏆 Standard — Year of the Raptor 2025 + Year of the Scarab 2026 (Whizbang\'s / Perils / Great Dark = Wild)';
+      hint.style.borderLeftColor='#1a4090';hint.style.color='#90c0ff';
+    }else{
+      hint.textContent='🌀 Wild — toutes les extensions sans restriction';
+      hint.style.borderLeftColor='#6a00c0';hint.style.color='#c890ff';
+    }
+  }
+  // Synchroniser le select du mode custom
+  var hf2=document.getElementById('hf2');
+  if(hf2)hf2.value=f;
+}
+
+// ─── SÉLECTION MODE + RACE + ÉCOLE ───────────────────────────────────────────
+function setMode(mode, btn){
+  ST.deckType = mode;
+  document.querySelectorAll('#tt-srv,#tt-spl,#tt-both').forEach(b=>b.classList.remove('active-srv','active-spl','active-both'));
+  if(mode==='MINION') btn.classList.add('active-srv');
+  else if(mode==='SPELL') btn.classList.add('active-spl');
+  else btn.classList.add('active-both');
+  // Afficher/masquer les panneaux de sélection
+  document.getElementById('panel-srv').classList.toggle('open', mode==='MINION'||mode==='BOTH');
+  document.getElementById('panel-spl').classList.toggle('open', mode==='SPELL'||mode==='BOTH');
+  updateTypeHint();
+}
+
+function pickRace(race, btn){
+  ST.selectedRace = (ST.selectedRace===race) ? null : race; // toggle
+  document.querySelectorAll('#grid-race .pick-btn').forEach(b=>b.classList.remove('sel'));
+  if(ST.selectedRace) document.getElementById('rb-'+race)?.classList.add('sel');
+  updateTypeHint();
+}
+
+function pickSchool(school, btn){
+  ST.selectedSchool = (ST.selectedSchool===school) ? null : school; // toggle
+  document.querySelectorAll('#grid-school .pick-btn').forEach(b=>b.classList.remove('sel'));
+  if(ST.selectedSchool) document.getElementById('sb-'+school)?.classList.add('sel');
+  updateTypeHint();
+}
+
+function updateTypeHint(){
+  var hint = document.getElementById('type-hint');
+  var parts = [];
+  var mode = ST.deckType||'MINION';
+  var race = ST.selectedRace;
+  var school = ST.selectedSchool;
+  var RACE_LABELS_SHORT = {BEAST:'🐾 Bêtes',DEMON:'👿 Démons',DRAGON:'🐉 Dragons',ELEMENTAL:'🔥 Élémentaux',MECH:'⚙️ Mechas',MURLOC:'🐟 Murlocs',NAGA:'🐍 Nagas',PIRATE:'☠️ Pirates',QUILBOAR:'🐗 Quilboars',TOTEM:'🪨 Totems',UNDEAD:'💀 Morts-vivants',DRAENEI:'💎 Draeneïs'};
+  var SCH_LABELS = {ARCANE:'🔮 Arcane',FEL:'☣️ Gangrène',FIRE:'🔥 Feu',FROST:'❄️ Givre',HOLY:'✨ Sacré',NATURE:'🌿 Nature',SHADOW:'🌑 Ombre',NONE:'🃏 Sans école'};
+  if((mode==='MINION'||mode==='BOTH') && race) parts.push('⚔️ '+(RACE_LABELS_SHORT[race]||race)+' · cartes de cette race uniquement');
+  else if(mode==='MINION') parts.push('⚔️ Sélectionne une race ci-dessus');
+  if((mode==='SPELL'||mode==='BOTH') && school) parts.push('✨ '+(SCH_LABELS[school]||school)+' · sorts de cette école uniquement');
+  else if(mode==='SPELL') parts.push('✨ Sélectionne une école ci-dessus');
+  if(mode==='BOTH' && !race && !school) parts.push('🎴 Mixte — sélectionne une race et/ou une école, ou laisse le moteur décider');
+  hint.innerHTML = parts.join('<br>');
+  hint.style.display = parts.length ? 'block' : 'none';
+  hint.style.borderLeftColor = mode==='SPELL'?'#c080ff':mode==='MINION'?'var(--grn)':'var(--gold)';
+  hint.style.color = mode==='SPELL'?'#e0b8ff':mode==='MINION'?'#90ffcc':'var(--gold-l)';
+}
+
+// Compatibilité — setDeckType redirige vers setMode
+function setDeckType(t,btn){ setMode(t,btn); }
+
+async function loadDb(force){
+  if(ST.hsDb&&!force)return ST.hsDb;
+  if(ST.dbLoad){while(ST.dbLoad)await new Promise(r=>setTimeout(r,80));return ST.hsDb;}
+  ST.dbLoad=true;setTok('spin','Chargement HearthstoneJSON...');
+  document.getElementById('tok-btn').disabled=true;
+  try{var r=await fetch('https://api.hearthstonejson.com/v1/latest/enUS/cards.collectible.json');var cards=await r.json();ST.hsDb={};cards.forEach(c=>{
+      if(c.name){
+        var key = c.name.toLowerCase();
+        ST.hsDb[key] = c;
+        // Aussi indexer avec apostrophe droite normalisée
+        var keyN = key.replace(/[‘’ʼ]/g,"'");
+        if(keyN !== key) ST.hsDb[keyN] = c;
+        // Index par card ID — clé fiable sans apostrophes
+        if(c.id) ST.hsDb['__id__'+c.id] = c;
+      }
+    });setTok('ok','★ '+Object.keys(ST.hsDb).length+' cartes — mode légendaires-first activé');document.getElementById('tok-btn').textContent='Chargé ★';}
+  catch(e){ST.hsDb={};setTok('err','HearthstoneJSON non disponible — base locale active');}
+  ST.dbLoad=false;document.getElementById('tok-btn').disabled=false;return ST.hsDb;
+}
+
+function writeVI(n,a){n=Math.max(0,Math.floor(n));do{var b=n&0x7f;n>>>=7;if(n>0)b|=0x80;a.push(b);}while(n>0);}
+function buildCode(heroId,fmt,pairs){
+  var singles=pairs.filter(p=>p.n===1).map(p=>p.d).sort((a,b)=>a-b);
+  var doubles=pairs.filter(p=>p.n>=2).map(p=>p.d).sort((a,b)=>a-b);
+  var b=[];writeVI(0,b);writeVI(1,b);writeVI(fmt,b);writeVI(1,b);writeVI(heroId,b);
+  writeVI(singles.length,b);singles.forEach(id=>writeVI(id,b));
+  writeVI(doubles.length,b);doubles.forEach(id=>writeVI(id,b));writeVI(0,b);
+  var u8=new Uint8Array(b),bin='';u8.forEach(v=>{bin+=String.fromCharCode(v);});return btoa(bin);
+}
+
+// ─── COPIER LE CODE — API Clipboard moderne + fallback robuste ────────────────
+function copyCode(){
+  var ta=document.getElementById('code-ta');
+  var val=ta.value;
+  if(!val||val.startsWith('⚠')||val.startsWith('Cliquez'))return;
+
+  function markCopied(ok){
+    var b1=document.getElementById('copy-btn'),b2=document.getElementById('copy-btn2');
+    var lbl=ok?'✓ Copié !':'Sélectionné — Ctrl+C';
+    b1.textContent=lbl;b1.classList.toggle('ok',ok);
+    b2.textContent=lbl;b2.classList.toggle('ok',ok);
+    // Afficher le status visuel
+    var st=document.getElementById('copy-status');
+    if(ok){
+      st.style.display='block';
+      st.style.background='rgba(74,173,122,.12)';
+      st.style.border='1px solid rgba(74,173,122,.4)';
+      st.style.color='var(--grn)';
+      st.textContent='✓ Code copié ! Colle-le dans Hearthstone → Collection → Mes Decks → Importer (Ctrl+V)';
+    } else {
+      st.style.display='block';
+      st.style.background='rgba(201,168,76,.08)';
+      st.style.border='1px solid rgba(201,168,76,.3)';
+      st.style.color='var(--gold-l)';
+      st.textContent='Le texte est sélectionné — appuie sur Ctrl+C (PC) ou Cmd+C (Mac) pour copier';
+    }
+    setTimeout(function(){
+      b1.textContent='Copier';b1.classList.remove('ok');
+      b2.textContent='Copier le Code';b2.classList.remove('ok');
+      st.style.display='none';
+    },4000);
+  }
+
+  // Méthode 1 : API Clipboard moderne (async, fonctionne dans les iframes modernes)
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(val).then(function(){markCopied(true);}).catch(function(){
+      // Fallback : sélection + execCommand
+      ta.select();ta.setSelectionRange(0,99999);
+      var ok2=false;try{ok2=document.execCommand('copy');}catch(e){}
+      markCopied(ok2);
+    });
+  } else {
+    // Méthode 2 directe si clipboard API absente
+    ta.select();ta.setSelectionRange(0,99999);
+    var ok3=false;try{ok3=document.execCommand('copy');}catch(e){}
+    markCopied(ok3);
+  }
+}
+
+// ─── FALLBACK : ouvrir le code dans une nouvelle page (copie manuelle garantie)
+function openCodeWindow(){
+  var val=document.getElementById('code-ta').value;
+  if(!val||val.startsWith('⚠'))return;
+  // Extraire la ligne base64 pour la mettre en évidence
+  var lines=val.split('\n');
+  var b64=lines.find(function(l){return l.trim().length>20&&!l.startsWith('#')&&/^[A-Za-z0-9+/=]+$/.test(l.trim());})||'';
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Code Deck HS</title>'
+    +'<style>body{font-family:monospace;background:#08060d;color:#cfc8e8;padding:20px;}'
+    +'h2{color:#f0d080;font-family:serif;}p{color:#6a6090;font-size:.9em;}'
+    +'.code{background:#060410;border:2px solid #4aad7a;border-radius:6px;padding:16px;'
+    +'font-size:1.1em;color:#70d090;word-break:break-all;cursor:pointer;margin:10px 0;}'
+    +'.b64{background:#0a0820;border:2px solid #f0d080;border-radius:6px;padding:14px;'
+    +'font-size:1.2em;color:#f0d080;word-break:break-all;cursor:pointer;margin:10px 0;font-weight:bold;}'
+    +'button{background:#1a3a00;border:1px solid #4aad7a;color:#4aad7a;padding:10px 20px;'
+    +'border-radius:4px;font-size:1em;cursor:pointer;margin:8px 4px;}'
+    +'button:hover{background:#2a5a00;}'
+    +'</style></head><body>'
+
+```
++'<h2>★ Code de Deck Hearthstone</h2>'
++'<p>Copie le code complet ci-dessous (bloc vert), ou juste la ligne base64 (bloc doré) — colle dans HS → Collection → Importer</p>'
++(b64?'<div class="b64" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.innerText).then(()=>this.style.background=\'#0a2a00\');this.style.background=\'#0a2a00\';" title="Cliquer pour copier">'+b64+'</div><p>↑ Ligne base64 uniquement (clic pour copier)</p>':'')
++'<div class="code" onclick="var r=document.createRange();r.selectNode(this);window.getSelection().removeAllRanges();window.getSelection().addRange(r);" title="Cliquer pour sélectionner tout">'+val.replace(/\n/g,'<br>')+'</div>'
++'<button onclick="navigator.clipboard&&navigator.clipboard.writeText(document.querySelector(\'.b64\').innerText).then(()=>alert(\'Copié !\'))">Copier le code base64</button>'
++'<button onclick="window.close()">Fermer</button>'
++'</body></html>';
+```
+
+var w=window.open(’’,’_blank’,‘width=700,height=600,scrollbars=yes’);
+if(w){w.document.write(html);w.document.close();}
+else{alert(‘Active les popups pour ce site pour utiliser cette fonction.’);}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOTEUR v10 — Basé sur méta HSReplay/MetaStats · standardSet strict · Groupes races
+// Sources: metastats.net avril 2026 — Imbue Druid 60%, Herald Shaman 58%,
+//          Dragon Warrior 58%, Face Hunter 57%, Aura Paladin 57%, Unholy DK 57%
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── SETS STANDARD 2026 (Year of the Scarab) ─────────────────────────────────
+// ─── SETS STANDARD 2026 — Year of the Scarab ─────────────────────────────────
+// Standard = Core 2026 + Year of the Scarab (2026) + Year of the Raptor (2025)
+// Roté en Wild depuis mars 2026 : Whizbang’s Workshop, Perils in Paradise,
+//   The Great Dark Beyond (Year of the Pegasus 2024) et tout ce qui précède.
+//
+// Year of the Raptor (2025) — ENCORE LÉGAUX en Standard :
+//   - Into the Emerald Dream    → préfixe EDR_
+//   - Across the Timeways       → préfixe TLC_
+//   - Lost City of Un’Goro      → préfixe LOSTCITY_ ou UNG2_ (à confirmer)
+//   - Mini-sets Raptor          → préfixes FIR_, DINO_
+//
+// Year of the Scarab (2026) — LÉGAUX :
+//   - CATACLYSM                 → préfixe CATA_
+//   - Sets à venir 2026
+//
+// Roté en Wild depuis mars 2026 (Year of the Pegasus 2024) :
+//   WHIZBANGS_WORKSHOP (WHI_/WW_), PERILS_IN_PARADISE (PIP_/POP_),
+//   THE_GREAT_DARK_BEYOND (GDB_/SPACE_), Heroes of StarCraft (STARCRAFT_)
+
+var STD_PREFIXES_OK  = new Set([‘CATA’,‘EDR’,‘TLC’,‘FIR’,‘DINO’,‘LOSTCITY’,‘TIME’,‘SCARAB’]);
+var STD_PREFIXES_WILD= new Set([
+// Year of the Pegasus (2024) — roté
+‘WW’,‘WHI’,‘PIP’,‘POP’,‘GDB’,‘SPACE’,‘STARCRAFT’,‘HEROES’,
+// Années précédentes — toutes Wild
+‘TITANS’,‘WONDERS’,‘BADLANDS’,‘WILD_WEST’,
+‘REVENDRETH’,‘SUNKEN’,‘VOYAGE’,‘MINIS’,‘MURDER’,
+‘STORMWIND’,‘WAILING’,‘ALTERAC’,
+‘DARKMOON’,‘SCHOLOMANCE’,‘ASHES’,
+‘DEMONS’,‘DRAGONS’,‘GALAKROND’,
+‘DALARAN’,‘SAVIORS’,‘BAD’,
+‘RASTAKHANS’,‘BOOMDAY’,‘GILNEAS’,‘LOOTAPALOOZA’,
+‘ICECROWN’,‘UNG’,‘GANGS’,‘KARAZHAN’,‘WOG’,
+‘TGT’,‘LOE’,‘BRM’,‘NAX’,‘GVG’,‘VANILLA’,
+]);
+
+function isStandardCard(card){
+// Priorité 1 : champ natif standardSet du JSON HearthstoneJSON (le plus fiable)
+if(card.standardSet===true)  return true;
+if(card.standardSet===false) return false;
+
+var s = (card.set||’’).toUpperCase();
+
+// Core et Legacy = toujours Standard
+if(!s || s===‘CORE’ || s===‘LEGACY’) return true;
+
+// Priorité 2 : préfixe de l’ID de carte (ex: CATA_131, EDR_800, TLC_100)
+if(card.id){
+var prefix = card.id.split(’_’)[0].toUpperCase();
+if(STD_PREFIXES_OK.has(prefix))   return true;
+if(STD_PREFIXES_WILD.has(prefix)) return false;
+}
+
+// Priorité 3 : nom du set
+// Sets Year of the Raptor (2025) — légaux
+if([‘EMERALD_DREAM’,‘ACROSS_THE_TIMEWAYS’,‘TIMEWAYS’,‘LOST_CITY’,‘LOSTCITY’,
+‘INTO_THE_EMERALD_DREAM’,‘FIRESTORM’,‘DINOSAUR’].includes(s)) return true;
+// Sets Year of the Scarab (2026) — légaux
+if([‘CATACLYSM’,‘SCARAB’].includes(s)) return true;
+
+// Sets Year of the Pegasus (2024) — Wild depuis mars 2026
+if([‘WHIZBANGS_WORKSHOP’,‘PERILS_IN_PARADISE’,‘THE_GREAT_DARK_BEYOND’,
+‘GREAT_DARK_BEYOND’,‘HEROES_OF_STARCRAFT’].includes(s)) return false;
+
+// Tout le reste (sets plus anciens) = Wild
+return false;
+}
+
+// ─── PATTERNS MÉTA — extraits de metastats.net / hsreplay.net avril 2026 ─────
+// Ces patterns décrivent les mécaniques gagnantes de chaque archétype en méta actuel
+var META_PATTERNS={
+// ─ Imbue Druid 58-60% winrate ─
+DRUID_IMBUE:{
+keywords:[‘imbue’,‘nature’,‘choose one’,‘treant’,‘root’,‘buff’],
+coreCards:[‘Innervate’,‘Living Roots’,‘Symbiosis’,‘Mark of the Wild’,‘Waveshaping’,
+‘Ebb and Flow’,‘Horn of Plenty’,‘Dreambound Disciple’,‘Flutterwing Guardian’,
+‘Hybridization’,‘Amirdrassil’,‘Hamuul Runetotem’,‘Malorne the Waywatcher’,‘Shaladrassil’],
+strategy:‘Chaîne de sorts Nature avec Imbue pour buff massif. Win-con: Malorne/Shaladrassil.’
+},
+// ─ Herald Shaman 58% winrate ─
+SHAMAN_HERALD:{
+keywords:[‘elemental’,‘overload’,‘herald’,‘evolve’,‘totem’],
+coreCards:[‘Static Shock’,‘Wailing Vapor’,‘Primordial Overseer’,‘Ritual of Power’,‘Skywall Sentinel’,
+‘Flight of the Firehawk’,‘Envoy of the End’,‘Muradin’,‘Al'Akir, Lord of Storms’,
+‘Muradin's Last Stand’,‘Ultraxion’,‘Deathwing, Worldbreaker’],
+strategy:‘Élémentaux + Overload pour Herald. Deathwing comme win-con ultime.’
+},
+// ─ Dragon Warrior 58% winrate ─
+WARRIOR_DRAGON:{
+keywords:[‘dragon’,‘enrage’,‘armor’,‘rush’,‘forge’,‘excavate’],
+coreCards:[‘Darkrider’,‘Sanguine Depths’,‘Time-Twisted Seer’,‘Torch’,‘Brood Keeper’,‘Living Flame’,
+‘Petal Peddler’,‘Precursory Strike’,‘Shadowflame Suffusion’,‘Darkscale Broodmother’,
+‘Erupting Volcano’,‘Stadium Announcer’,‘Prescient Slitherdrake’,‘Grommash Hellscream’,
+‘The Great Dracorex’,‘Windpeak Wyrm’],
+strategy:‘Dragons + Enrage synergy. Grommash comme finisher OTK avec buffs.’
+},
+// ─ Face Hunter 57% winrate ─
+HUNTER_FACE:{
+keywords:[‘beast’,‘rush’,‘damage’,‘secret’,‘bow’,‘rapid fire’],
+coreCards:[‘Arcane Shot’,‘Tracking’,‘Wound Prey’,‘Arrow Retriever’,‘Precise Shot’,‘Rockskipper’,
+‘Confront the Tol'vir’,‘Ranger General Sylvanas’,‘Quel'dorei Fletcher’,
+‘Raptor-Nest Nurse’,‘Reinforcement Rallier’,‘Sizzling Cinder’],
+strategy:‘Face aggro pur. Sorts 1-2 mana maximum + bêtes Rush pour vider la face.’
+},
+// ─ Aura Paladin 57% winrate ─
+PALADIN_AURA:{
+keywords:[‘aura’,‘divine shield’,‘buff’,‘holy’,‘libram’],
+coreCards:[‘Righteous Protector’,‘Acceleration Aura’,‘Hardlight Protector’,‘Inspiring Maul’,
+‘Violet Treasuregill’,‘Manifested Timeways’,‘Spearheart Sentry’,‘Chronological Aura’,
+‘Scalebreaker Bulwark’,‘Renewing Flames’,‘Gelbin of Tomorrow’,‘Nozdormu, Bronze Aspect’],
+strategy:‘Auras en chaîne = buff board permanent. Nozdormu + Gelbin comme win-con.’
+},
+// ─ Unholy Death Knight 57% winrate ─
+DK_UNHOLY:{
+keywords:[‘undead’,‘corpse’,‘reborn’,‘deathrattle’,‘plague’],
+coreCards:[‘Carrier Whelp’,‘Monstrous Mosquito’,‘Murmy’,‘Ancient Raptor’,‘Maze Guide’,
+‘Living Paradox’,‘Reluctant Wrangler’,‘Grave Strength’,‘Nerubian Swarmguard’,
+‘Reanimated Pterrordax’,‘Talanji's Last Stand’,‘Shadows of Yesterday’,
+‘Remnant of Rage’,‘Chow Down’],
+strategy:‘Undead + corpses pour buff Grave Strength. Chow Down comme board clear massive.’
+},
+// ─ Aggro Druid 56% winrate ─
+DRUID_AGGRO:{
+keywords:[‘beast’,‘rush’,‘charge’,‘stealth’,‘token’],
+coreCards:[‘Living Roots’,‘Innervate’,‘Charred Chameleon’,‘Wild Growth’,‘Mark of the Wild’],
+strategy:‘Bêtes agressives avec Rush. Curve basse, close game turn 6-8.’
+},
+// ─ Generic Patterns par archétype ─
+GENERIC:{
+Aggro:[‘charge’,‘rush’,‘divine shield’,‘stealth’,‘1/1’,‘deal damage’,‘face’],
+Midrange:[‘battlecry’,‘deathrattle’,‘rush’,‘discover’,‘draw a card’],
+Control:[‘taunt’,‘destroy’,‘silence’,‘freeze’,‘armor’,‘heal’],
+Combo:[‘combo’,‘spell damage’,‘copy’,‘reduce cost’,‘draw’],
+Tempo:[‘rush’,‘charge’,‘battlecry’,‘spell damage’,‘counter’],
+Ramp:[‘mana crystal’,‘gain an empty mana crystal’,‘choose one’],
+Zoo:[‘battlecry’,‘deathrattle’,‘divine shield’,‘summon a’,‘1/1’],
+OTK:[‘spell damage’,‘deal damage’,‘copy’,‘combo’,‘reduce’],
+Big:[‘taunt’,‘divine shield’,‘deathrattle’,‘8’,‘9’,‘10’],
+Token:[‘summon’,‘1/1’,‘inspire’,‘after you play’,‘battlecry’]
+}
+};
+
+// ─── PROFILS D’ARCHÉTYPES ─────────────────────────────────────────────────────
+var ARC_PROFILES={
+Aggro:   {manaCurve:[1,2,3],   boost:[‘charge’,‘rush’,‘battlecry’,‘stealth’,‘windfury’,‘divine shield’],maxCost:5, legMin:2,legMax:4},
+Midrange:{manaCurve:[2,3,4,5], boost:[‘battlecry’,‘deathrattle’,‘rush’,‘lifesteal’,‘reborn’,‘discover’],maxCost:7, legMin:4,legMax:6},
+Control: {manaCurve:[3,4,5,6,7],boost:[‘taunt’,‘divine shield’,‘lifesteal’,‘deathrattle’,‘freeze’,‘armor’,‘silence’],maxCost:10,legMin:5,legMax:7},
+Combo:   {manaCurve:[1,2,3,4], boost:[‘combo’,‘spell damage’,‘battlecry’,‘freeze’,‘discover’,‘draw’],   maxCost:9, legMin:4,legMax:6},
+Tempo:   {manaCurve:[2,3,4],   boost:[‘rush’,‘charge’,‘battlecry’,‘spell damage’,‘windfury’,‘counter’],  maxCost:6, legMin:3,legMax:5},
+Ramp:    {manaCurve:[0,3,4,8,9],boost:[‘choose one’,‘mana crystal’,‘battlecry’,‘taunt’,‘divine shield’], maxCost:12,legMin:4,legMax:7},
+Zoo:     {manaCurve:[1,2,3],   boost:[‘battlecry’,‘deathrattle’,‘rush’,‘divine shield’,‘summon’],        maxCost:5, legMin:3,legMax:5},
+OTK:     {manaCurve:[1,2,3,4], boost:[‘spell damage’,‘combo’,‘battlecry’,‘freeze’,‘draw’,‘reduce’],      maxCost:10,legMin:4,legMax:6},
+Big:     {manaCurve:[5,6,7,8,9],boost:[‘taunt’,‘divine shield’,‘deathrattle’,‘windfury’,‘reborn’],       maxCost:12,legMin:5,legMax:8},
+Token:   {manaCurve:[1,2,3,4], boost:[‘battlecry’,‘deathrattle’,‘inspire’,‘rush’,‘summon’,‘1/1’],        maxCost:6, legMin:3,legMax:5}
+};
+
+// ─── SYNERGIES TRIBUS (TRIBE_SYNERGY_MAP) ────────────────────────────────────
+var TRIBE_SYNERGY_MAP={
+BEAST:{keywords:[‘beast’,‘friendly beast’,‘beasts’,‘play a beast’,‘summon a beast’],
+buffers:[‘Tundra Rhino’,‘Scavenging Hyena’,‘Timber Wolf’,‘Houndmaster’],
+engines:[‘Rexxar’,‘Zul'jin’,‘Kathrena’,‘King Krush’],bonus:45},
+DEMON:{keywords:[‘demon’,‘imp’,‘infernal’,‘doomguard’,‘friendly demon’],
+buffers:[‘Crystalweaver’,‘Skull of the Man'ari’],
+engines:[‘Mal'Ganis’,‘Lord Jaraxxus’,‘Neeru Fireblade’],bonus:42},
+DRAGON:{keywords:[‘dragon’,‘holding a dragon’,‘friendly dragon’,‘while holding’],
+buffers:[‘Twilight Guardian’,‘Wyrmrest Agent’,‘Blackwing Corruptor’],
+engines:[‘Ysera’,‘Deathwing’,‘Malygos’,‘Alexstrasza’,‘Nozdormu’],bonus:50},
+ELEMENTAL:{keywords:[‘elemental’,‘last turn’,‘you played an elemental’],
+buffers:[‘Servant of Kalimos’,‘Fire Fly’,‘Tar Creeper’,‘Glacial Shard’],
+engines:[‘Kalimos’,‘Ragnaros’,‘Al'Akir’],bonus:42},
+MECH:{keywords:[‘mech’,‘magnetic’,‘friendly mech’,‘summon a mech’],
+buffers:[‘Annoy-o-Tron’,‘Replicating Menace’,‘Glow-Tron’],
+engines:[‘Dr. Boom’,‘Zilliax’,‘Kangor’],bonus:42},
+MURLOC:{keywords:[‘murloc’,‘mrgl’,‘friendly murloc’],
+buffers:[‘Murloc Warleader’,‘Coldlight Seer’,‘Rockpool Hunter’],
+engines:[‘Anyfin’,‘Megafin’,‘Finja’],bonus:45},
+NAGA:{keywords:[‘naga’,‘while holding a spell’,‘after you cast’],
+buffers:[‘Spitelash Siren’],engines:[‘Lady Vashj’],bonus:38},
+PIRATE:{keywords:[‘pirate’,‘weapon’,‘friendly pirate’],
+buffers:[‘Southsea Captain’,‘Ship's Cannon’],
+engines:[‘Patches the Pirate’,‘Mr. Smite’],bonus:40},
+QUILBOAR:{keywords:[‘quilboar’,‘blood gem’],buffers:[],engines:[],bonus:30},
+TOTEM:{keywords:[‘totem’,‘friendly totem’,‘summon a totem’],
+buffers:[‘Flametongue Totem’,‘Mana Tide Totem’],
+engines:[‘Thing from Below’,‘White Eyes’],bonus:35},
+UNDEAD:{keywords:[‘undead’,‘corpse’,‘reborn’,‘generate a corpse’],
+buffers:[‘Nerubian Swarmguard’,‘Murmy’],
+engines:[‘The Lich King’,‘Baron Rivendare’,‘Deathbringer Saurfang’],bonus:42},
+DRAENEI:{keywords:[‘draenei’,‘if you have played a draenei’],
+buffers:[‘Vindicator Maraad’],engines:[‘Yrel’],bonus:30}
+};
+
+// ─── RÈGLES SYNERGIE LÉGENDAIRES ─────────────────────────────────────────────
+var LEG_SYNERGY_RULES=[
+{keys:[‘beast’,‘friendly beast’],bonus:40,race:‘BEAST’,tag:‘Bêtes’},
+{keys:[‘demon’,‘imp’],bonus:40,race:‘DEMON’,tag:‘Démons’},
+{keys:[‘dragon’,‘holding a dragon’],bonus:48,race:‘DRAGON’,tag:‘Dragons’},
+{keys:[‘elemental’,‘last turn’],bonus:40,race:‘ELEMENTAL’,tag:‘Élémentaux’},
+{keys:[‘mech’,‘magnetic’],bonus:40,race:‘MECH’,tag:‘Mechas’},
+{keys:[‘murloc’,‘mrgl’],bonus:42,race:‘MURLOC’,tag:‘Murlocs’},
+{keys:[‘naga’],bonus:36,race:‘NAGA’,tag:‘Nagas’},
+{keys:[‘pirate’,‘weapon’],bonus:38,race:‘PIRATE’,tag:‘Pirates’},
+{keys:[‘totem’],bonus:34,race:‘TOTEM’,tag:‘Totems’},
+{keys:[‘undead’,‘corpse’,‘reborn’],bonus:40,race:‘UNDEAD’,tag:‘Morts-vivants’},
+{keys:[‘deathrattle’,‘reborn’,‘triggering’],bonus:42,tag:‘Deathrattle’},
+{keys:[‘Baron Rivendare’,‘N'Zoth’,‘Sylvanas’],bonus:55,tag:‘Deathrattle maître’},
+{keys:[‘spell’,‘spell damage’,‘cast’],bonus:35,tag:‘Sorts’},
+{keys:[‘Archmage Antonidas’,‘Malygos’],bonus:50,tag:‘Sorts infinis’},
+{keys:[‘battlecry’],bonus:35,tag:‘Battlecry’},
+{keys:[‘Brann Bronzebeard’],bonus:55,tag:‘Brann x2’},
+{keys:[‘divine shield’],bonus:30,tag:‘Bouclier’},
+{keys:[‘taunt’],bonus:25,tag:‘Provocation’},
+{keys:[‘overload’],bonus:32,tag:‘Surcharge’},
+{keys:[‘discover’],bonus:25,tag:‘Découverte’},
+{keys:[‘draw a card’,‘card draw’],bonus:25,tag:‘Pioche’},
+{keys:[‘freeze’],bonus:28,tag:‘Gel’},
+{keys:[‘combo’],bonus:35,tag:‘Combo Rogue’},
+{keys:[‘invoke’,‘galakrond’],bonus:38,tag:‘Galakrond’},
+{keys:[‘n'zoth’,‘c'thun’,‘yogg’],bonus:55,tag:‘Anciens Dieux’},
+{keys:[‘aura’],bonus:35,tag:‘Aura’},
+{keys:[‘imbue’,‘nature spell’],bonus:40,tag:‘Imbue/Nature’},
+{keys:[‘herald’,‘avatar’],bonus:40,tag:‘Herald’},
+{keys:[‘corpse’,‘unholy’],bonus:38,tag:‘Unholy DK’},
+];
+
+// ─── SCORE SYNERGIE entre deux légendaires ────────────────────────────────────
+function legSynergyScore(legA,legB){
+var tA=((legA.text||legA.n||’’)+’ ‘+(legA.mechanics||[]).join(’ ‘)).toLowerCase();
+var tB=((legB.text||legB.n||’’)+’ ‘+(legB.mechanics||[]).join(’ ‘)).toLowerCase();
+var rA=(legA.race||legA.races?.[0]||’’).toUpperCase();
+var rB=(legB.race||legB.races?.[0]||’’).toUpperCase();
+var score=0;
+if(rA&&rB&&rA===rB)score+=70;
+if(rA&&TRIBE_SYNERGY_MAP[rA]){var tm=TRIBE_SYNERGY_MAP[rA];if(tm.keywords.some(k=>tB.includes(k)))score+=tm.bonus;}
+if(rB&&TRIBE_SYNERGY_MAP[rB]){var tm2=TRIBE_SYNERGY_MAP[rB];if(tm2.keywords.some(k=>tA.includes(k)))score+=tm2.bonus;}
+LEG_SYNERGY_RULES.forEach(rule=>{
+var aM=rule.keys.some(k=>tA.includes(k.toLowerCase()));
+var bM=rule.keys.some(k=>tB.includes(k.toLowerCase()));
+var rb=(rule.race&&(rA===rule.race||rB===rule.race))?20:0;
+if(aM&&bM)score+=rule.bonus+rb;
+else if(aM||bM)score+=rule.bonus*0.2+rb*0.5;
+});
+return score;
+}
+
+// ─── CHOISIR LES LÉGENDAIRES ─────────────────────────────────────────────────
+function pickLegendaries(allLegs,cls,arc,count){
+var profile=ARC_PROFILES[arc]||ARC_PROFILES.Midrange;
+var eligible=allLegs.filter(c=>{
+var cc=(c.cardClass||c.classes?.[0]||‘NEUTRAL’).toUpperCase();
+return(cc===cls||cc===‘NEUTRAL’)&&(c.cost||0)<=profile.maxCost;
+});
+if(!eligible.length)return[];
+shuffle(eligible);
+var topN=Math.max(20,Math.floor(eligible.length*0.4));
+var cands=eligible.slice(0,topN);shuffle(cands);
+var chosen=[cands[0]],remaining=cands.slice(1);
+while(chosen.length<count&&remaining.length>0){
+var best=null,bestS=-Infinity;
+remaining.forEach(leg=>{
+var s=chosen.reduce((sum,c)=>sum+legSynergyScore(leg,c),0);
+s+=(profile.manaCurve.includes(leg.cost||0)?18:0)+Math.random()*25-12;
+if(s>bestS){bestS=s;best=leg;}
+});
+if(best){chosen.push(best);remaining=remaining.filter(c=>c!==best);}
+else break;
+}
+return chosen;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOTEUR v14 — Filtres race + école de sort corrects et stricts
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Mots-clés par école de sort (fallback si spellSchool absent du JSON)
+var SCHOOL_KEYWORDS = {
+ARCANE: [‘arcane’],
+FEL:    [‘fel’,‘felfire’,‘fel flame’,‘metamorphosis’],
+FIRE:   [‘fire’,‘flame’,‘burn’,‘blaze’,‘ignite’,‘conflagr’],
+FROST:  [‘frost’,‘freeze’,‘frozen’,‘blizzard’,‘ice’,‘glacial’],
+HOLY:   [‘holy’,‘divine’,‘light’,‘sacred’,‘consecrat’,‘bless’],
+NATURE: [‘nature’,‘nature spell’,‘overgrowth’,‘poison’,‘thorn’,‘earthen’,‘growth’,‘wrath’,‘moonfire’,‘innervate’,‘lightning’],
+SHADOW: [‘shadow’,‘void’,‘dark’,‘corruption’,‘decay’,‘necrotic’,‘defile’,‘plague’],
+};
+
+// Vérifie l’école d’un sort : utilise spellSchool du JSON en priorité, puis mots-clés
+function getSpellSchool(card) {
+if(card.spellSchool) return card.spellSchool.toUpperCase();
+if(!card.text) return ‘NONE’;
+var t = card.text.toLowerCase();
+for(var school in SCHOOL_KEYWORDS) {
+if(SCHOOL_KEYWORDS[school].some(k => t.includes(k))) return school;
+}
+return ‘NONE’;
+}
+
+// ─── CONSTRUIRE L’IDENTITÉ DU DECK depuis les choix utilisateur ──────────────
+// Retourne { race: ‘DRAGON’|null, school: ‘FIRE’|null }
+// Les deux peuvent être non-null simultanément (mode BOTH)
+function buildDeckFilter() {
+var mode = ST.deckType || ‘MINION’;
+var race   = (mode === ‘MINION’ || mode === ‘BOTH’) ? (ST.selectedRace   || null) : null;
+var school = (mode === ‘SPELL’  || mode === ‘BOTH’) ? (ST.selectedSchool || null) : null;
+return { mode, race, school };
+}
+
+// ─── FILTRER LES LÉGENDAIRES selon le choix de race ───────────────────────────
+// Si une race est choisie, forcer les légendaires de cette race en priorité
+function pickLegendariesFiltered(allLegs, cls, arc, count, filter) {
+var profile = ARC_PROFILES[arc] || ARC_PROFILES.Midrange;
+
+// Pré-filtrer par classe et coût
+var eligible = allLegs.filter(c => {
+var cc = (c.cardClass || c.classes?.[0] || ‘NEUTRAL’).toUpperCase();
+return (cc === cls || cc === ‘NEUTRAL’) && (c.cost||0) <= profile.maxCost;
+});
+
+// ── Race choisie : FORCER les légendaires de cette race ─────────────────────
+if(filter.race) {
+var fRace = filter.race;
+var tm = TRIBE_SYNERGY_MAP[fRace];
+
+```
+// Légendaires exactement de la race choisie
+var raceLegs = eligible.filter(c => (c.race||c.races?.[0]||'').toUpperCase() === fRace);
+
+// Légendaires de support (mentionnent la race mais pas de la race eux-mêmes)
+var supportLegs = eligible.filter(c => {
+  var cr = (c.race||c.races?.[0]||'').toUpperCase();
+  if(cr === fRace) return false;          // déjà dans raceLegs
+  if(cr && TRIBE_SYNERGY_MAP[cr]) return false; // autre tribu → exclu
+  var t = ((c.text||'')+' '+(c.mechanics||[]).join(' ')).toLowerCase();
+  return tm ? tm.keywords.some(k=>t.includes(k)) : t.includes(fRace.toLowerCase());
+});
+
+shuffle(raceLegs); shuffle(supportLegs);
+
+// Prendre max de légendaires de la race, compléter avec support si besoin
+var taken = raceLegs.slice(0, count);
+if(taken.length < count) {
+  taken = taken.concat(supportLegs.slice(0, count - taken.length));
+}
+// Si encore insuffisant, fallback sur tous les éligibles
+if(taken.length === 0) taken = eligible.slice(0, count);
+shuffle(taken);
+return taken.slice(0, count);
+```
+
+}
+
+// ── Mode sorts : pas de contrainte sur les légendaires ──────────────────────
+// (les légendaires sorts-synergy seront sélectionnés par le scoring)
+
+// ── Greedy normal pour mode BOTH ou MINION sans race ────────────────────────
+if(!eligible.length) return [];
+shuffle(eligible);
+var topN = Math.max(20, Math.floor(eligible.length * 0.4));
+var cands = eligible.slice(0, topN); shuffle(cands);
+var chosen = [cands[0]], remaining = cands.slice(1);
+while(chosen.length < count && remaining.length > 0) {
+var best = null, bestS = -Infinity;
+remaining.forEach(leg => {
+var s = chosen.reduce((sum,c) => sum + legSynergyScore(leg,c), 0);
+s += (profile.manaCurve.includes(leg.cost||0) ? 18 : 0) + Math.random()*20-10;
+if(s > bestS) { bestS = s; best = leg; }
+});
+if(best) { chosen.push(best); remaining = remaining.filter(c => c !== best); }
+else break;
+}
+return chosen;
+}
+
+// ─── SCORER une carte selon le filtre utilisateur ────────────────────────────
+// Retourne un score numérique. Cartes hors-filtre = score très négatif.
+function scoreCard(card, chosenLegs, arc, cls, filter) {
+var profile = ARC_PROFILES[arc] || ARC_PROFILES.Midrange;
+var cost    = card.cost || 0;
+var cType   = (card.type || ‘MINION’).toUpperCase();
+var cText   = ((card.text||’’) + ’ ’ + (card.mechanics||[]).join(’ ’)).toLowerCase();
+var cCls    = (card.cardClass || card.classes?.[0] || ‘NEUTRAL’).toUpperCase();
+var cRace   = (card.race || card.races?.[0] || ‘’).toUpperCase();
+var mode    = filter.mode;
+var fRace   = filter.race;
+var fSchool = filter.school;
+
+// ── Filtre classe strict ─────────────────────────────────────────────────────
+if(cCls !== cls && cCls !== ‘NEUTRAL’) return -9999;
+
+// ════════════════════════════════════════════════════════════════════════════
+// FILTRES HARD — cartes hors-type = -9999, jamais incluses peu importe le reste
+// ════════════════════════════════════════════════════════════════════════════
+
+if(mode === ‘MINION’) {
+if(cType === ‘MINION’) {
+if(fRace) {
+// Autre race tribale connue → EXCLU définitif
+if(cRace && cRace !== fRace && TRIBE_SYNERGY_MAP[cRace]) return -9999;
+// Serviteur sans race sans rapport → EXCLU
+if(!cRace) {
+var tm = TRIBE_SYNERGY_MAP[fRace];
+var helpsTribe = tm ? tm.keywords.some(k=>cText.includes(k)) : cText.includes(fRace.toLowerCase());
+if(!helpsTribe) return -9999;
+}
+}
+// Mode sans race → tous les serviteurs sans race tribale ok, les tribaux exclus d’autres races
+}
+else if(cType === ‘SPELL’) {
+if(fRace) {
+var tm2 = TRIBE_SYNERGY_MAP[fRace];
+var helps2 = tm2 ? tm2.keywords.some(k=>cText.includes(k)) : cText.includes(fRace.toLowerCase());
+if(!helps2 && cCls !== cls) return -9999;      // sort neutre hors-tribu → exclu
+if(!helps2 && cCls === cls) return 5;          // sort de classe générique → score neutre, laissé
+}
+}
+else if(cType === ‘WEAPON’) {
+// Armes : seulement la classe cible
+if(cCls !== cls) return -9999;
+}
+else return -9999; // Lieux/etc → exclus
+}
+
+else if(mode === ‘SPELL’) {
+if(cType === ‘SPELL’) {
+if(fSchool && fSchool !== ‘NONE’) {
+var cardSch = getSpellSchool(card);
+// Sort d’une autre école → EXCLU
+if(cardSch !== fSchool && cardSch !== ‘NONE’) return -9999;
+// Sort “sans école” dans un deck école spécifique → toléré mais faible
+if(cardSch === ‘NONE’) { /* ok, score faible plus bas */ }
+} else if(fSchool === ‘NONE’) {
+// Deck “sans école” : exclure les sorts qui ont une école connue
+if(getSpellSchool(card) !== ‘NONE’) return -9999;
+}
+// Pas d’école choisie → tous les sorts autorisés
+}
+else if(cType === ‘MINION’) {
+// Mode sorts : seuls les serviteurs qui amplifient les sorts
+var synSort = cText.includes(‘spell’) || cText.includes(‘cast’) ||
+cText.includes(‘spell damage’) || cText.includes(‘after you cast’) ||
+cText.includes(‘whenever you cast’) || cText.includes(‘spellpower’);
+if(!synSort) return -9999; // tout serviteur sans synergie sort → exclu
+}
+else return -9999;
+}
+
+else { // BOTH
+if(cType === ‘MINION’ && fRace) {
+// En mode mixte avec race choisie : serviteurs d’une autre race tribale → exclus
+if(cRace && cRace !== fRace && TRIBE_SYNERGY_MAP[cRace]) return -9999;
+}
+if(cType === ‘SPELL’ && fSchool && fSchool !== ‘NONE’) {
+var cSch2 = getSpellSchool(card);
+if(cSch2 !== fSchool && cSch2 !== ‘NONE’) return -9999;
+}
+if(cType === ‘SPELL’ && fSchool === ‘NONE’) {
+if(getSpellSchool(card) !== ‘NONE’) return -9999;
+}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SCORING POSITIF — cartes acceptées
+// ════════════════════════════════════════════════════════════════════════════
+var score = 0;
+
+// Bonus fort pour le type exact voulu
+if(mode === ‘MINION’) {
+if(fRace && cType === ‘MINION’ && cRace === fRace) score += 200;
+else if(cType === ‘MINION’ && !fRace && !cRace) score += 60;
+else if(cType === ‘MINION’ && cRace) score += 40;
+else if(cType === ‘SPELL’) score += 30;
+else if(cType === ‘WEAPON’) score += 20;
+}
+else if(mode === ‘SPELL’) {
+if(cType === ‘SPELL’) {
+var sch = fSchool ? getSpellSchool(card) : ‘ANY’;
+if(sch === fSchool || !fSchool) score += 200;
+else if(sch === ‘NONE’) score += 60; // sort sans école dans deck école spécifique
+if(cCls === cls) score += 30;
+}
+else if(cType === ‘MINION’) score += 80; // serviteur sort-synergy
+}
+else { // BOTH
+if(cType === ‘MINION’) {
+if(fRace && cRace === fRace) score += 180;
+else if(!fRace) score += 60;
+else score += 20;
+}
+if(cType === ‘SPELL’) {
+if(fSchool) {
+var cS2 = getSpellSchool(card);
+if(cS2 === fSchool) score += 180;
+else if(cS2 === ‘NONE’) score += 60;
+else score += 30;
+} else score += 80;
+if(cCls === cls) score += 20;
+}
+if(cType === ‘WEAPON’ && cCls === cls) score += 30;
+}
+
+// ── Courbe mana ──────────────────────────────────────────────────────────────
+if(profile.manaCurve.includes(cost)) score += 28;
+else if(cost <= (profile.maxCost||8)) score += 8;
+else score -= 15;
+
+// ── Mécaniques archétype ─────────────────────────────────────────────────────
+profile.boost.forEach(m => { if(cText.includes(m)) score += 18; });
+
+// ── Synergies légendaires (seulement si même type) ───────────────────────────
+chosenLegs.forEach(leg => {
+var lt = ((leg.text||’’) + ’ ’ + (leg.mechanics||[]).join(’ ‘)).toLowerCase();
+var lr = (leg.race||leg.races?.[0]||’’).toUpperCase();
+LEG_SYNERGY_RULES.forEach(rule => {
+var lM = rule.keys.some(k => lt.includes(k.toLowerCase()));
+var cM = rule.keys.some(k => cText.includes(k.toLowerCase()));
+var rb = (rule.race && (cRace===rule.race||lr===rule.race)) ? 10 : 0;
+if(lM && cM) score += rule.bonus*0.45 + rb;
+});
+if(lr && cRace && lr === cRace) score += 25;
+});
+
+// Bonus classe
+if(cCls === cls) score += 12;
+
+// Pas de randomness sur le score — les cartes sont sélectionnées de façon déterministe
+// (le shuffle du pool apporte la variation)
+return score;
+}
+
+// ─── QUANTITÉ (1 ou 2 copies) ────────────────────────────────────────────────
+function decideCopies(card, filter) {
+if(card.r === ‘L’) return 1;
+var cRace  = (card.race||’’).toUpperCase();
+var cType  = (card.t||‘MINION’).toUpperCase();
+var s      = card._score || 0;
+
+// Score ≥ 200 = carte de type exact → toujours 2
+if(s >= 200) return 2;
+// Score ≥ 150 → toujours 2
+if(s >= 150) return 2;
+// Score ≥ 80 → probablement 2
+if(s >= 80)  return Math.random() > 0.25 ? 2 : 1;
+// Score ≥ 40 → 50/50
+if(s >= 40)  return Math.random() > 0.5 ? 2 : 1;
+// Score faible → 1
+return 1;
+}
+
+// ─── CONSTRUIRE LE POOL ───────────────────────────────────────────────────────
+function buildSupportPool(cls, arc, chosenLegs, collMode, fmt) {
+var profile = ARC_PROFILES[arc] || ARC_PROFILES.Midrange;
+if(!ST.hsDb) return [];
+var filter = buildDeckFilter();
+
+return Object.values(ST.hsDb)
+.filter(c => {
+var cc = (c.cardClass||c.classes?.[0]||‘NEUTRAL’).toUpperCase();
+if(cc !== cls && cc !== ‘NEUTRAL’) return false;
+if(!c.dbfId || !c.name) return false;
+if(c.type===‘HERO’ || c.type===‘HERO_POWER’) return false;
+if(c.rarity===‘LEGENDARY’) return false;
+if((c.cost||0) > (profile.maxCost||10)) return false;
+if(fmt===2 && !isStandardCard(c)) return false;
+if(collMode && MY_COLL.size>0 && !inColl(c.name)) return false;
+return true;
+})
+.map(c => {
+var s = scoreCard(c, chosenLegs, arc, cls, filter);
+var cardObj = {
+n: c.name,
+c: c.cost||0,
+r: normRar(c.rarity),
+d: c.dbfId,
+t: c.type||‘MINION’,
+race: (c.race||c.races?.[0]||’’).toUpperCase(),
+spellSchool: (c.spellSchool||’’).toUpperCase(),
+set: c.set||’’,
+_score: s,
+};
+cardObj.q = decideCopies(cardObj, filter);
+return cardObj;
+})
+.filter(c => c._score > -999)   // exclure les -9999 (hors-type)
+.sort((a,b) => b._score - a._score);
+}
+
+// ─── DESCRIPTION SYNERGIQUE ──────────────────────────────────────────────────
+function describeSynergies(chosenLegs, arc, cls) {
+var tagCount={}, raceCount={};
+chosenLegs.forEach(leg => {
+var t=((leg.text||’’)+’ ‘+(leg.mechanics||[]).join(’ ‘)).toLowerCase();
+LEG_SYNERGY_RULES.forEach(rule => {
+if(rule.keys.some(k=>t.includes(k.toLowerCase()))) tagCount[rule.tag]=(tagCount[rule.tag]||0)+1;
+});
+var r=(leg.race||leg.races?.[0]||’’).toUpperCase();
+if(r) raceCount[r]=(raceCount[r]||0)+1;
+});
+var topTags  = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+var topRaces = Object.entries(raceCount).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>RACE_LABELS[e[0]]||e[0]);
+var metaStr = ‘’;
+Object.keys(META_PATTERNS).forEach(k => {
+if(k!==‘GENERIC’ && k.startsWith(cls+’_’)) metaStr = META_PATTERNS[k].strategy;
+});
+var legNames = chosenLegs.map(l=>’<span class="combo">★ ‘+(l.name||l.n)+’</span>’).join(’ · ’);
+var rPart = topRaces.length ? ‘<br><span style="color:var(--grn);font-size:.82em">Tribus : ‘+topRaces.join(’ · ‘)+’</span>’ : ‘’;
+var tPart = topTags.length  ? ‘<br><span style="color:var(--dim);font-size:.8em">Thèmes : ‘+topTags.join(’ · ‘)+’</span>’ : ‘’;
+var mPart = metaStr ? ‘<br><span style="color:var(--pur);font-size:.8em">Méta : ‘+metaStr+’</span>’ : ‘’;
+return legNames + rPart + tPart + mPart;
+}
+
+// ─── GÉNÉRER UN DECK ─────────────────────────────────────────────────────────
+function genDeck(){
+if(!ST.arc)return;
+var cls=document.getElementById(‘hc’).value;
+var fmt=ST.fmt;
+var dn=document.getElementById(‘dn’).value.trim();
+var arc=ST.arc;
+var db=META[arc]||META.Midrange;
+var data=db[cls]||db.MAGE;
+ST.lastP={mode:‘arc’,cls,fmt,dn,arc};
+var deck=[],tot=0;
+var useDb=ST.hsDb&&Object.keys(ST.hsDb).length>0;
+var profile=ARC_PROFILES[arc]||ARC_PROFILES.Midrange;
+var filter=buildDeckFilter();
+
+if(useDb){
+var collMode=ST.src===‘my’;
+var allLegs=Object.values(ST.hsDb).filter(c=>{
+if(c.rarity!==‘LEGENDARY’||!c.dbfId||!c.name)return false;
+if(c.type===‘HERO’||c.type===‘HERO_POWER’)return false;
+if(fmt===2&&!isStandardCard(c))return false;
+return true;
+});
+if(collMode&&MY_COLL.size>0)allLegs=allLegs.filter(c=>inColl(c.name));
+var legCount=profile.legMin+Math.floor(Math.random()*(profile.legMax-profile.legMin+1));
+legCount=Math.min(legCount,10);
+var chosenLegs=pickLegendariesFiltered(allLegs,cls,arc,legCount,filter);
+chosenLegs.forEach(leg=>{
+deck.push({n:leg.name,c:leg.cost||0,r:‘L’,d:leg.dbfId,q:1,
+t:leg.type||‘MINION’,race:(leg.race||leg.races?.[0]||’’).toUpperCase(),
+spellSchool:’’,set:leg.set||’’});
+tot+=1;
+});
+
+```
+var supportPool=buildSupportPool(cls,arc,chosenLegs,collMode,fmt);
+var deckNames=new Set(deck.map(x=>x.n));
+var topN=Math.max(50,Math.floor(supportPool.length*0.55));
+var topPool=supportPool.slice(0,topN); shuffle(topPool);
+for(var c of topPool){
+  if(tot>=30)break;
+  if(deckNames.has(c.n))continue;
+  var cnt=Math.min(c.q||1,30-tot);
+  if(cnt>0){deck.push({...c,q:cnt});deckNames.add(c.n);tot+=cnt;}
+}
+if(tot<30){
+  var rem=supportPool.filter(c=>!deckNames.has(c.n));shuffle(rem);
+  for(var c of rem){if(tot>=30)break;var cnt=Math.min(c.q||1,30-tot);if(cnt>0){deck.push({...c,q:cnt});deckNames.add(c.n);tot+=cnt;}}
+}
+
+// Badge identité
+var SCH_LBL={ARCANE:'🔮 Arcane',FEL:'☣️ Gangrène',FIRE:'🔥 Feu',FROST:'❄️ Givre',HOLY:'✨ Sacré',NATURE:'🌿 Nature',SHADOW:'🌑 Ombre',NONE:'🃏 Sans école'};
+var idParts=[];
+if(filter.race)idParts.push('<span style="color:var(--grn)">⚔️ '+(RACE_LABELS?.[filter.race]||filter.race)+'</span>');
+if(filter.school)idParts.push('<span style="color:#c080ff">✨ '+(SCH_LBL[filter.school]||filter.school)+'</span>');
+if(!idParts.length)idParts.push('<span style="color:var(--dim)">🎴 Deck équilibré</span>');
+var identityLine=idParts.join(' + ')+'<br>';
+var synTxt='<strong style="color:var(--gold-l)">'+arc+' '+CLS[cls]+'</strong> — '+chosenLegs.length+' légendaires<br>'+identityLine+describeSynergies(chosenLegs,arc,cls);
+showDeck(deck,synTxt,cls,fmt,dn||(arc+' '+CLS[cls]));
+```
+
+}else{
+var cards=data.cards.map(c=>({…c,r:normRar(c.r)}));
+if(ST.src===‘my’&&MY_COLL.size>0)cards=cards.filter(c=>inColl(c.n));
+shuffle(cards);
+for(var c of cards){if(tot>=30)break;var mQ=c.r===‘L’?1:2;var cnt=Math.min(c.q,mQ,30-tot);if(cnt>0){deck.push({…c,q:cnt});tot+=cnt;}}
+if(tot<30&&ST.src!==‘my’){
+var avgC=deck.reduce((a,c)=>a+(c.c*c.q),0)/Math.max(tot,1);
+var fp=LOCAL.map(x=>({…x,r:normRar(x.r)})).sort((a,b)=>Math.abs(a.c-avgC)-Math.abs(b.c-avgC));
+var dn2=new Set(deck.map(x=>x.n));
+for(var f of fp){if(tot>=30)break;if(dn2.has(f.n))continue;var mQf=f.r===‘L’?1:2;var fc=Math.min(mQf,30-tot);if(fc>0){deck.push({…f,q:fc});dn2.add(f.n);tot+=fc;}}
+}
+var syn=’<strong style="color:var(--gold-l)">’+data.label+’</strong> — ‘+data.strategy+’<br><span style="color:var(--dim);font-size:.88em">’+data.combos.map(c=>’<span class="combo">’+c+’</span>’).join(’ · ‘)+’</span>’;
+showDeck(deck,syn,cls,fmt,dn||data.label);
+}
+}
+
+function genCustom(){
+if(!ST.seeds.length)return;
+var cls=document.getElementById(‘hc2’).value;
+var fmt=ST.fmt; // Utiliser ST.fmt (boutons Standard/Wild) plutôt que le select caché
+var dn=document.getElementById(‘dn2’).value.trim()||(’Custom ’+CLS[cls]);
+ST.lastP={mode:‘custom’,cls,fmt,dn};
+var deck=ST.seeds.map(s=>{var r=normRar(s.rar);return{n:s.name,q:r===‘L’?1:2,d:s.dbf||0,c:s.cost,r:r};});
+var tot=deck.reduce((a,c)=>a+c.q,0);
+var deckNames=new Set(deck.map(x=>x.n));
+var avgSeedCost=ST.seeds.reduce((a,s)=>a+s.cost,0)/ST.seeds.length;
+var inferredArc=avgSeedCost<=2.5?‘Aggro’:avgSeedCost>=5?‘Control’:‘Midrange’;
+var collMode=ST.csrc===‘my’;
+var useDb=ST.hsDb&&Object.keys(ST.hsDb).length>0;
+var seedLegs=ST.seeds.filter(s=>normRar(s.rar)===‘L’);
+var seedLegsObj=seedLegs.map(s=>({name:s.name,n:s.name,text:s.name,cost:s.cost,mechanics:[]}));
+var filter=buildDeckFilter();
+
+if(useDb){
+var allLegs=Object.values(ST.hsDb).filter(c=>{
+if(c.rarity!==‘LEGENDARY’||!c.dbfId||!c.name||c.type===‘HERO’)return false;
+if(fmt===2&&!isStandardCard(c))return false;
+return true;
+});
+if(collMode&&MY_COLL.size>0)allLegs=allLegs.filter(c=>inColl(c.name));
+var extraLegsPool=allLegs.filter(c=>!deckNames.has(c.name));
+var extraLegs=pickLegendariesFiltered(extraLegsPool,cls,inferredArc,Math.max(2,4-seedLegs.length),filter);
+extraLegs.forEach(leg=>{
+if(tot<20&&!deckNames.has(leg.name)){
+deck.push({n:leg.name,c:leg.cost||0,r:‘L’,d:leg.dbfId,q:1,
+t:leg.type||‘MINION’,race:(leg.race||leg.races?.[0]||’’).toUpperCase(),spellSchool:’’});
+deckNames.add(leg.name);tot+=1;
+}
+});
+var allChosenLegs=[…seedLegsObj,…extraLegs.filter(l=>deckNames.has(l.name))];
+var supportPool=buildSupportPool(cls,inferredArc,allChosenLegs,collMode,fmt);
+var seedNL=new Set(ST.seeds.map(s=>s.name.toLowerCase()));
+var filtered=supportPool.filter(c=>!seedNL.has(c.n.toLowerCase())&&!deckNames.has(c.n));
+var topN2=Math.max(40,Math.floor(filtered.length*0.5));
+filtered=filtered.slice(0,topN2);shuffle(filtered);
+for(var c of filtered){if(tot>=30)break;if(deckNames.has(c.n))continue;var cnt=Math.min(c.q||1,30-tot);if(cnt>0){deck.push({…c,q:cnt});deckNames.add(c.n);tot+=cnt;}}
+if(tot<30){var rem=supportPool.filter(c=>!deckNames.has(c.n));shuffle(rem);for(var c of rem){if(tot>=30)break;var cnt=Math.min(c.q||1,30-tot);if(cnt>0){deck.push({…c,q:cnt});deckNames.add(c.n);tot+=cnt;}}}
+var legList=deck.filter(c=>c.r===‘L’).map(c=>’<span class="combo">★ ‘+c.n+’</span>’).join(’ · ‘);
+showDeck(deck,‘Custom autour de <span class="combo">’+ST.seeds.map(s=>s.name).join(’, ‘)+’</span><br>’+legList,cls,fmt,dn);
+}else{
+var base=META.Midrange[cls]||META.Midrange.MAGE;
+var seedNLl=new Set(ST.seeds.map(s=>s.name.toLowerCase()));
+var extra=base.cards.map(c=>({…c,r:normRar(c.r)})).filter(c=>!seedNLl.has(c.n.toLowerCase())&&!deckNames.has(c.n));
+if(collMode&&MY_COLL.size>0)extra=extra.filter(c=>inColl(c.n));
+shuffle(extra);
+for(var c of extra){if(tot>=30)break;if(deckNames.has(c.n))continue;var mQ=c.r===‘L’?1:2;var cnt=Math.min(c.q,mQ,30-tot);if(cnt>0){deck.push({…c,q:cnt});deckNames.add(c.n);tot+=cnt;}}
+if(tot<30){var fp=LOCAL.map(x=>({…x,r:normRar(x.r)})).sort((a,b)=>a.c-b.c);for(var f of fp){if(tot>=30)break;if(deckNames.has(f.n))continue;var mQF=f.r===‘L’?1:2;var fc=Math.min(mQF,30-tot);if(fc>0){deck.push({…f,q:fc});deckNames.add(f.n);tot+=fc;}}}
+showDeck(deck,’Custom ’+CLS[cls],cls,fmt,dn);
+}
+}
+
+var RACE_ORDER=[‘BEAST’,‘DEMON’,‘DRAGON’,‘ELEMENTAL’,‘MECH’,‘MURLOC’,‘NAGA’,‘PIRATE’,‘QUILBOAR’,‘TOTEM’,‘UNDEAD’,‘DRAENEI’];
+var RACE_LABELS={BEAST:‘🐾 Bêtes’,DEMON:‘👿 Démons’,DRAGON:‘🐉 Dragons’,ELEMENTAL:‘🔥 Élémentaux’,MECH:‘⚙️ Mechas’,MURLOC:‘🐟 Murlocs’,NAGA:‘🐍 Nagas’,PIRATE:‘☠️ Pirates’,QUILBOAR:‘🐗 Quilboars’,TOTEM:‘🪨 Totems’,UNDEAD:‘💀 Morts-vivants’,DRAENEI:‘💎 Draeneïs’};
+var RC={F:’#aaa’,C:’#ccc’,R:’#4a90e0’,E:’#c060e0’,L:’#f0d080’};
+var RN={F:‘Libre’,C:‘Commune’,R:‘Rare’,E:‘Épique’,L:‘Légendaire’};
+
+function cardGroupKey(c){
+var type=(c.t||‘MINION’).toUpperCase();
+var race=(c.race||’’).toUpperCase();
+if(type===‘SPELL’)return ‘ZZZ_SPELL’;
+if(type===‘WEAPON’)return ‘ZZZ_WEAPON’;
+if(type===‘LOCATION’)return ‘ZZZ_LOCATION’;
+var ri=RACE_ORDER.indexOf(race);
+if(ri>=0)return ‘R’+String(ri).padStart(2,‘0’)+’_’+race;
+return ‘ZZ_MINION’;
+}
+
+function showDeck(cards,synText,cls,fmt,dn){
+// Normaliser + enrichir type/race/dbfId depuis hsDb ou LOCAL
+cards=cards.map(c=>({…c,r:normRar(c.r)}));
+cards=cards.map(c=>{
+var src=ST.hsDb?ST.hsDb[(c.n||’’).toLowerCase().replace(/[\u2018\u2019\u02bc]/g,”’”)]:null;
+if(src){return{…c,
+d: c.d>0 ? c.d : (src.dbfId||0),   // ← préserver ou injecter DBF ID
+t:c.t||src.type||‘MINION’,
+race:c.race||(src.race||src.races?.[0]||’’).toUpperCase(),
+set:c.set||src.set||’’
+};}
+var loc=LOCAL.find(x=>x.n===c.n);
+return{…c,t:c.t||(loc&&loc.t)||‘MINION’,race:c.race||’’};
+});
+// Sauvegarder CURRENT_DECK après enrichissement (avec DBF IDs complets)
+window.CURRENT_DECK = cards.map(function(c){return Object.assign({},c);});
+// Tri par groupe race puis coût
+cards.sort((a,b)=>{var ga=cardGroupKey(a),gb=cardGroupKey(b);if(ga!==gb)return ga.localeCompare(gb);return(a.c||0)-(b.c||0)||a.n.localeCompare(b.n);});
+var tot=cards.reduce((a,c)=>a+c.q,0);
+var fmtName=fmt===2?‘Standard’:‘Wild’;
+var clsName=CLS[cls]||cls;
+var legCount=cards.filter(c=>c.r===‘L’).length;
+var spellCount=cards.filter(c=>(c.t||’’).toUpperCase()===‘SPELL’).reduce((a,c)=>a+c.q,0);
+var tribeSet=new Set(cards.map(c=>c.race||’’).filter(r=>r&&RACE_ORDER.includes(r)));
+
+// Stats
+document.getElementById(‘s-total’).textContent=tot;
+document.getElementById(‘s-leg’).textContent=legCount;
+var se=document.getElementById(‘s-spell’);if(se)se.textContent=spellCount;
+var te=document.getElementById(‘s-tribes’);if(te)te.textContent=tribeSet.size;
+
+// Badge format Standard/Wild visible dans les stats
+var fmtBadgeEl=document.getElementById(‘s-fmt-badge’);
+if(fmtBadgeEl){
+fmtBadgeEl.textContent=(fmt===2?‘🏆 Standard’:‘🌀 Wild’);
+fmtBadgeEl.style.background=fmt===2?‘rgba(10,32,80,.6)’:‘rgba(42,0,96,.6)’;
+fmtBadgeEl.style.color=fmt===2?’#90c0ff’:’#c890ff’;
+fmtBadgeEl.style.borderColor=fmt===2?‘rgba(26,64,144,.5)’:‘rgba(106,0,192,.5)’;
+}
+
+// Badge type dominant
+var typeBadge=’’;
+var typeBadgeEl=document.getElementById(‘s-type-badge’);
+var SCH_LABELS3={ARCANE:‘🔮’,FEL:‘☣️’,FIRE:‘🔥’,FROST:‘❄️’,HOLY:‘✨’,NATURE:‘🌿’,SHADOW:‘🌑’,NONE:‘🃏’};
+if(ST.deckType===‘SPELL’){
+typeBadge=(ST.selectedSchool?(SCH_LABELS3[ST.selectedSchool]||‘✨’)+’ ‘+(ST.selectedSchool):‘✨ Sorts’);
+if(typeBadgeEl)typeBadgeEl.style.borderColor=‘rgba(192,128,255,.6)’;
+}else if(ST.deckType===‘MINION’){
+var raceCardCounts={};
+cards.forEach(c=>{var r=c.race||’’;if(r&&RACE_ORDER.includes(r))raceCardCounts[r]=(raceCardCounts[r]||0)+c.q;});
+var topRE=Object.entries(raceCardCounts).sort((a,b)=>b[1]-a[1])[0];
+typeBadge=topRE?‘⚔️ ‘+(RACE_LABELS[topRE[0]]||topRE[0]):‘⚔️ Srv’;
+if(typeBadgeEl)typeBadgeEl.style.borderColor=‘rgba(74,173,122,.6)’;
+}else{
+var bParts=[];
+if(ST.selectedRace)bParts.push(RACE_LABELS[ST.selectedRace]||ST.selectedRace);
+if(ST.selectedSchool)bParts.push((SCH_LABELS3[ST.selectedSchool]||’’)+(ST.selectedSchool));
+typeBadge=bParts.length?‘🎴 ‘+bParts.join(’+’):‘🎴 Mixte’;
+if(typeBadgeEl)typeBadgeEl.style.borderColor=‘rgba(201,168,76,.5)’;
+}
+var fe=document.getElementById(‘s-fmt’);if(fe)fe.textContent=typeBadge;
+
+// Synergies
+var synEl=document.getElementById(‘out-syn’);
+if(synText){document.getElementById(‘out-syn-txt’).innerHTML=synText;synEl.classList.add(‘on’);synEl.style.display=’’;}
+else{synEl.classList.remove(‘on’);synEl.style.display=‘none’;}
+
+// ─── DECK GRID groupé par race ────────────────────────────────────────────
+var gridHtml=’’,curGroup=’’;
+cards.forEach(c=>{
+var gk=cardGroupKey(c);
+var type=(c.t||‘MINION’).toUpperCase();
+var race=(c.race||’’).toUpperCase();
+if(gk!==curGroup){
+curGroup=gk;
+var label=’’;
+if(type===‘SPELL’)label=’<span style="color:#c080ff">✦</span> Sorts’;
+else if(type===‘WEAPON’)label=’<span style="color:#e08030">⚔</span> Armes’;
+else if(type===‘LOCATION’)label=‘📍 Lieux’;
+else if(RACE_ORDER.includes(race))label=RACE_LABELS[race]||race;
+else label=‘⚔ Serviteurs’;
+gridHtml+=’<div style="grid-column:1/-1;font-family:\'Cinzel\',serif;font-size:.56em;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;padding:6px 0 3px;border-top:1px solid var(--brd);margin-top:4px;">’+label+’</div>’;
+}
+var isLeg=c.r===‘L’;
+gridHtml+=’<div class="dc'+(isLeg?' leg':'')+'"><div class="mc'+(isLeg?' leg':'')+'">’+c.c+’</div>’
++’<div class="cn" style="color:'+(isLeg?'#f0d080':'var(--txt)')+'" title="'+c.n+'">’+(isLeg?‘★ ‘:’’)+c.n+’</div>’
++’<span style="font-size:.72em;color:'+(RC[c.r]||'#ccc')+';flex-shrink:0;">’+(isLeg?‘★’:c.r===‘E’?‘◆’:c.r===‘R’?‘◇’:’’)+’</span>’
++’<span class="cq">’+(isLeg?‘x1’:‘x’+c.q)+’</span></div>’;
+});
+document.getElementById(‘deck-grid’).innerHTML=gridHtml;
+
+// ─── CARD LIST groupée ────────────────────────────────────────────────────
+var inCollTot=0,listHtml=’’,curGroupL=’’;
+cards.forEach(c=>{
+var gk=cardGroupKey(c);
+var type=(c.t||‘MINION’).toUpperCase();
+var race=(c.race||’’).toUpperCase();
+if(gk!==curGroupL){
+curGroupL=gk;
+var label2=’’;
+if(type===‘SPELL’)label2=‘✦ Sorts’;
+else if(type===‘WEAPON’)label2=‘⚔ Armes’;
+else if(type===‘LOCATION’)label2=‘📍 Lieux’;
+else if(RACE_ORDER.includes(race))label2=RACE_LABELS[race]||race;
+else label2=‘⚔ Serviteurs’;
+listHtml+=’<div style="column-span:all;font-family:\'Cinzel\',serif;font-size:.56em;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;padding:6px 0 3px;border-top:1px solid var(--brd);margin-top:4px;">’+label2+’</div>’;
+}
+var isLeg=c.r===‘L’;
+var isSpell=type===‘SPELL’,isWeapon=type===‘WEAPON’;
+var rar=RN[c.r]||‘Commune’;
+var cardInColl=inColl(c.n);if(cardInColl)inCollTot+=c.q;
+var rbg={F:‘rgba(170,170,170,.1)’,C:‘rgba(200,200,200,.08)’,R:‘rgba(74,144,224,.12)’,E:‘rgba(192,96,224,.12)’,L:‘rgba(201,168,76,.15)’}[c.r]||‘rgba(200,200,200,.08)’;
+var rbc={F:‘rgba(170,170,170,.2)’,C:‘rgba(200,200,200,.2)’,R:‘rgba(74,144,224,.35)’,E:‘rgba(192,96,224,.35)’,L:‘rgba(201,168,76,.4)’}[c.r]||‘rgba(200,200,200,.2)’;
+var typeTag=isSpell?’<span style="font-size:.55em;color:#c080ff;opacity:.8;flex-shrink:0;margin-right:2px;">✦</span>’:isWeapon?’<span style="font-size:.55em;color:#e08030;opacity:.8;flex-shrink:0;margin-right:2px;">⚔</span>’:’’;
+listHtml+=’<div style="display:flex;align-items:center;gap:6px;break-inside:avoid;padding:1px 0;">’
++’<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:'+(isLeg?'linear-gradient(135deg,#5a3a00,#2a1800)':'linear-gradient(135deg,#1a3a7a,#0a1a4a)')+';color:'+(isLeg?'#f0d080':'#90c0ff')+';font-size:.68em;font-weight:bold;border:1px solid '+(isLeg?'#8a6a00':'#2a4a8a')+';flex-shrink:0;">’+c.c+’</span>’
++typeTag+’<span style="flex:1;color:'+(isLeg?'#f0d080':'var(--txt)')+';font-weight:'+(isLeg?600:400)+';">’+c.n+(isLeg?’ ★’:’’)+’</span>’
++’<span style="font-size:.58em;padding:1px 5px;border-radius:3px;font-weight:700;text-transform:uppercase;flex-shrink:0;background:'+rbg+';color:'+(RC[c.r]||'#ccc')+';border:1px solid '+rbc+';">’+rar+’</span>’
++’<span style="color:var(--gold);font-weight:700;font-size:.8em;min-width:24px;text-align:right;">’+(isLeg?‘★x1’:‘x’+c.q)+’</span>’
++(MY_COLL.size>0?’<span style="font-size:.76em;" title="'+(cardInColl?'Dans votre collection':'Absent')+'">’+(cardInColl?‘✅’:‘⬜’)+’</span>’:’’)+’</div>’;
+});
+document.getElementById(‘card-list’).innerHTML=listHtml;
+document.getElementById(‘coll-stat’).textContent=MY_COLL.size>0?(inCollTot+’/’+tot+’ dans votre collection’):’’;
+
+// ─── ENCODE ──────────────────────────────────────────────────────────────
+var heroId=HEROES[cls]||637;
+var dbfMap={};
+cards.forEach(c=>{
+var id=0;
+// 1. Chercher dans hsDb par nom (source la plus fiable)
+if(ST.hsDb){
+var h=ST.hsDb[(c.n||’’).toLowerCase().replace(/[\u2018\u2019\u02bc]/g,”’”)];
+if(h&&h.dbfId) id=h.dbfId;
+}
+// 2. Utiliser le dbfId déjà sur la carte si hsDb n’a pas trouvé
+if(!id&&c.d>0) id=c.d;
+// 3. LOCAL fallback
+if(!id){var loc=LOCAL.find(x=>x.n===c.n);if(loc&&loc.d)id=loc.d;}
+if(id) dbfMap[c.n]=id;
+});
+var pairs=cards.map(c=>({d:dbfMap[c.n]||c.d||0,n:c.q})).filter(p=>p.d>0&&p.n>0);
+document.getElementById(‘s-dbf’).textContent=pairs.length;
+var inpB64=document.getElementById(‘code-b64’);
+var ta=document.getElementById(‘code-ta’);
+if(pairs.length>0){
+try{
+var b64=buildCode(heroId,fmt,pairs);
+inpB64.value=b64;
+inpB64.style.borderColor=pairs.length===tot?‘var(–grn)’:‘var(–gold-d)’;
+var lines=[’### ‘+(dn||clsName),’# Class: ‘+clsName,’# Format: ‘+fmtName,’#’,…cards.map(c=>’# ‘+c.q+‘x (’+c.c+’) ‘+c.n),’# ‘,b64,’#’,’# To use this deck, copy it to your clipboard and create a new deck in Hearthstone’];
+if(pairs.length<tot)lines.push(’# ⚠ Code partiel (’+pairs.length+’/’+tot+’ DBF IDs) — Précharger cartes pour code complet’);
+ta.value=lines.join(’\n’);
+}catch(e){inpB64.value=’Erreur: ’+e.message;ta.value=‘Erreur: ‘+e.message;}
+}else{
+inpB64.value=’’;inpB64.placeholder=‘Cliquez “Précharger cartes” puis régénérez’;
+ta.value=‘⚠ Aucun DBF ID — Cliquez “Précharger cartes” puis régénérez.’;
+}
+
+var fmtIcon=fmt===2?‘🏆’:‘🌀’;
+document.getElementById(‘deck-lbl’).textContent=fmtIcon+’ ‘+fmtName+’ · ‘+clsName+’ · ‘+tot+’/30’+(tribeSet.size?’ · ‘+tribeSet.size+’ tribu’+(tribeSet.size>1?‘s’:’’):’’);
+var tribeList=Array.from(tribeSet).map(r=>RACE_LABELS[r]||r).join(’ · ‘);
+var missingDbf=tot-pairs.length;
+var sbarMsg=tot+’/30 cartes · ★ ‘+legCount+’ légendaire(s) · ✦ ‘+spellCount+’ sort(s)’;
+if(tribeList)sbarMsg+=’ · ‘+tribeList;
+if(missingDbf>0)sbarMsg+=’ · ‘+missingDbf+’ DBF manquant(s) — Précharger’;
+else sbarMsg+=’ · ✓ Code importable’;
+document.getElementById(‘sbar’).textContent=sbarMsg;
+document.getElementById(‘deck-out’).classList.add(‘on’);
+}
+
+function regen(){if(!ST.lastP)return;if(ST.lastP.mode===‘arc’)genDeck();else genCustom();}
+
+// COLLECTION
+// ─── NORMALISATION des noms de cartes ────────────────────────────────────────
+// Hearthstone exporte parfois avec apostrophes typographiques, guillemets, etc.
+function normCardName(n){
+if(!n)return’’;
+return n.trim()
+.toLowerCase()
+.replace(/[\u2018\u2019\u02bc\u2032]/g,”’”)
+.replace(/[\u201c\u201d]/g,’”’)
+.replace(/\s+/g,’ ’);
+}
+
+function parseCollText(text){
+var names=new Set();
+text.split(/\r?\n/).forEach(l=>{
+var raw=l.trim();
+if(!raw||raw.startsWith(’#’))return;
+if(/^[A-Za-z0-9+/=]{30,}$/.test(raw))return; // ligne base64 = ignorer
+var name=raw
+.replace(/^#+\s*/,’’)
+.replace(/^\d+x?\s+(\d+)\s+/,’’)
+.replace(/^\d+x?\s+/,’’)
+.replace(/\s+x\d+\s*$/,’’)
+.replace(/\s+\d+\s*$/,’’)
+.trim();
+if(name&&name.length>1) names.add(normCardName(name));
+});
+return names;
+}
+
+function applyCollection(names){
+MY_COLL=names;
+var count=MY_COLL.size;
+document.getElementById(‘coll-n’).textContent=count.toLocaleString(‘fr-CA’);
+document.getElementById(‘coll-badge’).textContent=count>0?count+’ cartes’:’’;
+var sample=Array.from(MY_COLL).slice(0,3).join(’, ‘)+(MY_COLL.size>3?’ …’:’’);
+var sEl=document.getElementById(‘coll-sample’);if(sEl)sEl.textContent=count>0?‘Ex : ‘+sample:’’;
+var st=document.getElementById(‘coll-status’);
+if(st){
+st.textContent=count>0?‘✓ ‘+count+’ cartes importées — filtre “Ma Collection” actif’:‘⚠ Aucune carte reconnue — vérifie le format’;
+st.style.color=count>0?‘var(–grn)’:‘var(–red)’;
+st.style.display=‘block’;
+setTimeout(()=>st.style.display=‘none’,6000);
+}
+}
+
+function importColl(inp){
+var f=inp.files[0];if(!f)return;
+var r=new FileReader();
+r.onload=function(e){ applyCollection(parseCollText(e.target.result)); };
+r.readAsText(f);
+}
+
+var collPasteTO=null;
+function onCollPaste(val){
+clearTimeout(collPasteTO);
+if(!val||val.trim().length<3)return;
+collPasteTO=setTimeout(function(){ applyCollection(parseCollText(val)); },700);
+}
+
+function clearColl(){
+if(!confirm(‘Vider la collection ?’))return;
+MY_COLL=new Set();
+document.getElementById(‘coll-n’).textContent=‘0’;
+document.getElementById(‘coll-badge’).textContent=’’;
+var sEl=document.getElementById(‘coll-sample’);if(sEl)sEl.textContent=’’;
+var pEl=document.getElementById(‘coll-paste’);if(pEl)pEl.value=’’;
+}
+
+// Vérifie si une carte est dans la collection (insensible casse/apostrophes)
+function inColl(name){ return MY_COLL.size>0 && MY_COLL.has(normCardName(name)); }
+
+// SEARCH
+var searchTO=null;
+function onSearch(val){
+clearTimeout(searchTO);
+if(!val||val.length<2){document.getElementById(‘ac-box’).classList.remove(‘open’);return;}
+searchTO=setTimeout(()=>{
+var q=val.toLowerCase(),isCollMode=ST.csrc===‘my’;
+var pool=ST.hsDb?Object.values(ST.hsDb).map(c=>({n:c.name,c:c.cost??0,r:normRar(c.rarity),d:c.dbfId,t:c.type})):LOCAL.map(x=>({…x,r:normRar(x.r),t:x.t||‘MINION’}));
+var res=pool.filter(x=>{var name=(x.n||’’).toLowerCase();return name.includes(q)&&x.t!==‘HERO’&&x.t!==‘HERO_POWER’&&(!isCollMode||inColl(x.n||’’));}).sort((a,b)=>{var an=(a.n||’’).toLowerCase(),bn=(b.n||’’).toLowerCase();return(an.startsWith(q)?-1:0)-(bn.startsWith(q)?-1:0)||((a.c||0)-(b.c||0));}).slice(0,10);
+ST.acRes=res;ST.acIdx=-1;
+var box=document.getElementById(‘ac-box’);
+box.innerHTML=res.map((c,i)=>{
+var typeLabel=c.t===‘SPELL’?‘Sort’:c.t===‘WEAPON’?‘Arme’:c.t===‘LOCATION’?‘Lieu’:’’;
+var typeStyle=c.t===‘SPELL’?‘color:#c080ff’:c.t===‘WEAPON’?‘color:#e08030’:‘color:var(–dim)’;
+return ‘<div class="ac-item" onclick="addSeed('+i+')"><div class="ac-cost">’+(c.c||0)+’</div>’
++’<span style="flex:1;font-weight:600;color:'+(RC[c.r]||'#ccc')+'">’+(c.n||’?’)+’</span>’
++(typeLabel?’<span style="font-size:.65em;'+typeStyle+'">’+typeLabel+’</span>’:’’)
++’<span style="font-size:.7em;color:var(--dim)">’+(c.r===‘L’?‘Légendaire’:c.r===‘E’?‘Épique’:c.r===‘R’?‘Rare’:’’)+’</span></div>’;
+}).join(’’);
+box.classList.add(‘open’);
+if(!ST.hsDb&&!ST.dbLoad)loadDb(false);
+},120);
+}
+function onKey(e){
+var items=document.querySelectorAll(’#ac-box .ac-item’);
+if(e.key===‘ArrowDown’){e.preventDefault();ST.acIdx=Math.min(ST.acIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle(‘hi’,i===ST.acIdx));}
+else if(e.key===‘ArrowUp’){e.preventDefault();ST.acIdx=Math.max(ST.acIdx-1,-1);items.forEach((el,i)=>el.classList.toggle(‘hi’,i===ST.acIdx));}
+else if(e.key===‘Enter’){e.preventDefault();if(ST.acIdx>=0)addSeed(ST.acIdx);else if(ST.acRes.length)addSeed(0);}
+else if(e.key===‘Escape’)document.getElementById(‘ac-box’).classList.remove(‘open’);
+}
+function addSeed(idx){
+if(ST.seeds.length>=5)return;
+var c=ST.acRes[idx];if(!c)return;
+var name=c.n||’?’;
+if(ST.seeds.find(s=>s.name===name)){document.getElementById(‘csearch’).value=’’;document.getElementById(‘ac-box’).classList.remove(‘open’);return;}
+ST.seeds.push({name,cost:c.c||0,rar:normRar(c.r),dbf:c.d||0});
+document.getElementById(‘csearch’).value=’’;document.getElementById(‘ac-box’).classList.remove(‘open’);
+renderSeeds();document.getElementById(‘gen-btn2’).disabled=false;
+}
+function remSeed(name){ST.seeds=ST.seeds.filter(s=>s.name!==name);renderSeeds();document.getElementById(‘gen-btn2’).disabled=!ST.seeds.length;}
+function renderSeeds(){
+var g=document.getElementById(‘seed-grid’);
+if(!ST.seeds.length){g.innerHTML=’<div class="seed-ph">Cherchez ci-dessus pour ajouter jusqu'à 5 cartes</div>’;document.getElementById(‘seed-syn’).classList.remove(‘on’);return;}
+g.innerHTML=ST.seeds.map(c=>’<div class="seed-card"><div class="sc-c">’+c.cost+’</div><span style="flex:1;font-size:.88em;color:'+(RC[c.rar]||'#ccc')+';font-weight:600;">’+(c.rar===‘L’?‘★ ‘:’’)+c.name+’</span><button class=“sc-del” onclick=“remSeed('’+c.name.replace(/’/g,”\’”)+’')” >✕</button></div>’).join(’’);
+if(ST.seeds.length>=2){var avg=ST.seeds.reduce((a,s)=>a+s.cost,0)/ST.seeds.length;var rec=avg<=2.5?‘Aggro/Zoo’:avg>=5?‘Control/Big’:‘Midrange’;document.getElementById(‘seed-syn-txt’).innerHTML=‘Courbe moy : <span class="combo">’+avg.toFixed(1)+’</span> → archétype <span class="combo">’+rec+’</span> recommandé<br>Seeds : ‘+ST.seeds.map(s=>’<span class="combo">’+s.name+’</span>’).join(’, ’);document.getElementById(‘seed-syn’).classList.add(‘on’);}
+}
+
+// IMPORT
+var importData=null;
+function onImport(val){
+var btn=document.getElementById(‘import-btn’),prev=document.getElementById(‘import-preview’);importData=null;btn.disabled=true;
+if(!val.trim()){prev.style.display=‘none’;return;}
+var lines=val.trim().split(’\n’),name=’’,cls=’’,fmt=’’,code=’’,cards=[];
+lines.forEach(line=>{var t=line.trim();if(t.startsWith(’###’))name=t.replace(/^#+\s*/,’’).trim();else if(t.startsWith(’# Class:’))cls=t.replace(’# Class:’,’’).trim();else if(t.startsWith(’# Format:’))fmt=t.replace(’# Format:’,’’).trim();else if(t.length>20&&!t.startsWith(’#’)&&/^[A-Za-z0-9+/=]+$/.test(t))code=t;else{var m=t.match(/^#\s+(\d+)x\s+((\d+))\s+(.+)$/);if(m)cards.push({qty:parseInt(m[1]),cost:parseInt(m[2]),name:m[3].trim()});}});
+if(!code&&!cards.length){prev.innerHTML=’<span style="color:var(--red)">Aucun code valide détecté.</span>’;prev.style.display=‘block’;return;}
+importData={name,cls,fmt,code,cards};
+prev.innerHTML=’<strong style="color:var(--gold-l)">’+(name||’(sans nom)’)+’</strong><br>Classe : ‘+(cls||’?’)+’ · Format : ‘+(fmt||’?’)+’ · ‘+cards.length+’ cartes’+(code?’ · Code présent’:’’);
+prev.style.display=‘block’;btn.disabled=false;
+}
+function loadImport(){
+if(!importData)return;
+var clsMap={Mage:‘MAGE’,Warrior:‘WARRIOR’,Hunter:‘HUNTER’,Paladin:‘PALADIN’,Rogue:‘ROGUE’,Priest:‘PRIEST’,Shaman:‘SHAMAN’,Warlock:‘WARLOCK’,Druid:‘DRUID’,‘Demon Hunter’:‘DEMONHUNTER’,‘Death Knight’:‘DEATHKNIGHT’};
+var cls=clsMap[importData.cls]||‘MAGE’,fmt=importData.fmt===‘Wild’?1:2;
+var deck=importData.cards.map(c=>({n:c.name,q:c.qty,d:0,c:c.cost,r:‘C’}));
+showDeck(deck,‘Deck importé depuis Hearthstone’,cls,fmt,importData.name);
+}
+document.addEventListener(‘click’,e=>{if(!e.target.closest(’.search-wrap’))document.getElementById(‘ac-box’).classList.remove(‘open’);});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FORGE ASSISTANT — Chat IA pour modifier/créer des decks en langage naturel
+// ═══════════════════════════════════════════════════════════════════════════
+
+var CHAT_MODE = ‘modify’;
+var CHAT_BUSY = false;
+var CHAT_OPEN = true; // visible par défaut
+
+function toggleChat(){
+CHAT_OPEN = !CHAT_OPEN;
+var body = document.getElementById(‘chat-body’);
+var icon = document.getElementById(‘chat-toggle-icon’);
+if(body) body.style.display = CHAT_OPEN ? ‘flex’ : ‘none’;
+if(icon) icon.style.transform = CHAT_OPEN ? ‘’ : ‘rotate(-90deg)’;
+}
+
+function setChatMode(mode, btn){
+CHAT_MODE = mode;
+document.querySelectorAll(’.chat-mode-btn’).forEach(b=>b.classList.remove(‘sel’));
+btn.classList.add(‘sel’);
+}
+
+function onChatKey(e){
+if(e.key===‘Enter’ && !e.shiftKey){ e.preventDefault(); sendChat(); }
+}
+
+function chatAppend(html, cls){
+var msgs = document.getElementById(‘chat-msgs’);
+var el = document.createElement(‘div’);
+el.className = cls || ‘cm-bot’;
+el.innerHTML = html;
+msgs.appendChild(el);
+msgs.scrollTop = msgs.scrollHeight;
+return el;
+}
+
+function chatRemove(el){ if(el && el.parentNode) el.parentNode.removeChild(el); }
+
+// Sérialiser le deck actuel en texte lisible pour le contexte IA
+function serializeDeck(){
+var out = document.getElementById(‘deck-out’);
+if(!out || !out.classList.contains(‘on’)) return null;
+var grid = document.getElementById(‘deck-grid’);
+if(!grid) return null;
+var cards = [];
+grid.querySelectorAll(’.dc’).forEach(item => {
+var cost = item.querySelector(’.mc’)?.textContent?.trim() || ‘0’;
+var name = item.querySelector(’.cn’)?.textContent?.trim().replace(‘★ ‘,’’) || ‘’;
+var qty  = item.querySelector(’.cq’)?.textContent?.trim().replace(‘x’,’’) || ‘1’;
+if(name) cards.push({ n:name, c:parseInt(cost)||0, q:parseInt(qty)||1 });
+});
+if(!cards.length) return null;
+var cls = ST.lastP?.cls || ‘MAGE’;
+var arc = ST.lastP?.arc || ‘’;
+var fmt = ST.lastP?.fmt===2?‘Standard’:‘Wild’;
+
+// Identité du deck — race et/ou école active
+var SCH_NAMES = {ARCANE:‘Arcane’,FEL:‘Fel’,FIRE:‘Fire’,FROST:‘Frost’,HOLY:‘Holy’,NATURE:‘Nature’,SHADOW:‘Shadow’,NONE:‘No-school’};
+var RACE_NAMES = {BEAST:‘Beast’,DEMON:‘Demon’,DRAGON:‘Dragon’,ELEMENTAL:‘Elemental’,MECH:‘Mech’,MURLOC:‘Murloc’,NAGA:‘Naga’,PIRATE:‘Pirate’,QUILBOAR:‘Quilboar’,TOTEM:‘Totem’,UNDEAD:‘Undead’,DRAENEI:‘Draenei’};
+var identityParts = [];
+var deckType = ST.deckType || ‘BOTH’;
+if(ST.selectedRace) identityParts.push(’minion tribe: ’+( RACE_NAMES[ST.selectedRace]||ST.selectedRace));
+if(ST.selectedSchool) identityParts.push(’spell school: ‘+(SCH_NAMES[ST.selectedSchool]||ST.selectedSchool));
+if(!identityParts.length){
+if(deckType===‘MINION’) identityParts.push(‘minion-focused (no tribe locked)’);
+else if(deckType===‘SPELL’) identityParts.push(‘spell-focused’);
+else identityParts.push(‘mixed minions + spells’);
+}
+var identity = identityParts.join(’, ’);
+
+return { cls, arc, fmt, identity, cards };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PARSER LOCAL — Interprète les commandes en langage naturel sans API externe
+// ═══════════════════════════════════════════════════════════════════════════
+
+function parseNaturalCommand(msg, mode) {
+var m = msg.toLowerCase().trim()
+.replace(/[\u2018\u2019\u02bc\u2032]/g,”’”)
+.replace(/\s+/g,’ ’);
+var actions = [];
+var message = ‘’;
+
+// ════════════════════════════════════════════════════════════════
+// 1. COLLECTION — toutes les variantes de “remplace ce que j’ai pas”
+// ════════════════════════════════════════════════════════════════
+var byLeg = /l[eé]gendaire/i.test(m);
+var byEpic = /[eé]pique|epic/i.test(m);
+var byRare = /\brare\b/i.test(m);
+var collAction = /replac|remplace|retire|enleve|chang|swap|vire|met/i.test(m);
+var collRef = /manqu|j.?ai pas|ai pas|j.n.?ai pas|n.?ai pas|pas dans|hors.?coll|absent|collection.*pas|pas.*coll|pas en|j.?ai point|j.?nai|je n.?ai|pas dans ma/i.test(m);
+var collFilter = /garde.*(seulement|que).*(mes|les).*carte/i.test(m)
+|| /filtre.*(collection|coll)/i.test(m)
+|| /utilise.*(ma|collection)/i.test(m)
+|| /seulement.*ce que j.?ai/i.test(m)
+|| /adapt.*ma collection/i.test(m)
+|| /ma collection seulement/i.test(m);
+
+if((collAction && collRef) || collFilter) {
+if(MY_COLL.size > 0 && window.CURRENT_DECK && window.CURRENT_DECK.length) {
+var missing = window.CURRENT_DECK.filter(c => !inColl(c.n));
+if(missing.length > 0) {
+missing.forEach(c => {
+var pref = byLeg ? ‘LEGENDARY’ : byEpic ? ‘EPIC’ : byRare ? ‘RARE’ : null;
+var alt = findCollectionAlternative(c, pref);
+if(alt) actions.push({ type:‘REPLACE_CARD’, old:c.n, new:alt, qty:c.q });
+else    actions.push({ type:‘REMOVE_CARD’, card:c.n, qty:‘all’ });
+});
+var rareTxt = byLeg ? ’ par des légendaires’ : byEpic ? ’ par des épiques’ : byRare ? ’ par des rares’ : ’ par des alternatives’;
+message = missing.length + ’ carte(s) manquante(s) remplacée(s)’ + rareTxt + ‘.’;
+} else {
+message = ‘✅ Toutes les cartes sont déjà dans ta collection !’;
+}
+} else if(MY_COLL.size === 0) {
+message = ‘⚠ Importe ta collection dans le panneau “Ma Collection” en haut d'abord.’;
+} else {
+message = ‘⚠ Génère ou charge un deck avant de modifier.’;
+}
+return { message, actions };
+}
+
+// ════════════════════════════════════════════════════════════════
+// 2. FILTRE PAR COÛT DE MANA
+// ════════════════════════════════════════════════════════════════
+// “enlève les cartes de plus de 5 mana” / “retire tout ce qui coûte +7”
+var mAbove = m.match(/(?:plus de|au[-\s]dessus|>\s*|coûte? plus de|cher.*que)\s*(\d+)\s*mana/i)
+|| m.match(/(\d+)\s*mana\s*(?:et plus|ou plus|+)/i)
+|| m.match(/(?:enleve|retire|vire|supprime).*+\s*(\d+)/i);
+if(mAbove && window.CURRENT_DECK) {
+var mc = parseInt(mAbove[1]);
+window.CURRENT_DECK.forEach(c => { if((c.c||0) > mc) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Cartes >’+mc+’ mana retirées.’; return { message, actions }; }
+}
+
+// “enlève les cartes de moins de 3 mana”
+var mBelow = m.match(/(?:moins de|en[-\s]dessous|<\s*)\s*(\d+)\s*mana/i)
+|| m.match(/(\d+)\s*mana\s*(?:et moins|ou moins)/i);
+if(mBelow && window.CURRENT_DECK) {
+var mc2 = parseInt(mBelow[1]);
+window.CURRENT_DECK.forEach(c => { if((c.c||0) < mc2) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Cartes <’+mc2+’ mana retirées.’; return { message, actions }; }
+}
+
+// “enlève les cartes à 6 mana exactement”
+var mExact = m.match(/(?:enleve|retire|vire|supprime|remove).*\b(\d+)\s*mana\b(?!.*(?:plus|moins|dessus|dessous))/i);
+if(mExact && window.CURRENT_DECK) {
+var me = parseInt(mExact[1]);
+window.CURRENT_DECK.forEach(c => { if((c.c||0) === me) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Cartes à ‘+me+’ mana retirées.’; return { message, actions }; }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 3. FILTRE PAR TYPE/RARETÉ
+// ════════════════════════════════════════════════════════════════
+if(/(?:enleve|retire|vire|supprime|remove).*\bl[eé]gendaire/i.test(m) && window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if(c.r===‘L’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = actions.length+’ légendaire(s) retiré(s).’; return { message, actions }; }
+}
+if(/(?:enleve|retire|vire|supprime).*\b[eé]pique/i.test(m) && window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if(c.r===‘E’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Épiques retirées.’; return { message, actions }; }
+}
+if(/(?:enleve|retire|vire|supprime).*\bsort/i.test(m) && window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if((c.t||’’).toUpperCase()===‘SPELL’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Sorts retirés.’; return { message, actions }; }
+}
+if(/(?:enleve|retire|vire|supprime).*\bserviteur/i.test(m) && window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if((c.t||‘MINION’).toUpperCase()===‘MINION’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Serviteurs retirés.’; return { message, actions }; }
+}
+// “garde seulement les sorts” / “garde seulement les serviteurs”
+if(/garde.*seulement.*sort/i.test(m) || /seulement.*sort/i.test(m)) {
+if(window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if((c.t||’’).toUpperCase()!==‘SPELL’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Serviteurs retirés, sorts conservés.’; return { message, actions }; }
+}
+}
+if(/garde.*seulement.*serviteur/i.test(m) || /seulement.*serviteur/i.test(m)) {
+if(window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if((c.t||‘MINION’).toUpperCase()!==‘MINION’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Sorts retirés, serviteurs conservés.’; return { message, actions }; }
+}
+}
+// “garde seulement les légendaires”
+if(/garde.*seulement.*l[eé]gendaire/i.test(m) || /seulement.*l[eé]gendaire/i.test(m)) {
+if(window.CURRENT_DECK) {
+window.CURRENT_DECK.forEach(c => { if(c.r!==‘L’) actions.push({type:‘REMOVE_CARD’,card:c.n,qty:‘all’}); });
+if(actions.length) { message = ‘Seules les légendaires conservées.’; return { message, actions }; }
+}
+}
+
+// ════════════════════════════════════════════════════════════════
+// 4. MODIFIER LE FORMAT
+// ════════════════════════════════════════════════════════════════
+if(/passe.*(?:en\s+)?wild|change.*(?:en\s+)?wild|(?:en|vers)\s+wild/i.test(m)) {
+ST.fmt = 1; setFmt(1); message = ‘🌀 Format changé en Wild. Régénère le deck.’; return { message, actions:[] };
+}
+if(/passe.*(?:en\s+)?standard|change.*(?:en\s+)?standard|(?:en|vers)\s+standard/i.test(m)) {
+ST.fmt = 2; setFmt(2); message = ‘🏆 Format changé en Standard. Régénère le deck.’; return { message, actions:[] };
+}
+
+// ════════════════════════════════════════════════════════════════
+// 5. NOUVEAU DECK (création complète)
+// ════════════════════════════════════════════════════════════════
+var isNewCmd = /\b(cree[rz]?|cr[eé]e[rz]?|gen[eè]re?r?[ez]?|fais[-\s]?moi|nouveau|new|make|build|construis?|veux un deck)\b/i.test(m)
+|| mode===‘new’;
+
+// Maps de traduction
+var CLS_MAP = {mage:‘MAGE’,warrior:‘WARRIOR’,guerrier:‘WARRIOR’,combattant:‘WARRIOR’,
+hunter:‘HUNTER’,chasseur:‘HUNTER’,paladin:‘PALADIN’,chevalier:‘PALADIN’,
+rogue:‘ROGUE’,voleur:‘ROGUE’,assassin:‘ROGUE’,
+priest:‘PRIEST’,pretre:‘PRIEST’,prêtre:‘PRIEST’,
+shaman:‘SHAMAN’,chaman:‘SHAMAN’,druide:‘DRUID’,druid:‘DRUID’,
+warlock:‘WARLOCK’,demoniste:‘WARLOCK’,démoniste:‘WARLOCK’,sorcier:‘WARLOCK’,
+dh:‘DEMONHUNTER’,dk:‘DEATHKNIGHT’};
+var RACE_MAP = {dragon:‘DRAGON’,beast:‘BEAST’,bete:‘BEAST’,bête:‘BEAST’,
+murloc:‘MURLOC’,pirate:‘PIRATE’,mech:‘MECH’,meca:‘MECH’,méca:‘MECH’,robot:‘MECH’,
+elemental:‘ELEMENTAL’,elementaire:‘ELEMENTAL’,‘élémentaire’:‘ELEMENTAL’,
+demon:‘DEMON’,démon:‘DEMON’,undead:‘UNDEAD’,zombie:‘UNDEAD’,
+‘mort-vivant’:‘UNDEAD’,‘mort vivant’:‘UNDEAD’,naga:‘NAGA’,quilboar:‘QUILBOAR’,totem:‘TOTEM’};
+var ARC_MAP = {aggro:‘Aggro’,agressif:‘Aggro’,rapide:‘Aggro’,face:‘Aggro’,rush:‘Aggro’,
+midrange:‘Midrange’,milieu:‘Midrange’,équilibré:‘Midrange’,equilibre:‘Midrange’,
+control:‘Control’,contrôle:‘Control’,controle:‘Control’,défensif:‘Control’,defensif:‘Control’,slow:‘Control’,lent:‘Control’,
+combo:‘Combo’,tempo:‘Tempo’,ramp:‘Ramp’,zoo:‘Zoo’,
+otk:‘OTK’,‘one shot’:‘OTK’,‘one turn kill’:‘OTK’,
+big:‘Big’,token:‘Token’,jetons:‘Token’};
+var SCL_MAP = {arcane:‘ARCANE’,gangrène:‘FEL’,gangrene:‘FEL’,fel:‘FEL’,
+feu:‘FIRE’,fire:‘FIRE’,flamme:‘FIRE’,
+givre:‘FROST’,frost:‘FROST’,glace:‘FROST’,froid:‘FROST’,
+sacré:‘HOLY’,sacre:‘HOLY’,holy:‘HOLY’,lumière:‘HOLY’,
+nature:‘NATURE’,ombre:‘SHADOW’,shadow:‘SHADOW’};
+
+if(isNewCmd) {
+// Chercher “demon hunter” et “death knight” en premier
+var newCls = null;
+if(/demon\s*hunter|démon\s*hunter|chasseur.*démon/i.test(m)) newCls=‘DEMONHUNTER’;
+else if(/death\s*knight|chevalier.*mort/i.test(m)) newCls=‘DEATHKNIGHT’;
+else { for(var k in CLS_MAP) { if(m.includes(k)) { newCls=CLS_MAP[k]; break; } } }
+var newArc = null;
+for(var k in ARC_MAP) { if(m.includes(k)) { newArc=ARC_MAP[k]; break; } }
+var newRace = null;
+for(var k in RACE_MAP) { if(m.includes(k)) { newRace=RACE_MAP[k]; break; } }
+var newSchool = null;
+for(var k in SCL_MAP) { if(m.includes(k)) { newSchool=SCL_MAP[k]; break; } }
+var newFmt = /\b(wild|sauvage)\b/i.test(m) ? 1 : 2;
+
+```
+if(newCls || newArc || newRace || newSchool) {
+  newCls = newCls || (ST.lastP && ST.lastP.cls) || 'MAGE';
+  newArc = newArc || 'Midrange';
+  ST.arc=newArc; ST.fmt=newFmt;
+  ST.deckType = newRace ? 'MINION' : (newSchool ? 'SPELL' : 'BOTH');
+  ST.selectedRace=newRace||null; ST.selectedSchool=newSchool||null;
+  ST.lastP = { mode:'arc', cls:newCls, fmt:newFmt, arc:newArc, dn:'' };
+  var hcEl = document.getElementById('hc');
+  if(hcEl) hcEl.value = newCls;
+  genDeck();
+  var rL = newRace ? (' '+(RACE_LABELS&&RACE_LABELS[newRace]||newRace)) : (newSchool?' sorts '+newSchool:'');
+  message = '✨ Génération : '+newArc+' '+(CLS[newCls]||newCls)+rL+(newFmt===2?' Standard':' Wild')+'...';
+  return { message, actions:[] };
+}
+```
+
+}
+
+// ════════════════════════════════════════════════════════════════
+// 6. CHARGER UN TEMPLATE MÉTA
+// ════════════════════════════════════════════════════════════════
+if(/(?:charge|load|donne|montre|utilise|prends?|joue|met)\s+.*?(?:deck\s+)?([a-z\u00e0-\u00ff\s]{3,30})/i.test(m)) {
+var mRef = m.match(/(?:charge|load|donne|montre|utilise|prends?|joue|met)\s+.*?(?:deck\s+)?([a-z\u00e0-\u00ff\s]{3,30})/i);
+if(mRef && typeof META_DECKS !== ‘undefined’) {
+var ms = mRef[1].trim().toLowerCase();
+var fd = META_DECKS.find(d =>
+d.name.toLowerCase().includes(ms.split(’ ‘)[0]) ||
+ms.includes(d.cls.toLowerCase()) ||
+ms.split(’ ‘).some(w => d.name.toLowerCase().includes(w))
+);
+if(fd) {
+loadMetaDeck(META_DECKS.indexOf(fd));
+return { message:‘✨ Template chargé : ‘+fd.name+’ (’+fd.wr+’ WR)’, actions:[] };
+}
+}
+}
+
+// ════════════════════════════════════════════════════════════════
+// 7. RÉGÉNÉRER / RECONSTRUIRE LE DECK
+// ════════════════════════════════════════════════════════════════
+if(/(?:r[eé]g[eé]n[eè]re?|rebuil|reconstruit?|refait?|reload|refresh|recommence)/i.test(m)) {
+regen();
+message = ‘🔁 Deck régénéré.’; return { message, actions:[] };
+}
+
+// ════════════════════════════════════════════════════════════════
+// 8. OPTIMISER / AMÉLIORER (commandes floues)
+// ════════════════════════════════════════════════════════════════
+if(/(?:optimise?|am[eé]liore?|rends?\s+(?:le\s+)?(?:deck\s+)?meilleur|boost|upgrade|powerlevel)/i.test(m)) {
+message = ‘💡 Pour optimiser, dis-moi comment :<br>• <em>“enlève les cartes de plus de 7 mana”</em><br>• <em>“remplace les cartes que j'ai pas”</em><br>• <em>“ajoute 2x Fireball”</em><br>Ou utilise le bouton 🔁 Régénérer pour un nouveau tirage.’;
+return { message, actions:[] };
+}
+
+// ════════════════════════════════════════════════════════════════
+// 9. REMPLACER une carte par une autre
+// ════════════════════════════════════════════════════════════════
+var repRe = /(?:remplace[rz]?|replac\w*|chang[e]?[rz]?|swap|echange[rz]?|substitue[rz]?|mets?\s+(?:des?|une?)\s+)?([^\s][\w\s’’\u00e0-\u00ff-]{1,35}?)\s+(?:par|en|avec|pour|→|->|/|by|with|contre)\s+([\w\s’’\u00e0-\u00ff-]{2,35})(?:\s*(?:$|et|,|.))/gi;
+var rM;
+while((rM = repRe.exec(msg)) !== null) {
+var oc = rM[1].trim().replace(/^(remplace[rz]?|change[rz]?|swap|les?|des?|une?)\s+/i,’’).replace(/[.,]+$/,’’).trim();
+var nc = rM[2].trim().replace(/^(les?|des?|une?)\s+/i,’’).replace(/[.,]+$/,’’).trim();
+if(oc.length>1 && nc.length>1 && oc.toLowerCase()!==nc.toLowerCase())
+actions.push({type:‘REPLACE_CARD’, old:oc, new:nc, qty:2});
+}
+
+// ════════════════════════════════════════════════════════════════
+// 10. AJOUTER une carte
+// ════════════════════════════════════════════════════════════════
+var addRe = /(?:ajoute[rz]?|add|inclus?|mets?|rajoute[rz]?|insert[e]?)\s+(?:(\d+)x?\s+)?(?:des?|une?\s+)?(?:copies?\s+(?:de\s+)?)?([^\s][\w\s’’\u00e0-\u00ff-]{1,35})(?:\s*(?:$|et|,|.))/gi;
+var aM;
+while((aM = addRe.exec(msg)) !== null) {
+var qty = Math.min(parseInt(aM[1]||‘1’)||1,2);
+var cn = aM[2].trim().replace(/[.,]+$/,’’);
+if(cn.length>1 && !/^(le|la|les|des|un|une|du|au|aux|copies?|carte)$/i.test(cn))
+actions.push({type:‘ADD_CARD’, card:cn, qty:qty});
+}
+
+// ════════════════════════════════════════════════════════════════
+// 11. RETIRER une carte
+// ════════════════════════════════════════════════════════════════
+var rmRe = /(?:enleve[rz]?|enlève[rz]?|retire[rz]?|supprime[rz]?|remove|vire[rz]?|efface[rz]?|delete|del|kick)\s+(?:(\d+)x?\s+)?(?:les?\s+)?(?:carte[s]?\s+)?([^\s][\w\s’’\u00e0-\u00ff-]{1,35})(?:\s*(?:$|et|,|.))/gi;
+var rmM;
+while((rmM = rmRe.exec(msg)) !== null) {
+var rmQty = rmM[1] ? parseInt(rmM[1]) : ‘all’;
+var rmCn = rmM[2].trim().replace(/^(les?|des?|une?)\s+/i,’’).replace(/[.,]+$/,’’).trim();
+if(rmCn.length>1 && !/^(les?|des?|un|une|toutes?|tous|carte|sort|serviteur|tout)$/i.test(rmCn))
+actions.push({type:‘REMOVE_CARD’, card:rmCn, qty:rmQty});
+}
+
+// ════════════════════════════════════════════════════════════════
+// 12. FALLBACK — aide riche
+// ════════════════════════════════════════════════════════════════
+if(actions.length === 0 && !message) {
+message = [
+‘<strong style="color:#d0a0ff">📖 Commandes disponibles :</strong>’,
+‘’,
+‘<strong>🃏 Ajouter une carte :</strong>’,
+‘• <em>ajoute 2x Fireball</em> · <em>mets un Blizzard</em>’,
+‘’,
+‘<strong>🗑 Retirer une carte :</strong>’,
+‘• <em>enlève Blizzard</em> · <em>retire les légendaires</em>’,
+‘• <em>vire les cartes de plus de 7 mana</em> · <em>supprime les sorts</em>’,
+‘’,
+‘<strong>🔄 Remplacer une carte :</strong>’,
+‘• <em>remplace Blizzard par Frostbolt</em>’,
+‘• <em>change Fireball en Pyroblast</em>’,
+‘’,
+‘<strong>📦 Collection :</strong>’,
+‘• <em>remplace les cartes que j'ai pas</em>’,
+‘• <em>remplace les manquantes par des légendaires</em>’,
+‘• <em>garde seulement mes cartes</em>’,
+‘’,
+‘<strong>✨ Nouveau deck :</strong>’,
+‘• <em>crée un deck Dragon Warrior Wild</em>’,
+‘• <em>fais-moi un deck Aggro Mage Standard</em>’,
+‘• <em>génère un deck Murloc Paladin</em>’,
+‘’,
+‘<strong>🏷 Filtres :</strong>’,
+‘• <em>garde seulement les sorts</em> · <em>enlève les épiques</em>’,
+‘• <em>passe en Wild</em> · <em>passe en Standard</em>’,
+‘’,
+‘<strong>⚡ Templates méta :</strong>’,
+‘• <em>charge le deck Imbue Druid</em>’,
+‘• <em>donne-moi l'Aura Paladin</em>’,
+].join(’<br>’);
+}
+
+if(!message && actions.length)
+message = actions.length + ’ action(s) appliquée(s).’;
+
+return { message, actions };
+}
+
+// Trouver une alternative dans la collection pour une carte manquante
+// preferRarity: ‘LEGENDARY’ pour prioriser les légendaires
+function findCollectionAlternative(card, preferRarity) {
+if(!ST.hsDb || MY_COLL.size === 0) return null;
+var cType = (card.t||‘MINION’).toUpperCase();
+var cCost = card.c || 0;
+var cRace = (card.race||’’).toUpperCase();
+var cls = ST.lastP?.cls || ‘MAGE’;
+
+var candidates = Object.values(ST.hsDb).filter(c => {
+if(!inColl(c.name)) return false;
+if((c.type||‘MINION’).toUpperCase() !== cType) return false;
+// Si on cherche des légendaires, ne pas filtrer par coût
+if(!preferRarity && Math.abs((c.cost||0) - cCost) > 2) return false;
+var cc = (c.cardClass||c.classes?.[0]||‘NEUTRAL’).toUpperCase();
+return cc === cls || cc === ‘NEUTRAL’;
+});
+
+// Si préférence légendaire, filtrer d’abord
+if(preferRarity === ‘LEGENDARY’) {
+var legCandidates = candidates.filter(c => c.rarity === ‘LEGENDARY’);
+if(legCandidates.length > 0) candidates = legCandidates;
+}
+
+var sameRace = cRace ? candidates.filter(c=>(c.race||c.races?.[0]||’’).toUpperCase()===cRace) : [];
+var pool = sameRace.length > 0 ? sameRace : candidates;
+var deckNames = new Set((window.CURRENT_DECK||[]).map(c=>c.n.toLowerCase()));
+pool = pool.filter(c => !deckNames.has(c.name.toLowerCase()));
+return pool.length > 0 ? pool[Math.floor(Math.random()*pool.length)].name : null;
+}
+
+function sendChat(){
+if(CHAT_BUSY) return;
+var inp = document.getElementById(‘chat-inp’);
+var msg = inp.value.trim();
+if(!msg) return;
+inp.value = ‘’;
+CHAT_BUSY = true;
+var sb = document.getElementById(‘chat-send’);
+if(sb){sb.disabled=true;sb.style.opacity=’.4’;sb.style.cursor=‘not-allowed’;}
+chatAppend(msg.replace(/</g,’<’),‘cm-user’);
+var thinking = chatAppend(’<span>●</span><span>●</span><span>●</span>’,‘cm-thinking’);
+
+// ── Construire le contexte complet du deck ───────────────────────────────
+var deckInfo = ‘’;
+if(CHAT_MODE===‘modify’){
+var d = serializeDeck();
+if(d){
+// Distribution mana
+var manaDist={};
+d.cards.forEach(c=>{var k=c.c>=7?‘7+’:String(c.c);manaDist[k]=(manaDist[k]||0)+c.q;});
+var manaStr=Object.entries(manaDist).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(e=>e[0]+‘m×’+e[1]).join(’, ‘);
+// Nb légendaires
+var legCount=(window.CURRENT_DECK||[]).filter(c=>c.r===‘L’).length;
+var spellCount=(window.CURRENT_DECK||[]).filter(c=>(c.t||’’).toUpperCase()===‘SPELL’).reduce((a,c)=>a+c.q,0);
+var minionCount=(window.CURRENT_DECK||[]).filter(c=>(c.t||’’).toUpperCase()===‘MINION’).reduce((a,c)=>a+c.q,0);
+
+```
+  deckInfo = `
+```
+
+DECK ACTUEL:
+
+- Classe: ${d.cls}  Archétype: ${d.arc}  Format: ${d.fmt}
+- Identité/Type: ${d.identity}
+- Total cartes: ${d.cards.reduce((a,c)=>a+c.q,0)}/30  Légendaires: ${legCount}  Sorts: ${spellCount}  Serviteurs: ${minionCount}
+- Courbe de mana: ${manaStr}
+
+LISTE DES CARTES:
+${d.cards.map(c=>c.q+‘x (’+c.c+’) ‘+c.n).join(’\n’)}
+
+IMPORTANT: Ce deck a une identité “${d.identity}”. Toute carte ajoutée DOIT respecter ce type.`;
+} else {
+deckInfo = ‘\n\n(Mode modifier — aucun deck généré. Dis à l'utilisateur de générer un deck d'abord.)’;
+}
+}
+
+// DB chargée ?
+var dbNote = ST.hsDb
+? `\n\nBase de données: ${Object.keys(ST.hsDb).length} cartes Hearthstone disponibles. Tu connais toutes les cartes HS.`
+: ‘\n\nBase de données: non chargée. Utilise tes connaissances générales des cartes HS.’;
+
+// ── Prompt système riche ─────────────────────────────────────────────────
+var sys = `Tu es Forge Assistant, un expert Hearthstone qui aide les joueurs à construire et modifier des decks.
+Tu es intégré dans HS Deck Forge, un générateur de decks avancé.
+
+RÉPONSE: JSON uniquement, sans backticks, sans texte avant/après.
+
+FORMAT JSON:
+{
+“message”: “réponse en français, max 2 phrases, explique ce que tu fais”,
+“actions”: [
+{ “type”: “ADD_CARD”, “card”: “Nom exact anglais”, “qty”: 2 },
+{ “type”: “REMOVE_CARD”, “card”: “Nom exact anglais”, “qty”: “all” },
+{ “type”: “REPLACE_CARD”, “old”: “Carte retirée”, “new”: “Carte ajoutée”, “qty”: 2 },
+{ “type”: “NEW_DECK”, “cards”: [{“n”:“Nom anglais”,“q”:2,“c”:3}], “cls”:“MAGE”, “arc”:“Aggro”, “fmt”:2 }
+]
+}
+
+ACTIONS DISPONIBLES:
+
+- ADD_CARD: ajouter une carte existante (qty 1 ou 2)
+- REMOVE_CARD: retirer une carte (qty = nombre ou “all”)
+- REPLACE_CARD: échanger une carte contre une autre
+- NEW_DECK: créer un deck entier (fmt: 2=Standard, 1=Wild)
+
+RÈGLES STRICTES:
+
+1. Noms de cartes en ANGLAIS exact (ex: “Fireball” pas “Boule de feu”)
+1. RESPECTE le type/identité du deck — ne mélange JAMAIS les races ou écoles
+1. Deck Dragon → seulement Dragons + cartes synergiques Dragons
+1. Deck Fire spells → seulement sorts Fire + serviteurs amplificateurs de sorts
+1. Max 30 cartes, max 2x par carte (1x légendaires)
+1. Quand tu REPLACE plusieurs cartes, liste chaque remplacement séparément
+1. Si l’utilisateur veut “optimiser”, “améliorer”, “adapter” → propose plusieurs REPLACE_CARD pertinents
+1. NEW_DECK seulement si création complète demandée
+1. actions:[] si rien à faire ou si impossible`;
+
+var userContent = msg + deckInfo + dbNote;
+
+// Tente l’API — fallback silencieux sur le parser local si CORS/erreur
+var _tried = false;
+function _tryApi() {
+fetch(‘https://api.anthropic.com/v1/messages’, {
+method:‘POST’,
+headers:{‘Content-Type’:‘application/json’},
+body: JSON.stringify({
+model:‘claude-sonnet-4-5-20251001’,
+max_tokens:2000,
+system:sys,
+messages:[{role:‘user’,content:userContent}]
+})
+})
+.then(function(r){ return r.json(); })
+.then(function(data){
+chatRemove(thinking);
+if(data.error){ _localFallback(); return; }
+var raw = (data.content||[]).map(function(b){return b.text||’’;}).join(’’).trim()
+.replace(/^`json\s*/,'').replace(/^`\s*/,’’).replace(/\s*```$/,’’).trim();
+var p2; try{ p2=JSON.parse(raw); } catch(e){ _localFallback(); return; }
+deliver(p2,‘🤖’);
+})
+.catch(function(){ chatRemove(thinking); _localFallback(); });
+}
+function _localFallback(){
+deliver(parseNaturalCommand(msg,CHAT_MODE),’’);
+}
+_tryApi();
+}
+function fallback(msg){
+deliver(parseNaturalCommand(msg, CHAT_MODE), ‘’);
+}
+
+function deliver(parsed, src){
+// botMsg: le message du bot peut contenir du HTML (br, em, strong) — ne pas échapper
+var botMsg = parsed.message || ‘’;
+var actions = parsed.actions||[];
+var actHtml = ‘’;
+if(actions.length){
+actHtml = ‘<div class="cm-actions">’;
+applyDeckActions(actions).forEach(a=>{
+actHtml += ‘<div class="cm-action-item '+a.cls+'">’+a.label+’</div>’;
+});
+actHtml += ‘</div>’;
+}
+var srcBadge = src===‘🤖’ ? ‘<span style="font-size:.58em;opacity:.28;float:right;">🤖</span>’ : ‘’;
+chatAppend(srcBadge+(botMsg||‘Voilà!’)+actHtml,‘cm-bot’);
+CHAT_BUSY=false;
+var sb=document.getElementById(‘chat-send’);
+if(sb){sb.disabled=false;sb.style.opacity=’’;sb.style.cursor=’’;}
+var el=document.getElementById(‘chat-inp’);
+if(el)el.focus();
+}
+
+function applyDeckActions(actions){
+var results = [];
+var deckOut = document.getElementById(‘deck-out’);
+var hasActiveDeck = deckOut && deckOut.classList.contains(‘on’);
+
+// Deck de travail — clone une seule fois avant la boucle
+var deck = (window.CURRENT_DECK && window.CURRENT_DECK.length)
+? window.CURRENT_DECK.map(function(c){return Object.assign({},c);})
+: [];
+var deckModified = false;
+
+for(var act of actions){
+var type = act.type;
+
+```
+if(type === 'NEW_DECK' && act.cards && act.cards.length){
+  var cls = act.cls || (ST.lastP && ST.lastP.cls) || 'MAGE';
+  var arc = act.arc || (ST.lastP && ST.lastP.arc) || 'Midrange';
+  var fmt = act.fmt !== undefined ? act.fmt : ((ST.lastP && ST.lastP.fmt) || 2);
+  var newDeck = act.cards.map(function(c){return{
+    n:c.n||c.name||'', c:c.c||c.cost||0,
+    q:c.q||c.qty||1, r:normRar(c.r||'C'), d:c.d||0,
+    t:c.t||'MINION', race:'', spellSchool:''
+  };}).filter(function(c){return c.n;});
+  if(ST.hsDb) newDeck = newDeck.map(function(c){
+    var h=ST.hsDb[c.n.toLowerCase()];
+    if(h) return Object.assign({},c,{d:h.dbfId||c.d,t:h.type||c.t,race:(h.race||h.races&&h.races[0]||'').toUpperCase()});
+    return c;
+  });
+  showDeck(newDeck, '🧙 Deck créé par Forge Assistant — <em>'+arc+' '+(CLS[cls]||cls)+'</em>', cls, fmt, arc+' '+(CLS[cls]||cls));
+  results.push({ cls:'newdeck', label:'✨ Nouveau deck créé : '+newDeck.length+' cartes' });
+  ST.lastP = { mode:'arc', cls:cls, fmt:fmt, arc:arc, dn:'' };
+  continue;
+}
+
+if(!hasActiveDeck && type !== 'NEW_DECK'){
+  results.push({ cls:'', label:'⚠ Aucun deck actif — génère d\'abord un deck' });
+  break;
+}
+
+if(!deck.length){
+  results.push({ cls:'', label:'⚠ Deck introuvable — régénère le deck' });
+  break;
+}
+
+if(type === 'ADD_CARD' && act.card){
+  var nm = act.card;
+  var qty = Math.min(parseInt(act.qty)||1, 2);
+  // Vérifier que la carte respecte le type du deck
+  var h = ST.hsDb ? ST.hsDb[nm.toLowerCase()] : null;
+  var typeWarn = h ? checkCardFitsIdentity(h) : null;
+  if(typeWarn){
+    results.push({cls:'', label:'⚠ '+nm+' — '+typeWarn});
+  } else {
+    var existing = deck.find(c=>c.n.toLowerCase()===nm.toLowerCase());
+    if(existing){
+      var isLeg = existing.r==='L';
+      var maxQ = isLeg?1:2;
+      var add = Math.min(qty, maxQ-existing.q);
+      if(add>0){ existing.q+=add; results.push({cls:'add',label:'+ '+add+'x '+nm}); deckModified=true; }
+      else results.push({cls:'',label:'⚠ '+nm+' déjà au max'});
+    } else {
+      var newCard = h
+        ? {n:h.name,c:h.cost||0,q:Math.min(qty,h.rarity==='LEGENDARY'?1:2),r:normRar(h.rarity),d:h.dbfId,t:h.type||'MINION',race:(h.race||h.races?.[0]||'').toUpperCase(),spellSchool:(h.spellSchool||'').toUpperCase(),set:h.set||''}
+        : {n:nm,c:0,q:Math.min(qty,1),r:'C',d:0,t:'MINION',race:'',spellSchool:''};
+      deck.push(newCard);
+      results.push({cls:'add',label:'+ '+newCard.q+'x '+nm});
+      deckModified=true;
+    }
+  }
+}
+
+else if(type === 'REMOVE_CARD' && act.card){
+  var nm2 = act.card;
+  var rmQty = act.qty==='all'?99:parseInt(act.qty)||1;
+  var idx2 = deck.findIndex(c=>c.n.toLowerCase()===nm2.toLowerCase());
+  if(idx2>=0){
+    var c2 = deck[idx2];
+    if(rmQty >= c2.q || act.qty==='all'){ deck.splice(idx2,1); results.push({cls:'remove',label:'− '+nm2+' (retirée)'}); }
+    else { c2.q-=rmQty; results.push({cls:'remove',label:'− '+rmQty+'x '+nm2}); }
+    deckModified=true;
+  } else results.push({cls:'',label:'⚠ Carte introuvable : '+nm2});
+}
+
+else if(type === 'REPLACE_CARD' && act.old && act.new){
+  var h2 = ST.hsDb ? ST.hsDb[act.new.toLowerCase()] : null;
+  var typeWarn2 = h2 ? checkCardFitsIdentity(h2) : null;
+  if(typeWarn2){
+    results.push({cls:'', label:'⚠ '+act.new+' — '+typeWarn2});
+  } else {
+    var idx3 = deck.findIndex(c=>c.n.toLowerCase()===act.old.toLowerCase());
+    if(idx3>=0){
+      var oldCard = deck[idx3];
+      var newC = h2
+        ? {n:h2.name,c:h2.cost||0,q:oldCard.q,r:normRar(h2.rarity),d:h2.dbfId,t:h2.type||'MINION',race:(h2.race||h2.races?.[0]||'').toUpperCase(),spellSchool:(h2.spellSchool||'').toUpperCase()}
+        : {n:act.new,c:0,q:oldCard.q,r:'C',d:0,t:'MINION',race:'',spellSchool:''};
+      deck[idx3] = newC;
+      results.push({cls:'replace',label:'↔ '+act.old+' → '+act.new});
+      deckModified=true;
+    } else results.push({cls:'',label:'⚠ Carte à remplacer introuvable : '+act.old});
+  }
+}
+```
+
+}
+
+// Rafraîchir l’affichage UNE FOIS après toutes les modifications
+if(deckModified){
+var synHtml = document.getElementById(‘out-syn-txt’) ? document.getElementById(‘out-syn-txt’).innerHTML : ‘’;
+var _cls = (ST.lastP&&ST.lastP.cls)||‘MAGE’;
+var _fmt = (ST.lastP&&ST.lastP.fmt)||2;
+var _dn  = (ST.lastP&&ST.lastP.dn)||‘Deck’;
+
+```
+function _applyAndShow(deckToShow){
+  // Enrichir les DBF IDs depuis hsDb pour toutes les cartes
+  if(ST.hsDb){
+    deckToShow = deckToShow.map(function(c){
+      if(c.d > 0) return c; // déjà enrichi
+      var norm = (c.n||'').toLowerCase().replace(/[\u2018\u2019\u02bc]/g,"'");
+      var h = ST.hsDb[norm];
+      if(h && h.dbfId) return Object.assign({}, c, {d: h.dbfId});
+      return c;
+    });
+  }
+  window.CURRENT_DECK = deckToShow.map(function(c){ return Object.assign({},c); });
+  showDeck(deckToShow, synHtml, _cls, _fmt, _dn);
+}
+
+// Si la DB est disponible, enrichir directement
+if(ST.hsDb && Object.keys(ST.hsDb).length > 0){
+  _applyAndShow(deck);
+} else {
+  // Charger la DB d'abord pour avoir les DBF IDs
+  loadDb(false).then(function(){ _applyAndShow(deck); }).catch(function(){ _applyAndShow(deck); });
+}
+```
+
+}
+
+return results;
+}
+
+// Vérifie si une carte respecte l’identité du deck actif
+// Retourne null si ok, ou un message d’erreur si incompatible
+function checkCardFitsIdentity(card){
+var mode = ST.deckType || ‘BOTH’;
+var fRace = ST.selectedRace;
+var fSchool = ST.selectedSchool;
+var cRace = (card.race||card.races?.[0]||’’).toUpperCase();
+var cType = (card.type||‘MINION’).toUpperCase();
+var RACE_NAMES = {BEAST:‘Bête’,DEMON:‘Démon’,DRAGON:‘Dragon’,ELEMENTAL:‘Élémentaire’,MECH:‘Méca’,MURLOC:‘Murloc’,NAGA:‘Naga’,PIRATE:‘Pirate’,QUILBOAR:‘Quilboar’,TOTEM:‘Totem’,UNDEAD:‘Mort-vivant’,DRAENEI:‘Draeneï’};
+
+if(mode === ‘MINION’ && fRace){
+if(cType === ‘MINION’ && cRace && cRace !== fRace && TRIBE_SYNERGY_MAP[cRace]){
+return ‘hors-type (deck ‘+(RACE_NAMES[fRace]||fRace)+’, cette carte est ‘+(RACE_NAMES[cRace]||cRace)+’)’;
+}
+}
+if(mode === ‘SPELL’ && fSchool && fSchool !== ‘NONE’){
+if(cType === ‘SPELL’){
+var cs = (card.spellSchool||’’).toUpperCase();
+if(cs && cs !== fSchool){
+return ‘mauvaise école de sort (deck ‘+fSchool+’, cette carte est ‘+cs+’)’;
+}
+}
+}
+return null;
+}
+
+// CURRENT_DECK est maintenant sauvegardé directement dans showDeck après enrichissement
+</script>
