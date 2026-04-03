@@ -651,19 +651,20 @@ function loadMetaDeck(idx){
   var d = META_DECKS[idx];
   if(!d) return;
 
-  var deck = d.cards.map(function(c){
-    return {n:c.n, c:c.c, q:c.q, r:normRar(c.r||'C'), d:0, t:'MINION', race:'', spellSchool:''};
-  });
-
-  var synHtml = '<strong style="color:var(--gold-l)">'+d.name+'</strong>'
-    +' — <span style="color:var(--grn)">'+d.wr+' WR</span>'
-    +' · '+d.games+' parties Legend'
-    +'<br><span style="color:var(--dim);font-size:.8em;">Source : metastats.net · Standard Cataclysm Avril 2026</span>';
+  var synHtml = '<strong style="color:var(--gold-l)">'+d.name+'<\/strong>'
+    +' \u2014 <span style="color:var(--grn)">'+d.wr+' WR<\/span>'
+    +' \xb7 '+d.games+' parties Legend'
+    +'<br><span style="color:var(--dim);font-size:.8em;">Source : metastats.net \xb7 Standard Cataclysm Avril 2026<\/span>';
 
   ST.lastP = {mode:'arc', cls:d.cls, fmt:d.fmt, arc:d.arc, dn:d.name};
-  showDeck(deck, synHtml, d.cls, d.fmt, d.name);
 
-  // Si le deck a un code hardcodé, l'injecter directement
+  // Affichage initial (cartes sans DBF IDs pour l'instant)
+  var deckBasic = d.cards.map(function(c){
+    return {n:c.n, c:c.c, q:c.q, r:normRar(c.r||'C'), d:0, t:'MINION', race:'', spellSchool:''};
+  });
+  showDeck(deckBasic, synHtml, d.cls, d.fmt, d.name);
+
+  // Injecter le code hardcod\u00e9 imm\u00e9diatement si dispo
   if(d.code){
     var inp = document.getElementById('code-b64');
     var ta  = document.getElementById('code-ta');
@@ -678,27 +679,36 @@ function loadMetaDeck(idx){
     }
     var tot = d.cards.reduce(function(a,c){return a+c.q;},0);
     var sbar = document.getElementById('sbar');
-    if(sbar) sbar.textContent = tot+'/30 cartes · ✓ Code importable';
-  } else {
-    // Pas de code hardcodé → charger la DB et générer
-    if(!ST.hsDb){
-      setTok('spin','Chargement DB...');
-      loadDb(false).then(function(){
-        // Ré-enrichir les cartes avec les DBF IDs
-        var deck2 = d.cards.map(function(c){
-          var h = ST.hsDb[(c.n||'').toLowerCase().replace(/[‘’ʼ]/g,"'")];
-          if(!h && c.id) h = ST.hsDb['__id__'+c.id];
-          return Object.assign({},c,{
-            r: normRar(h?h.rarity:c.r),
-            d: h?(h.dbfId||0):(c.d||0),
-            t: h?(h.type||'MINION'):'MINION',
-            race: h?(h.race||h.races&&h.races[0]||'').toUpperCase():'',
-            spellSchool: h?(h.spellSchool||'').toUpperCase():''
-          });
-        });
-        showDeck(deck2, synHtml, d.cls, d.fmt, d.name);
+    if(sbar) sbar.textContent = tot+'/30 cartes \xb7 \u2713 Code importable';
+  }
+
+  // Toujours charger la DB en background pour enrichir CURRENT_DECK avec les DBF IDs
+  // => les modifications via le chat auront des IDs valides
+  function enrichCurrent(){
+    var deck2 = d.cards.map(function(c){
+      var norm = (c.n||''). toLowerCase().replace(/[\u2018\u2019\u02bc]/g,"'");
+      var h = ST.hsDb[norm];
+      if(!h && c.id) h = ST.hsDb['__id__'+c.id];
+      return Object.assign({}, c, {
+        r: normRar(h ? h.rarity : (c.r||'C')),
+        d: h ? (h.dbfId||0) : (c.d||0),
+        t: h ? (h.type||'MINION') : 'MINION',
+        race: h ? (h.race||(h.races&&h.races[0])||''). toUpperCase() : '',
+        spellSchool: h ? (h.spellSchool||''). toUpperCase() : ''
       });
+    });
+    // Mettre \u00e0 jour CURRENT_DECK avec les DBF IDs
+    window.CURRENT_DECK = deck2.map(function(c){ return Object.assign({},c); });
+    // Si pas de code hardcod\u00e9, g\u00e9n\u00e9rer le code
+    if(!d.code){
+      showDeck(deck2, synHtml, d.cls, d.fmt, d.name);
     }
+  }
+
+  if(ST.hsDb && Object.keys(ST.hsDb).length > 0){
+    enrichCurrent();
+  } else {
+    loadDb(false).then(enrichCurrent).catch(function(){});
   }
 
   setTimeout(function(){
@@ -706,7 +716,6 @@ function loadMetaDeck(idx){
     if(out) out.scrollIntoView({behavior:'smooth', block:'start'});
   }, 200);
 }
-
 
 // Initialiser les templates au chargement
 document.addEventListener('DOMContentLoaded', function(){
@@ -2158,104 +2167,177 @@ function serializeDeck(){
 
 function parseNaturalCommand(msg, mode) {
   var m = msg.toLowerCase().trim()
-    .replace(/[\u2018\u2019\u02bc]/g,"'")
+    .replace(/[\u2018\u2019\u02bc\u2032]/g,"'")
     .replace(/\s+/g,' ');
   var actions = [];
   var message = '';
 
-  // ── COLLECTION ────────────────────────────────────────────────────────────
-  var actionWord = /replac|remplace|retire|enleve|enl[eè]ve|chang|substitue|swap|vire|mettre|met/i.test(m);
-  var missingWord = /manqu|j.ai pas|ai pas|j.n.ai|n.ai pas|pas dans|hors.coll|absent|pas en coll|collection.*pas|pas.*coll/i.test(m);
-  var byLeg = /l[eé]gendaire/i.test(m) && missingWord;
-  var wantsColl = (actionWord && missingWord)
-    || /garde.*(seulement|que).*(mes|les).*carte/i.test(m)
+  // ════════════════════════════════════════════════════════════════
+  // 1. COLLECTION — toutes les variantes de "remplace ce que j'ai pas"
+  // ════════════════════════════════════════════════════════════════
+  var byLeg = /l[eé]gendaire/i.test(m);
+  var byEpic = /[eé]pique|epic/i.test(m);
+  var byRare = /\brare\b/i.test(m);
+  var collAction = /replac|remplace|retire|enleve|chang|swap|vire|met/i.test(m);
+  var collRef = /manqu|j.?ai pas|ai pas|j.n.?ai pas|n.?ai pas|pas dans|hors.?coll|absent|collection.*pas|pas.*coll|pas en|j.?ai point|j.?nai|je n.?ai|pas dans ma/i.test(m);
+  var collFilter = /garde.*(seulement|que).*(mes|les).*carte/i.test(m)
     || /filtre.*(collection|coll)/i.test(m)
-    || /utilise.*(ma|collection)/i.test(m);
+    || /utilise.*(ma|collection)/i.test(m)
+    || /seulement.*ce que j.?ai/i.test(m)
+    || /adapt.*ma collection/i.test(m)
+    || /ma collection seulement/i.test(m);
 
-  if(wantsColl) {
+  if((collAction && collRef) || collFilter) {
     if(MY_COLL.size > 0 && window.CURRENT_DECK && window.CURRENT_DECK.length) {
       var missing = window.CURRENT_DECK.filter(c => !inColl(c.n));
       if(missing.length > 0) {
         missing.forEach(c => {
-          var alt = findCollectionAlternative(c, byLeg ? 'LEGENDARY' : null);
+          var pref = byLeg ? 'LEGENDARY' : byEpic ? 'EPIC' : byRare ? 'RARE' : null;
+          var alt = findCollectionAlternative(c, pref);
           if(alt) actions.push({ type:'REPLACE_CARD', old:c.n, new:alt, qty:c.q });
-          else    actions.push({ type:'REMOVE_CARD',  card:c.n, qty:'all' });
+          else    actions.push({ type:'REMOVE_CARD', card:c.n, qty:'all' });
         });
-        message = missing.length + ' carte(s) manquante(s) remplacée(s)' + (byLeg ? ' par des légendaires' : ' par des alternatives') + '.';
+        var rareTxt = byLeg ? ' par des légendaires' : byEpic ? ' par des épiques' : byRare ? ' par des rares' : ' par des alternatives';
+        message = missing.length + ' carte(s) manquante(s) remplacée(s)' + rareTxt + '.';
       } else {
         message = '✅ Toutes les cartes sont déjà dans ta collection !';
       }
     } else if(MY_COLL.size === 0) {
-      message = '⚠ Importe ta collection dans le panneau "Ma Collection" d\'abord.';
+      message = '⚠ Importe ta collection dans le panneau "Ma Collection" en haut d\'abord.';
     } else {
-      message = '⚠ Génère ou charge un deck avant de le modifier.';
+      message = '⚠ Génère ou charge un deck avant de modifier.';
     }
     return { message, actions };
   }
 
-  // ── COÛT MANA ──────────────────────────────────────────────────────────────
-  var cAbove = m.match(/(?:plus de|au[-\s]dessus|cher.*que)\s*(\d+)\s*mana/i) ||
-               m.match(/(\d+)\s*mana\s*(?:et plus|ou plus)/i) ||
-               m.match(/(?:enleve|retire|vire|supprime).*\+\s*(\d+)/i);
-  if(cAbove && window.CURRENT_DECK) {
-    var maxC = parseInt(cAbove[1]);
-    window.CURRENT_DECK.forEach(c => { if((c.c||0) > maxC) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
-    if(actions.length) { message = 'Cartes >'+maxC+' mana retirées.'; return { message, actions }; }
+  // ════════════════════════════════════════════════════════════════
+  // 2. FILTRE PAR COÛT DE MANA
+  // ════════════════════════════════════════════════════════════════
+  // "enlève les cartes de plus de 5 mana" / "retire tout ce qui coûte +7"
+  var mAbove = m.match(/(?:plus de|au[-\s]dessus|>\s*|coûte? plus de|cher.*que)\s*(\d+)\s*mana/i)
+    || m.match(/(\d+)\s*mana\s*(?:et plus|ou plus|\+)/i)
+    || m.match(/(?:enleve|retire|vire|supprime).*\+\s*(\d+)/i);
+  if(mAbove && window.CURRENT_DECK) {
+    var mc = parseInt(mAbove[1]);
+    window.CURRENT_DECK.forEach(c => { if((c.c||0) > mc) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+    if(actions.length) { message = 'Cartes >'+mc+' mana retirées.'; return { message, actions }; }
   }
 
-  var cBelow = m.match(/(?:moins de|en[-\s]dessous)\s*(\d+)\s*mana/i);
-  if(cBelow && window.CURRENT_DECK) {
-    var minC = parseInt(cBelow[1]);
-    window.CURRENT_DECK.forEach(c => { if((c.c||0) < minC) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
-    if(actions.length) { message = 'Cartes <'+minC+' mana retirées.'; return { message, actions }; }
+  // "enlève les cartes de moins de 3 mana"
+  var mBelow = m.match(/(?:moins de|en[-\s]dessous|<\s*)\s*(\d+)\s*mana/i)
+    || m.match(/(\d+)\s*mana\s*(?:et moins|ou moins)/i);
+  if(mBelow && window.CURRENT_DECK) {
+    var mc2 = parseInt(mBelow[1]);
+    window.CURRENT_DECK.forEach(c => { if((c.c||0) < mc2) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+    if(actions.length) { message = 'Cartes <'+mc2+' mana retirées.'; return { message, actions }; }
   }
 
-  // ── LÉGENDAIRES ────────────────────────────────────────────────────────────
-  if(/(?:enleve|retire|vire|supprime).*l[eé]gendaire/i.test(m) && window.CURRENT_DECK) {
+  // "enlève les cartes à 6 mana exactement"
+  var mExact = m.match(/(?:enleve|retire|vire|supprime|remove).*\b(\d+)\s*mana\b(?!.*(?:plus|moins|dessus|dessous))/i);
+  if(mExact && window.CURRENT_DECK) {
+    var me = parseInt(mExact[1]);
+    window.CURRENT_DECK.forEach(c => { if((c.c||0) === me) actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+    if(actions.length) { message = 'Cartes à '+me+' mana retirées.'; return { message, actions }; }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // 3. FILTRE PAR TYPE/RARETÉ
+  // ════════════════════════════════════════════════════════════════
+  if(/(?:enleve|retire|vire|supprime|remove).*\bl[eé]gendaire/i.test(m) && window.CURRENT_DECK) {
     window.CURRENT_DECK.forEach(c => { if(c.r==='L') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
     if(actions.length) { message = actions.length+' légendaire(s) retiré(s).'; return { message, actions }; }
   }
-
-  // ── SORTS / SERVITEURS ─────────────────────────────────────────────────────
+  if(/(?:enleve|retire|vire|supprime).*\b[eé]pique/i.test(m) && window.CURRENT_DECK) {
+    window.CURRENT_DECK.forEach(c => { if(c.r==='E') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+    if(actions.length) { message = 'Épiques retirées.'; return { message, actions }; }
+  }
   if(/(?:enleve|retire|vire|supprime).*\bsort/i.test(m) && window.CURRENT_DECK) {
     window.CURRENT_DECK.forEach(c => { if((c.t||'').toUpperCase()==='SPELL') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
     if(actions.length) { message = 'Sorts retirés.'; return { message, actions }; }
   }
-  if(/(?:enleve|retire|vire|supprime).*serviteur/i.test(m) && window.CURRENT_DECK) {
+  if(/(?:enleve|retire|vire|supprime).*\bserviteur/i.test(m) && window.CURRENT_DECK) {
     window.CURRENT_DECK.forEach(c => { if((c.t||'MINION').toUpperCase()==='MINION') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
     if(actions.length) { message = 'Serviteurs retirés.'; return { message, actions }; }
   }
+  // "garde seulement les sorts" / "garde seulement les serviteurs"
+  if(/garde.*seulement.*sort/i.test(m) || /seulement.*sort/i.test(m)) {
+    if(window.CURRENT_DECK) {
+      window.CURRENT_DECK.forEach(c => { if((c.t||'').toUpperCase()!=='SPELL') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+      if(actions.length) { message = 'Serviteurs retirés, sorts conservés.'; return { message, actions }; }
+    }
+  }
+  if(/garde.*seulement.*serviteur/i.test(m) || /seulement.*serviteur/i.test(m)) {
+    if(window.CURRENT_DECK) {
+      window.CURRENT_DECK.forEach(c => { if((c.t||'MINION').toUpperCase()!=='MINION') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+      if(actions.length) { message = 'Sorts retirés, serviteurs conservés.'; return { message, actions }; }
+    }
+  }
+  // "garde seulement les légendaires"
+  if(/garde.*seulement.*l[eé]gendaire/i.test(m) || /seulement.*l[eé]gendaire/i.test(m)) {
+    if(window.CURRENT_DECK) {
+      window.CURRENT_DECK.forEach(c => { if(c.r!=='L') actions.push({type:'REMOVE_CARD',card:c.n,qty:'all'}); });
+      if(actions.length) { message = 'Seules les légendaires conservées.'; return { message, actions }; }
+    }
+  }
 
-  // ── NOUVEAU DECK ────────────────────────────────────────────────────────────
-  var isNew = /\b(cree[rz]?|cr[eé]e[rz]?|genere?|g[eé]n[eè]re?|fais[-\s]?moi|nouveau|new|make|build)\b/i.test(m) || mode==='new';
-  var clsMap = {mage:'MAGE',warrior:'WARRIOR',guerrier:'WARRIOR',hunter:'HUNTER',chasseur:'HUNTER',
-    paladin:'PALADIN',rogue:'ROGUE',voleur:'ROGUE',priest:'PRIEST',pretre:'PRIEST',
-    shaman:'SHAMAN',chaman:'SHAMAN',warlock:'WARLOCK',demoniste:'WARLOCK',
-    druid:'DRUID',druide:'DRUID','dh':'DEMONHUNTER','dk':'DEATHKNIGHT',chevalier:'DEATHKNIGHT'};
-  var raceMap = {dragon:'DRAGON',beast:'BEAST',bete:'BEAST',murloc:'MURLOC',pirate:'PIRATE',
-    mech:'MECH',meca:'MECH',robot:'MECH',elemental:'ELEMENTAL',elementaire:'ELEMENTAL',
-    demon:'DEMON',undead:'UNDEAD',zombie:'UNDEAD',naga:'NAGA',quilboar:'QUILBOAR',totem:'TOTEM'};
-  var arcMap = {aggro:'Aggro',agressif:'Aggro',rapide:'Aggro',face:'Aggro',midrange:'Midrange',
-    control:'Control',controle:'Control',defensif:'Control',combo:'Combo',tempo:'Tempo',
-    ramp:'Ramp',zoo:'Zoo',otk:'OTK',big:'Big',token:'Token'};
-  var sclMap = {arcane:'ARCANE',gangrene:'FEL',fel:'FEL',feu:'FIRE',fire:'FIRE',
-    givre:'FROST',frost:'FROST',glace:'FROST',sacre:'HOLY',holy:'HOLY',
+  // ════════════════════════════════════════════════════════════════
+  // 4. MODIFIER LE FORMAT
+  // ════════════════════════════════════════════════════════════════
+  if(/passe.*(?:en\s+)?wild|change.*(?:en\s+)?wild|(?:en|vers)\s+wild/i.test(m)) {
+    ST.fmt = 1; setFmt(1); message = '🌀 Format changé en Wild. Régénère le deck.'; return { message, actions:[] };
+  }
+  if(/passe.*(?:en\s+)?standard|change.*(?:en\s+)?standard|(?:en|vers)\s+standard/i.test(m)) {
+    ST.fmt = 2; setFmt(2); message = '🏆 Format changé en Standard. Régénère le deck.'; return { message, actions:[] };
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // 5. NOUVEAU DECK (création complète)
+  // ════════════════════════════════════════════════════════════════
+  var isNewCmd = /\b(cree[rz]?|cr[eé]e[rz]?|gen[eè]re?r?[ez]?|fais[-\s]?moi|nouveau|new|make|build|construis?|veux un deck)\b/i.test(m)
+    || mode==='new';
+
+  // Maps de traduction
+  var CLS_MAP = {mage:'MAGE',warrior:'WARRIOR',guerrier:'WARRIOR',combattant:'WARRIOR',
+    hunter:'HUNTER',chasseur:'HUNTER',paladin:'PALADIN',chevalier:'PALADIN',
+    rogue:'ROGUE',voleur:'ROGUE',assassin:'ROGUE',
+    priest:'PRIEST',pretre:'PRIEST',prêtre:'PRIEST',
+    shaman:'SHAMAN',chaman:'SHAMAN',druide:'DRUID',druid:'DRUID',
+    warlock:'WARLOCK',demoniste:'WARLOCK',démoniste:'WARLOCK',sorcier:'WARLOCK',
+    dh:'DEMONHUNTER',dk:'DEATHKNIGHT'};
+  var RACE_MAP = {dragon:'DRAGON',beast:'BEAST',bete:'BEAST',bête:'BEAST',
+    murloc:'MURLOC',pirate:'PIRATE',mech:'MECH',meca:'MECH',méca:'MECH',robot:'MECH',
+    elemental:'ELEMENTAL',elementaire:'ELEMENTAL','élémentaire':'ELEMENTAL',
+    demon:'DEMON',démon:'DEMON',undead:'UNDEAD',zombie:'UNDEAD',
+    'mort-vivant':'UNDEAD','mort vivant':'UNDEAD',naga:'NAGA',quilboar:'QUILBOAR',totem:'TOTEM'};
+  var ARC_MAP = {aggro:'Aggro',agressif:'Aggro',rapide:'Aggro',face:'Aggro',rush:'Aggro',
+    midrange:'Midrange',milieu:'Midrange',équilibré:'Midrange',equilibre:'Midrange',
+    control:'Control',contrôle:'Control',controle:'Control',défensif:'Control',defensif:'Control',slow:'Control',lent:'Control',
+    combo:'Combo',tempo:'Tempo',ramp:'Ramp',zoo:'Zoo',
+    otk:'OTK','one shot':'OTK','one turn kill':'OTK',
+    big:'Big',token:'Token',jetons:'Token'};
+  var SCL_MAP = {arcane:'ARCANE',gangrène:'FEL',gangrene:'FEL',fel:'FEL',
+    feu:'FIRE',fire:'FIRE',flamme:'FIRE',
+    givre:'FROST',frost:'FROST',glace:'FROST',froid:'FROST',
+    sacré:'HOLY',sacre:'HOLY',holy:'HOLY',lumière:'HOLY',
     nature:'NATURE',ombre:'SHADOW',shadow:'SHADOW'};
 
-  if(isNew) {
-    // "demon hunter" et "death knight" avant les mots simples
+  if(isNewCmd) {
+    // Chercher "demon hunter" et "death knight" en premier
     var newCls = null;
-    if(/demon\s*hunter/i.test(m)) newCls='DEMONHUNTER';
-    else if(/death\s*knight/i.test(m)) newCls='DEATHKNIGHT';
-    else for(var k in clsMap) { if(m.includes(k)) { newCls=clsMap[k]; break; } }
-    var newArc = null; for(var k in arcMap) { if(m.includes(k)) { newArc=arcMap[k]; break; } }
-    var newRace = null; for(var k in raceMap) { if(m.includes(k)) { newRace=raceMap[k]; break; } }
-    var newSchool = null; for(var k in sclMap) { if(m.includes(k)) { newSchool=sclMap[k]; break; } }
+    if(/demon\s*hunter|démon\s*hunter|chasseur.*démon/i.test(m)) newCls='DEMONHUNTER';
+    else if(/death\s*knight|chevalier.*mort/i.test(m)) newCls='DEATHKNIGHT';
+    else { for(var k in CLS_MAP) { if(m.includes(k)) { newCls=CLS_MAP[k]; break; } } }
+    var newArc = null;
+    for(var k in ARC_MAP) { if(m.includes(k)) { newArc=ARC_MAP[k]; break; } }
+    var newRace = null;
+    for(var k in RACE_MAP) { if(m.includes(k)) { newRace=RACE_MAP[k]; break; } }
+    var newSchool = null;
+    for(var k in SCL_MAP) { if(m.includes(k)) { newSchool=SCL_MAP[k]; break; } }
     var newFmt = /\b(wild|sauvage)\b/i.test(m) ? 1 : 2;
 
     if(newCls || newArc || newRace || newSchool) {
       newCls = newCls || (ST.lastP && ST.lastP.cls) || 'MAGE';
-      newArc = newArc || (ST.lastP && ST.lastP.arc) || 'Midrange';
+      newArc = newArc || 'Midrange';
       ST.arc=newArc; ST.fmt=newFmt;
       ST.deckType = newRace ? 'MINION' : (newSchool ? 'SPELL' : 'BOTH');
       ST.selectedRace=newRace||null; ST.selectedSchool=newSchool||null;
@@ -2269,64 +2351,121 @@ function parseNaturalCommand(msg, mode) {
     }
   }
 
-  // ── CHARGER UN TEMPLATE MÉTA ───────────────────────────────────────────────
-  var metaRef = m.match(/(?:charge|load|donne|montre|utilise|prends?)\s+.*?([a-z\u00e0-\u00ff\s]{3,30})/i);
-  if(metaRef && typeof META_DECKS !== 'undefined') {
-    var ms = metaRef[1].trim().toLowerCase();
-    var fd = META_DECKS.find(d =>
-      d.name.toLowerCase().includes(ms.split(' ')[0]) ||
-      ms.includes(d.cls.toLowerCase())
-    );
-    if(fd) {
-      loadMetaDeck(META_DECKS.indexOf(fd));
-      return { message:'✨ Template chargé : '+fd.name+' ('+fd.wr+' WR)', actions:[] };
+  // ════════════════════════════════════════════════════════════════
+  // 6. CHARGER UN TEMPLATE MÉTA
+  // ════════════════════════════════════════════════════════════════
+  if(/(?:charge|load|donne|montre|utilise|prends?|joue|met)\s+.*?(?:deck\s+)?([a-z\u00e0-\u00ff\s]{3,30})/i.test(m)) {
+    var mRef = m.match(/(?:charge|load|donne|montre|utilise|prends?|joue|met)\s+.*?(?:deck\s+)?([a-z\u00e0-\u00ff\s]{3,30})/i);
+    if(mRef && typeof META_DECKS !== 'undefined') {
+      var ms = mRef[1].trim().toLowerCase();
+      var fd = META_DECKS.find(d =>
+        d.name.toLowerCase().includes(ms.split(' ')[0]) ||
+        ms.includes(d.cls.toLowerCase()) ||
+        ms.split(' ').some(w => d.name.toLowerCase().includes(w))
+      );
+      if(fd) {
+        loadMetaDeck(META_DECKS.indexOf(fd));
+        return { message:'✨ Template chargé : '+fd.name+' ('+fd.wr+' WR)', actions:[] };
+      }
     }
   }
 
-  // ── REMPLACER une carte ────────────────────────────────────────────────────
-  var repRe = /(?:remplace[rz]?|replac\w*|chang[e]?[rz]?|swap|echang[e]?[rz]?|substitue[rz]?)\s+([\w\s'\u00e0-\u00ff-]{2,35}?)\s+(?:par|en|avec|pour|by|with|contre)\s+([\w\s'\u00e0-\u00ff-]{2,35?})(?:\s*(?:$|et|,|\.))/gi;
+  // ════════════════════════════════════════════════════════════════
+  // 7. RÉGÉNÉRER / RECONSTRUIRE LE DECK
+  // ════════════════════════════════════════════════════════════════
+  if(/(?:r[eé]g[eé]n[eè]re?|rebuil|reconstruit?|refait?|reload|refresh|recommence)/i.test(m)) {
+    regen();
+    message = '🔁 Deck régénéré.'; return { message, actions:[] };
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // 8. OPTIMISER / AMÉLIORER (commandes floues)
+  // ════════════════════════════════════════════════════════════════
+  if(/(?:optimise?|am[eé]liore?|rends?\s+(?:le\s+)?(?:deck\s+)?meilleur|boost|upgrade|powerlevel)/i.test(m)) {
+    message = '💡 Pour optimiser, dis-moi comment :<br>• <em>"enlève les cartes de plus de 7 mana"</em><br>• <em>"remplace les cartes que j\'ai pas"</em><br>• <em>"ajoute 2x Fireball"</em><br>Ou utilise le bouton 🔁 Régénérer pour un nouveau tirage.';
+    return { message, actions:[] };
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // 9. REMPLACER une carte par une autre
+  // ════════════════════════════════════════════════════════════════
+  var repRe = /(?:remplace[rz]?|replac\w*|chang[e]?[rz]?|swap|echange[rz]?|substitue[rz]?|mets?\s+(?:des?|une?)\s+)?([^\s][\w\s''\u00e0-\u00ff-]{1,35}?)\s+(?:par|en|avec|pour|→|->|\/|by|with|contre)\s+([\w\s''\u00e0-\u00ff-]{2,35})(?:\s*(?:$|et|,|\.))/gi;
   var rM;
   while((rM = repRe.exec(msg)) !== null) {
-    var oc = rM[1].trim().replace(/^(les?|des?|une?)\s+/i,'').replace(/[.,]+$/,'');
-    var nc = rM[2].trim().replace(/^(les?|des?|une?)\s+/i,'').replace(/[.,]+$/,'');
+    var oc = rM[1].trim().replace(/^(remplace[rz]?|change[rz]?|swap|les?|des?|une?)\s+/i,'').replace(/[.,]+$/,'').trim();
+    var nc = rM[2].trim().replace(/^(les?|des?|une?)\s+/i,'').replace(/[.,]+$/,'').trim();
     if(oc.length>1 && nc.length>1 && oc.toLowerCase()!==nc.toLowerCase())
       actions.push({type:'REPLACE_CARD', old:oc, new:nc, qty:2});
   }
 
-  // ── AJOUTER une carte ──────────────────────────────────────────────────────
-  var addRe = /(?:ajoute[rz]?|add|inclus?|mets?|rajoute[rz]?|insert[e]?)\s+(?:(\d+)x?\s+)?(?:des?|une?\s+)?([\w\s'\u00e0-\u00ff-]{2,35})(?:\s*(?:$|et|,|\.))/gi;
+  // ════════════════════════════════════════════════════════════════
+  // 10. AJOUTER une carte
+  // ════════════════════════════════════════════════════════════════
+  var addRe = /(?:ajoute[rz]?|add|inclus?|mets?|rajoute[rz]?|insert[e]?)\s+(?:(\d+)x?\s+)?(?:des?|une?\s+)?(?:copies?\s+(?:de\s+)?)?([^\s][\w\s''\u00e0-\u00ff-]{1,35})(?:\s*(?:$|et|,|\.))/gi;
   var aM;
   while((aM = addRe.exec(msg)) !== null) {
-    var qty4 = Math.min(parseInt(aM[1]||'1')||1,2);
-    var cn4 = aM[2].trim().replace(/[.,]+$/,'');
-    if(cn4.length>1 && !/^(le|la|les|des|un|une|du|au|aux)$/i.test(cn4))
-      actions.push({type:'ADD_CARD', card:cn4, qty:qty4});
+    var qty = Math.min(parseInt(aM[1]||'1')||1,2);
+    var cn = aM[2].trim().replace(/[.,]+$/,'');
+    if(cn.length>1 && !/^(le|la|les|des|un|une|du|au|aux|copies?|carte)$/i.test(cn))
+      actions.push({type:'ADD_CARD', card:cn, qty:qty});
   }
 
-  // ── RETIRER une carte ──────────────────────────────────────────────────────
-  var rmRe = /(?:enleve[rz]?|enlève[rz]?|retire[rz]?|supprime[rz]?|remove|vire[rz]?|efface[rz]?|delete)\s+(?:(\d+)x?\s+)?(?:les?\s+)?([\w\s'\u00e0-\u00ff-]{2,35})(?:\s*(?:$|et|,|\.))/gi;
+  // ════════════════════════════════════════════════════════════════
+  // 11. RETIRER une carte
+  // ════════════════════════════════════════════════════════════════
+  var rmRe = /(?:enleve[rz]?|enlève[rz]?|retire[rz]?|supprime[rz]?|remove|vire[rz]?|efface[rz]?|delete|del|kick)\s+(?:(\d+)x?\s+)?(?:les?\s+)?(?:carte[s]?\s+)?([^\s][\w\s''\u00e0-\u00ff-]{1,35})(?:\s*(?:$|et|,|\.))/gi;
   var rmM;
   while((rmM = rmRe.exec(msg)) !== null) {
     var rmQty = rmM[1] ? parseInt(rmM[1]) : 'all';
-    var rmCn = rmM[2].trim().replace(/^(les?|des?|une?)\s+/i,'').replace(/[.,]+$/,'');
-    if(rmCn.length>1 && !/^(les?|des?|un|une|toutes?|tous|carte|sort|serviteur)$/i.test(rmCn))
+    var rmCn = rmM[2].trim().replace(/^(les?|des?|une?)\s+/i,'').replace(/[.,]+$/,'').trim();
+    if(rmCn.length>1 && !/^(les?|des?|un|une|toutes?|tous|carte|sort|serviteur|tout)$/i.test(rmCn))
       actions.push({type:'REMOVE_CARD', card:rmCn, qty:rmQty});
   }
 
-  // ── FALLBACK ────────────────────────────────────────────────────────────────
-  if(actions.length===0 && !message) {
+  // ════════════════════════════════════════════════════════════════
+  // 12. FALLBACK — aide riche
+  // ════════════════════════════════════════════════════════════════
+  if(actions.length === 0 && !message) {
     message = [
-      '<strong>Ajouter :</strong> <em>"ajoute 2x Fireball"</em>',
-      '<strong>Retirer :</strong> <em>"enlève Blizzard"</em> · <em>"retire les cartes de plus de 7 mana"</em> · <em>"enlève les légendaires"</em>',
-      '<strong>Remplacer :</strong> <em>"remplace Blizzard par Frostbolt"</em>',
-      '<strong>Collection :</strong> <em>"remplace les cartes que j\'ai pas"</em> · <em>"remplace manquantes par légendaires"</em>',
-      '<strong>Nouveau deck :</strong> <em>"crée un deck Dragon Warrior Wild"</em>',
-      '<strong>Template méta :</strong> <em>"charge le deck Aura Paladin"</em>',
+      '<strong style="color:#d0a0ff">📖 Commandes disponibles :</strong>',
+      '',
+      '<strong>🃏 Ajouter une carte :</strong>',
+      '• <em>ajoute 2x Fireball</em> · <em>mets un Blizzard</em>',
+      '',
+      '<strong>🗑 Retirer une carte :</strong>',
+      '• <em>enlève Blizzard</em> · <em>retire les légendaires</em>',
+      '• <em>vire les cartes de plus de 7 mana</em> · <em>supprime les sorts</em>',
+      '',
+      '<strong>🔄 Remplacer une carte :</strong>',
+      '• <em>remplace Blizzard par Frostbolt</em>',
+      '• <em>change Fireball en Pyroblast</em>',
+      '',
+      '<strong>📦 Collection :</strong>',
+      '• <em>remplace les cartes que j\'ai pas</em>',
+      '• <em>remplace les manquantes par des légendaires</em>',
+      '• <em>garde seulement mes cartes</em>',
+      '',
+      '<strong>✨ Nouveau deck :</strong>',
+      '• <em>crée un deck Dragon Warrior Wild</em>',
+      '• <em>fais-moi un deck Aggro Mage Standard</em>',
+      '• <em>génère un deck Murloc Paladin</em>',
+      '',
+      '<strong>🏷 Filtres :</strong>',
+      '• <em>garde seulement les sorts</em> · <em>enlève les épiques</em>',
+      '• <em>passe en Wild</em> · <em>passe en Standard</em>',
+      '',
+      '<strong>⚡ Templates méta :</strong>',
+      '• <em>charge le deck Imbue Druid</em>',
+      '• <em>donne-moi l\'Aura Paladin</em>',
     ].join('<br>');
   }
-  if(!message && actions.length) message = actions.length+' action(s).';
+
+  if(!message && actions.length)
+    message = actions.length + ' action(s) appliquée(s).';
+
   return { message, actions };
 }
+
 
 // Trouver une alternative dans la collection pour une carte manquante
 // preferRarity: 'LEGENDARY' pour prioriser les légendaires
