@@ -152,27 +152,27 @@ textarea{resize:vertical;min-height:60px;font-size:11px;line-height:1.4}
     <div class="setup-logo">HS Deck Forge</div>
     <div class="setup-sub">AI Coach Edition</div>
 
-    <label class="setup-label">Clé API Anthropic</label>
-    <input class="setup-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
+    <label class="setup-label">URL de ton Cloudflare Worker</label>
+    <input class="setup-input" type="text" id="apiKeyInput" placeholder="https://hs-coach.TON-USER.workers.dev" autocomplete="off">
     <div class="setup-hint">
-      Ta clé reste sur ton ordinateur — elle n'est jamais envoyée ailleurs que directement à Anthropic.<br>
-      Obtenir une clé: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      L'URL de ton Worker Cloudflare qui fait le pont avec l'API Anthropic.<br>
+      Ta clé Anthropic reste sur Cloudflare — jamais dans ton navigateur.
     </div>
 
     <div class="setup-note">
-      🔒 Sécurité: la clé est sauvegardée dans ton navigateur (localStorage) et utilisée uniquement pour les appels au Coach IA. Elle ne transite pas par un serveur tiers.
+      🔒 Sécurité: ta clé Anthropic est dans les variables d'environnement Cloudflare, pas dans le navigateur. L'URL du Worker est sauvegardée localement.
     </div>
 
     <button class="setup-btn" onclick="initApp()">Lancer l'application</button>
     <button class="setup-btn" style="margin-top:8px;background:transparent;border-color:var(--border);color:var(--text2)" onclick="initApp(true)">Continuer sans Coach IA</button>
 
     <hr class="divider">
-    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px">Comment obtenir ta clé</div>
+    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px">Configurer le Worker Cloudflare (5 min)</div>
     <div class="setup-steps">
-      <div class="setup-step"><span class="step-n">1</span><span>Va sur <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue)">console.anthropic.com</a> et connecte-toi</span></div>
-      <div class="setup-step"><span class="step-n">2</span><span>Clique sur <strong style="color:var(--gold)">API Keys</strong> dans le menu gauche</span></div>
-      <div class="setup-step"><span class="step-n">3</span><span>Clique <strong style="color:var(--gold)">Create Key</strong> et copie la clé générée</span></div>
-      <div class="setup-step"><span class="step-n">4</span><span>Colle-la dans le champ ci-dessus et clique Lancer</span></div>
+      <div class="setup-step"><span class="step-n">1</span><span>Va sur <a href="https://workers.cloudflare.com" target="_blank" style="color:var(--blue)">workers.cloudflare.com</a> — compte gratuit</span></div>
+      <div class="setup-step"><span class="step-n">2</span><span>Crée un Worker et colle le contenu du fichier <strong style="color:var(--gold)">cloudflare-worker.js</strong></span></div>
+      <div class="setup-step"><span class="step-n">3</span><span>Dans <strong style="color:var(--gold)">Settings → Variables</strong>, ajoute <code style="background:var(--bg);padding:1px 4px;border-radius:3px;font-size:10px">ANTHROPIC_API_KEY</code> avec ta clé Anthropic</span></div>
+      <div class="setup-step"><span class="step-n">4</span><span>Copie l'URL du Worker et colle-la dans le champ ci-dessus</span></div>
     </div>
   </div>
 </div>
@@ -382,10 +382,10 @@ let S={
 // ========================
 function initApp(noAI=false){
   const key=document.getElementById('apiKeyInput').value.trim();
-  if(!noAI&&!key){showToastGlobal('Entre ta clé API ou choisis "Continuer sans Coach IA"');return;}
+  if(!noAI&&!key){showToastGlobal('Entre l\'URL du Worker ou choisis "Continuer sans Coach IA"');return;}
   if(key){
-    S.apiKey=key;S.aiEnabled=true;
-    localStorage.setItem(LS.KEY,key);
+    S.aiEnabled=true;
+    localStorage.setItem('hsdforge_proxy_url',key);
   }
   document.getElementById('setupScreen').style.display='none';
   document.getElementById('mainApp').style.display='block';
@@ -398,15 +398,15 @@ function initApp(noAI=false){
 }
 
 function showSettings(){
-  const key=prompt('Clé API Anthropic (laisse vide pour désactiver le Coach IA):',S.apiKey||'');
-  if(key===null)return;
-  if(key.trim()){
-    S.apiKey=key.trim();S.aiEnabled=true;
-    localStorage.setItem(LS.KEY,key.trim());
-    showToast('Clé API mise à jour!');
+  const url=prompt('URL du Cloudflare Worker (laisse vide pour désactiver le Coach IA):',localStorage.getItem('hsdforge_proxy_url')||'');
+  if(url===null)return;
+  if(url.trim()){
+    S.aiEnabled=true;
+    localStorage.setItem('hsdforge_proxy_url',url.trim());
+    showToast('Worker URL mis à jour!');
   }else{
-    S.apiKey=null;S.aiEnabled=false;
-    localStorage.removeItem(LS.KEY);
+    S.aiEnabled=false;
+    localStorage.removeItem('hsdforge_proxy_url');
     showToast('Coach IA désactivé');
   }
   updateAIBadge();
@@ -426,9 +426,9 @@ function showToastGlobal(m){
 
 // Check if saved key exists on load
 window.addEventListener('load',()=>{
-  const savedKey=localStorage.getItem(LS.KEY);
-  if(savedKey){
-    document.getElementById('apiKeyInput').value=savedKey;
+  const savedProxy=localStorage.getItem('hsdforge_proxy_url');
+  if(savedProxy){
+    document.getElementById('apiKeyInput').value=savedProxy;
   }
 });
 
@@ -440,8 +440,8 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){show
 
 function loadFromStorage(){
   S.selectedClass=lsGet(LS.CLASS,'PALADIN');
-  const savedKey=localStorage.getItem(LS.KEY);
-  if(savedKey&&!S.apiKey){S.apiKey=savedKey;S.aiEnabled=true;updateAIBadge();}
+  const savedProxy=localStorage.getItem('hsdforge_proxy_url');
+  if(savedProxy){S.aiEnabled=true;updateAIBadge();}
   const savedColl=lsGet(LS.COLL,[]);
   if(savedColl.length){
     applyCollection(savedColl);
@@ -1095,21 +1095,27 @@ function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace
 
 async function callAI(userMessage){
   S.isTyping=true;showTyping();
+  const proxyUrl=localStorage.getItem('hsdforge_proxy_url')||'';
+  if(!proxyUrl){
+    hideTyping();
+    addAIMessage('⚠️ Configure d\'abord l\'URL de ton Cloudflare Worker.<br><small style="color:var(--text3)">Clique sur ⚙ API en haut à droite et entre l\'URL du Worker.</small>');
+    S.isTyping=false;return;
+  }
   const sys=`Tu es le Coach Légendaire, expert Hearthstone dans HS Deck Forge. Réponds en français, sois précis et passionné.\n\nContexte:\n${buildCtx()}\n\nRègles:\n- Max 200 mots sauf analyse complète\n- Noms de cartes en gras\n- Conseils actionnables`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
+    const r=await fetch(proxyUrl,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-iab':'true'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[...S.chatHistory.slice(-8),{role:'user',content:userMessage}]})
     });
     const data=await r.json();hideTyping();
-    if(data.error){addAIMessage('⚠️ Erreur API: '+data.error.message+'<br><small style="color:var(--text3)">Vérifie ta clé API via ⚙ en haut à droite.</small>');S.isTyping=false;return;}
+    if(data.error){addAIMessage('⚠️ Erreur API: '+data.error.message+'<br><small style="color:var(--text3)">Vérifie la config du Worker Cloudflare.</small>');S.isTyping=false;return;}
     const reply=data.content?.[0]?.text||'Erreur de réponse.';
     S.chatHistory.push({role:'user',content:userMessage},{role:'assistant',content:reply});
     addAIMessage(fmt(reply));
   }catch(e){
     hideTyping();
-    addAIMessage('⚠️ Erreur de connexion.<br><small style="color:var(--text3)">'+e.message+'</small>');
+    addAIMessage('⚠️ Erreur de connexion au Worker.<br><small style="color:var(--text3)">'+e.message+'<br>Vérifie l\'URL du Worker dans ⚙ API.</small>');
   }
   S.isTyping=false;
 }
