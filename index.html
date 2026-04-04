@@ -374,7 +374,8 @@ let S={
   selectedClass:'PALADIN',format:'Standard',
   deck:[],collection:{},collectionByName:{},collectionRaw:[],
   optResult:null,activeVariant:'faithful',
-  chatHistory:[],isTyping:false,lastDeckCode:null
+  chatHistory:[],isTyping:false,lastDeckCode:null,
+  nameFRtoDbf:{},nameENtoDbf:{}
 };
 
 // ========================
@@ -468,13 +469,24 @@ function encodeVarint(value){
 }
 
 function generateRealDeckstring(deck,cls,format){
-  const withDbf=deck.filter(c=>c.dbfId);
-  if(!withDbf.length)return{code:null,valid:false,reason:'Aucun DBF ID trouvé'};
+  // Enrichir avec dbfId si manquant, en cherchant par nom dans les maps FR et EN
+  const enriched = deck.map(c => {
+    if(c.dbfId) return c;
+    // Chercher par nom FR puis EN
+    const dbfFR = S.nameFRtoDbf && c.name ? S.nameFRtoDbf[c.name.toLowerCase()] : null;
+    const dbfEN = S.nameENtoDbf && c.name ? S.nameENtoDbf[c.name.toLowerCase()] : null;
+    const dbfId = dbfFR || dbfEN || null;
+    // Chercher aussi dans S.cards par id
+    const found = S.cards && c.id ? S.cards.find(x=>x.id===c.id) : null;
+    return {...c, dbfId: dbfId || found?.dbfId || null};
+  });
+  const withDbf=enriched.filter(c=>c.dbfId);
+  if(!withDbf.length)return{code:null,valid:false,reason:'Aucun DBF ID trouvé — cartes non reconnues'};
   const clsObj=CLASSES.find(c=>c.id===cls);
   if(!clsObj)return{code:null,valid:false,reason:'Classe non reconnue'};
   const formatId=FORMAT_IDS[format]||2;
-  const singles=withDbf.filter(c=>c.count===1&&c.rarity==='LEGENDARY');
-  const doubles=withDbf.filter(c=>c.count===2||(c.count===1&&c.rarity!=='LEGENDARY'));
+  const singles=withDbf.filter(c=>c.count===1&&(c.rarity==='LEGENDARY'||c.rarity==='legendary'));
+  const doubles=withDbf.filter(c=>c.count===2||(c.count===1&&c.rarity!=='LEGENDARY'&&c.rarity!=='legendary'));
   const bytes=[];
   bytes.push(0x00);
   bytes.push(...encodeVarint(1));
@@ -813,17 +825,59 @@ function setupDrop(){
 // ========================
 async function loadCards(){
   try{
-    const r=await fetch('https://api.hearthstonejson.com/v1/latest/enUS/cards.collectible.json');
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    S.cards=await r.json();S.loaded=true;
+    // Charger les deux locales en parallèle
+    // frFR pour les noms affichés, enUS pour les dbfIds (toujours en anglais dans HS)
+    const [rFR, rEN] = await Promise.all([
+      fetch('https://api.hearthstonejson.com/v1/latest/frFR/cards.collectible.json'),
+      fetch('https://api.hearthstonejson.com/v1/latest/enUS/cards.collectible.json')
+    ]);
+    if(!rFR.ok||!rEN.ok) throw new Error('HTTP '+(!rFR.ok?rFR.status:rEN.status));
+    const cardsFR = await rFR.json();
+    const cardsEN = await rEN.json();
+
+    // Construire un map id -> dbfId depuis enUS
+    const dbfMap = {};
+    const costMap = {};
+    const typeMap = {};
+    const rarityMap = {};
+    cardsEN.forEach(c => {
+      if(c.id) {
+        dbfMap[c.id] = c.dbfId;
+        costMap[c.id] = c.cost;
+        typeMap[c.id] = c.type;
+        rarityMap[c.id] = c.rarity;
+      }
+    });
+
+    // Enrichir les cartes FR avec les dbfIds anglais
+    S.cards = cardsFR.map(c => ({
+      ...c,
+      dbfId: dbfMap[c.id] || c.dbfId,
+      cost: costMap[c.id] ?? c.cost,
+      type: typeMap[c.id] || c.type,
+      rarity: rarityMap[c.id] || c.rarity,
+    }));
+
+    // Construire aussi un map nom FR -> dbfId pour l'import de decks en français
+    S.nameFRtoDbf = {};
+    S.nameENtoDbf = {};
+    S.cards.forEach(c => {
+      if(c.name && c.dbfId) S.nameFRtoDbf[c.name.toLowerCase()] = c.dbfId;
+    });
+    cardsEN.forEach(c => {
+      if(c.name && c.dbfId) S.nameENtoDbf[c.name.toLowerCase()] = c.dbfId;
+    });
+
+    S.loaded = true;
     document.getElementById('hsDot').className='dot dot-on';
-    document.getElementById('hsTxt').textContent=S.cards.length+' cartes';
+    document.getElementById('hsTxt').textContent=S.cards.length+' cartes (FR+EN)';
     if(S.collectionRaw.length)applyCollection(S.collectionRaw);
-    renderBuilder();showToast(S.cards.length+' cartes chargées!');
+    renderBuilder();
+    showToast(S.cards.length+' cartes chargées avec DBF IDs corrects!');
   }catch(e){
     document.getElementById('hsDot').className='dot dot-off';
     document.getElementById('hsTxt').textContent='Erreur réseau';
-    showToast('Erreur chargement cartes — vérifie ta connexion');
+    showToast('Erreur chargement cartes: '+e.message);
   }
 }
 
