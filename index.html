@@ -1937,6 +1937,53 @@ function buildContext() {
     ctx += '\n\nOPTIMIZER REPLACEMENTS:\n' + (repls || 'None');
   }
 
+  // Build list of AVAILABLE cards for the AI
+  // Filtered by: format (Standard/Wild) + collection (owned) + class
+  if (G.loaded) {
+    const deckIds = new Set(G.deck.map(c => c.id));
+    const hasColl = G.collRaw.length > 0;
+
+    const available = G.cards
+      .filter(c => {
+        if (!c.collectible) return false;
+        if (deckIds.has(c.id)) return false;
+        if (c.cardClass !== G.cls && c.cardClass !== 'NEUTRAL') return false;
+        // Format filter
+        if (G.fmt === 'Standard' && !G.standardCardIds.has(c.id)) return false;
+        // Collection filter: only show owned cards
+        if (hasColl) {
+          const owned = getOwned(c);
+          if (owned <= 0) return false;
+        }
+        return true;
+      })
+      .sort((a,b) => a.cost - b.cost || a.name.localeCompare(b.name));
+
+    // Class cards (all of them)
+    const classCards = available.filter(c => c.cardClass === G.cls);
+    // Neutral cards (limit to keep context manageable)
+    const neutralCards = available.filter(c => c.cardClass === 'NEUTRAL').slice(0, 60);
+
+    const fmtLabel = G.fmt === 'Standard' ? 'Standard' : 'Wild';
+    const ownLabel = hasColl ? ', OWNED' : '';
+
+    if (classCards.length > 0) {
+      ctx += '\n\nAVAILABLE ' + cls.lbl.toUpperCase() + ' CARDS (' + fmtLabel + ownLabel + ', not in deck):\n' +
+        classCards.map(c => '(' + (c.cost||0) + ') ' + c.name).join('\n');
+    }
+    if (neutralCards.length > 0) {
+      ctx += '\n\nAVAILABLE NEUTRAL CARDS (' + fmtLabel + ownLabel + ', partial list):\n' +
+        neutralCards.map(c => '(' + (c.cost||0) + ') ' + c.name).join(', ');
+    }
+
+    ctx += '\n\nCRITICAL RULES FOR DECKMOD:ADD:\n';
+    ctx += '- ONLY use card names from the AVAILABLE lists above.\n';
+    ctx += '- Any card NOT in these lists will FAIL (wrong format, not owned, or wrong class).\n';
+    if (hasColl) ctx += '- The lists above are filtered by the player\'s COLLECTION. Do NOT suggest cards they don\'t own.\n';
+    ctx += '- Format is ' + fmtLabel + '. Do NOT suggest ' + (G.fmt==='Standard'?'Wild':'') + ' cards.\n';
+    ctx += '- Always pair each REMOVE with an ADD to keep 30 cards.';
+  }
+
   return ctx;
 }
 
@@ -2039,8 +2086,17 @@ function applyAIDeckMods(mods) {
 
       // Format enforcement
       if (G.fmt === 'Standard' && !G.standardCardIds.has(card.id)) {
-        errors.push('"' + card.name + '" is Wild-only');
+        errors.push('"' + card.name + '" is Wild-only, blocked in Standard');
         return;
+      }
+
+      // Collection enforcement: if collection imported, check ownership
+      if (G.collRaw.length > 0) {
+        const owned = getOwned(card);
+        if (owned <= 0) {
+          errors.push('"' + card.name + '" not in your collection');
+          return;
+        }
       }
 
       const existing = G.deck.find(c => c.id === card.id);
