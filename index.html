@@ -653,7 +653,8 @@ const CLASSES = [
   {id:'DRUID',     lbl:'Druid',    icon:'\uD83C\uDF3F', dbfId:274},
   {id:'SHAMAN',    lbl:'Shaman',   icon:'\u26A1', dbfId:1066},
   {id:'WARLOCK',   lbl:'Warlock',  icon:'\uD83D\uDC80', dbfId:893},
-  {id:'DEMONHUNTER',lbl:'D.Hunter',icon:'\uD83E\uDE93', dbfId:56550}
+  {id:'DEMONHUNTER',lbl:'D.Hunter',icon:'\uD83E\uDE93', dbfId:56550},
+  {id:'DEATHKNIGHT',lbl:'D.Knight',icon:'\u2620\uFE0F', dbfId:78065}
 ];
 
 // Format IDs: 1=Wild, 2=Standard, 3=Classic, 4=Twist
@@ -1373,6 +1374,56 @@ async function loadCards() {
     // This ensures Fabled cards like "Avatar Form", "High King's Hammer" are found
     G.nameToCard = {};
     G.idToCard = {};
+
+    // ============================================================
+    // DYNAMIC HERO DBF ID RESOLUTION
+    // Deckstrings require the correct hero DBF ID. HearthstoneJSON
+    // has multiple versions (Legacy, Core, skins). We pick the best
+    // match: CORE hero first, then base hero (HERO_XX id pattern).
+    // ============================================================
+    const heroCards = allCards.filter(c => c.type === 'HERO' && c.cardClass && !c.cost);
+    const heroMap = {}; // cardClass -> best hero dbfId
+
+    // Priority: 1) CORE set hero, 2) id starts with HERO_
+    heroCards.forEach(c => {
+      if (!c.cardClass || c.cardClass === 'NEUTRAL') return;
+      const cls = c.cardClass;
+      const isCoreHero = c.set === 'CORE' && c.id && c.id.startsWith('HERO_');
+      const isBaseHero = c.id && c.id.match(/^HERO_\d+$/); // e.g. HERO_01, HERO_02
+      const isCoreVersionHero = c.id && c.id.startsWith('HERO_') && c.id.includes('CORE');
+
+      if (!heroMap[cls]) {
+        heroMap[cls] = { dbfId: c.dbfId, priority: 0, id: c.id };
+      }
+
+      let priority = 0;
+      if (isCoreVersionHero) priority = 3; // HERO_XXp_CORE pattern
+      else if (isCoreHero) priority = 2;   // CORE set hero
+      else if (isBaseHero) priority = 1;    // Base hero (HERO_01 etc)
+
+      if (priority > heroMap[cls].priority) {
+        heroMap[cls] = { dbfId: c.dbfId, priority, id: c.id };
+      }
+    });
+
+    // Update CLASSES with resolved hero DBF IDs
+    let heroUpdates = [];
+    CLASSES.forEach(cls => {
+      if (heroMap[cls.id]) {
+        const oldDbf = cls.dbfId;
+        const newDbf = heroMap[cls.id].dbfId;
+        if (oldDbf !== newDbf) {
+          heroUpdates.push(cls.id + ': ' + oldDbf + ' -> ' + newDbf + ' (' + heroMap[cls.id].id + ')');
+        }
+        cls.dbfId = newDbf;
+      }
+    });
+    if (heroUpdates.length > 0) {
+      console.log('[HS Deck Forge] Hero DBF IDs updated from HearthstoneJSON:', heroUpdates);
+    } else {
+      console.log('[HS Deck Forge] Hero DBF IDs verified - all match HearthstoneJSON');
+    }
+    console.log('[HS Deck Forge] Hero map:', Object.entries(heroMap).map(([k,v]) => k + '=' + v.dbfId + ' (' + v.id + ')').join(', '));
 
     // First pass: add all cards to idToCard
     allCards.forEach(c => {
