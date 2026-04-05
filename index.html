@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HS Deck Forge</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -17,7 +17,7 @@
   --shadow:0 4px 24px rgba(0,0,0,0.6);
 }
 html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--txt);font-size:14px;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--txt);font-size:14px;-webkit-tap-highlight-color:transparent;overflow-x:hidden;touch-action:manipulation}
 
 /* ===== SETUP ===== */
 #setup{position:fixed;inset:0;z-index:9999;background:var(--navy);display:flex;align-items:center;justify-content:center}
@@ -325,6 +325,10 @@ textarea{resize:vertical;min-height:60px;font-size:11px;line-height:1.4}
   /* Buttons */
   .btn{font-size:10px;padding:5px 9px}
   .btn-sm{padding:4px 7px;font-size:9px}
+
+  /* Prevent iOS zoom on input focus */
+  input,select,textarea{font-size:16px !important}
+  .form-input{font-size:16px !important}
 
   /* Toast */
   .toast{left:8px;right:8px;max-width:none;font-size:11px;bottom:10px}
