@@ -357,7 +357,8 @@ textarea{resize:vertical;min-height:60px;font-size:11px;line-height:1.4}
         <div class="card" style="margin-bottom:10px">
           <div class="section-title">Import (.txt file)</div>
           <div style="font-size:11px;color:var(--txt2);margin-bottom:10px;line-height:1.6">
-            Format: <code style="background:var(--navy3);padding:2px 6px;border-radius:4px;font-size:10px">Card Name | 2</code> - one card per line (0, 1 or 2 copies).
+            Format: <code style="background:var(--navy3);padding:2px 6px;border-radius:4px;font-size:10px">Card Name | 2</code> - one card per line.<br>
+            Supports <code style="background:var(--navy3);padding:1px 4px;border-radius:3px;font-size:10px">[Golden]</code> and <code style="background:var(--navy3);padding:1px 4px;border-radius:3px;font-size:10px">[Trial]</code> tags (auto-merged).
             <button class="btn btn-ghost btn-xs" style="margin-left:8px" onclick="downloadTemplate()">&#x1F4E5; Download Template</button>
           </div>
           <div class="drop-zone" id="dropZone">
@@ -574,13 +575,15 @@ let G = {
   cards: [], loaded: false, aiOn: false,
   cls: 'PALADIN', fmt: 'Standard',
   deck: [],
-  coll: {}, collByName: {}, collRaw: [],
+  coll: {}, collByName: {}, collByNameNorm: {}, collRaw: [],
   optResult: null, variant: 'faithful',
   chatHist: [], typing: false,
   nameToCard: {},
+  stdNameToCard: {},
   idToCard: {},
   standardCardIds: new Set(),
-  lastCode: null, // last generated deck code for clipboard
+  lastCode: null,
+  availableCardNames: new Set(), // exact card names sent to AI - used for strict DECKMOD validation
 };
 
 // ============================================================
@@ -611,17 +614,21 @@ const ROTATED_SETS = new Set([
   'DALARAN', 'ULDUM', 'DRAGONS', 'YEAR_OF_THE_DRAGON',
   // Year of the Phoenix (2020)
   'BLACK_TEMPLE', 'SCHOLOMANCE', 'DARKMOON_FAIRE',
+  'DEMON_HUNTER_INITIATE', // DH initiate cards (2020)
   // Year of the Gryphon (2021)
   'THE_BARRENS', 'STORMWIND', 'ALTERAC_VALLEY',
   // Year of the Hydra (2022)
   'THE_SUNKEN_CITY', 'REVENDRETH', 'RETURN_OF_THE_LICH_KING',
   'PATH_OF_ARTHAS',
-  // Year of the Wolf (2023)
+  // Year of the Wolf (2023) + mini-sets
   'FESTIVAL_OF_LEGENDS', 'TITANS', 'BATTLE_OF_THE_BANDS',
   'SHOWDOWN_IN_THE_BADLANDS',
-  // Year of the Pegasus (2024) - rotated March 17, 2026
+  'WILD_WEST',    // Showdown in the Badlands mini-set
+  // Year of the Pegasus (2024) + mini-sets - rotated March 17, 2026
   'WHIZBANGS_WORKSHOP', 'PERILS_IN_PARADISE', 'THE_GREAT_DARK_BEYOND',
   'ISLAND_VACATION',
+  'WONDERS',      // Whizbang's Workshop mini-set (Dr. Boom's Inventions)
+  'SPACE',        // The Great Dark Beyond mini-set (Heroes of Starcraft)
 ]);
 
 // System/non-collectible sets to ignore (not Wild, not Standard)
@@ -629,20 +636,155 @@ const SYSTEM_SETS = new Set([
   'HERO_SKINS', 'TAVERN_BRAWL', 'TB', 'LETTUCE', 'BATTLEGROUNDS',
   'PLACEHOLDER', 'CREDITS', 'MISSIONS', 'DEMO', 'TUTORIAL',
   'VANILLA', 'EVENT',
+  'PLACEHOLDER_202204', // Placeholder set
 ]);
 
 // Dynamically determined Standard sets (populated after card load)
 let DETECTED_STANDARD_SETS = new Set();
 
+// ============================================================
+// CORE SET STALENESS DETECTION
+//
+// The CORE set changes every year, but HearthstoneJSON may lag
+// behind the in-game rotation. We detect stale CORE data by
+// checking for known Core 2026 NEW cards (cards that were
+// created specifically for Core 2026).
+//
+// If NONE of these markers exist in the CORE set, the data is
+// stale (still showing Core 2025) and we must exclude CORE
+// from Standard detection entirely.
+// ============================================================
+
+// New cards created for Core 2026 (Year of the Scarab)
+// If at least 2 of these exist with set=CORE, the data is current
+const CORE_2026_MARKERS = new Set([
+  'rehgar earthfury',        // Shaman legendary (new)
+  'calia menethil',          // Priest legendary (new)
+  'ulfar',                   // Druid legendary (new)
+  'tichondrius',             // Demon Hunter legendary (new)
+  'consumption',             // Death Knight spell (new)
+  "death's advance",         // Death Knight spell (new)
+]);
+
+// Cards CONFIRMED rotated OUT of Core for 2026
+// These are blocked from Standard even if HearthstoneJSON
+// still lists them as set=CORE (stale data protection)
+const CORE_ROTATED_OUT_2026 = new Set([
+  // Death Knight (6)
+  'soulbreaker',
+  'corpse explosion',
+  'deathbringer saurfang',
+  'vampiric blood',
+  'horn of winter',
+  'stitched giant',
+  // Demon Hunter (5)
+  'immolation aura',
+  "gan'arg glaivesmith",
+  'wayward sage',
+  'tuskpiercer',
+  'zai, the incredible',
+  // Druid (5)
+  'swipe',
+  'thickhide kodo',
+  'park panther',
+  'witchwood apple',
+  'greybough',
+  // Hunter (6)
+  'deadly shot',
+  "master's call",
+  'terrorscale stalker',
+  'ice trap',
+  'barak kodobane',
+  'veranus',
+  // Mage (5)
+  'arcane artificer',
+  'primordial glyph',
+  'firelands portal',
+  'flame geyser',
+  'kalecgos',
+  // Paladin (5)
+  'redscale dragontamer',
+  'crusader aura',
+  'underlight angling rod',
+  'bronze explorer',
+  'anachronos',
+  // Priest (5)
+  "ship's chirurgeon",
+  'spirit guide',
+  'thrive in the shadows',
+  'lightbomb',
+  'madame lazul',
+  // Rogue (6)
+  'shadowstep',
+  'undercity huckster',
+  'raiding party',
+  'hench-clan burglar',
+  'eviscerate',
+  'tess greymane',
+  // Shaman (6)
+  'menacing nimbus',
+  'flametongue totem',
+  'feral spirit',
+  'marshspawn',
+  'jinyu waterspeaker',
+  "al'akir the windlord",
+  // Warlock (5)
+  'enhanced dreadlord',
+  'dark alley pact',
+  'demonic studies',
+  'despicable dreadlord',
+  'the soularium',
+  // Warrior (5)
+  'cargo guard',
+  'fiery war axe',
+  'brawl',
+  'shield slam',
+  'heavy plate',
+  // Neutral (11)
+  'kobold geomancer',
+  'youthful brewmaster',
+  'nerubian egg',
+  'gnomelia, s.a.f.e. pilot',
+  'menagerie jug',
+  'cornelius roame',
+  'vicious slitherspear',
+  'vulpera scoundrel',
+  'wisp',
+  'octosari',
+  'ragnaros the firelord',
+  // Safety: cards from older Core sets or commonly confused Wild cards
+  // ONLY cards confirmed NOT in Core 2026
+  'maelstrom portal',
+  'snowfury giant',
+  'doomhammer',
+  'thing from below',
+  'overdraft',
+  'muck pools',
+  'spirit claws',
+  'defile',
+  'voidwalker',
+  'arch-villain rafaam',
+  'lesser amethyst spellstone',
+  'bloodbound imp',
+  'lothraxion the redeemed',
+]);
+
+let G_coreIsStale = false;
+
 function isCardStandard(card) {
   if (!card || !card.set) return false;
   if (DETECTED_STANDARD_SETS.size > 0) {
+    // Block known rotated-out CORE cards by name
+    if (card.set === 'CORE' && card.name &&
+        CORE_ROTATED_OUT_2026.has(card.name.toLowerCase())) {
+      return false;
+    }
     return DETECTED_STANDARD_SETS.has(card.set);
   }
   // Fallback before detection runs
   if (ROTATED_SETS.has(card.set)) return false;
   if (SYSTEM_SETS.has(card.set)) return false;
-  return true; // Unknown set = assume Standard
+  return true;
 }
 
 function detectStandardSets(cards) {
@@ -664,6 +806,30 @@ function detectStandardSets(cards) {
     if (SYSTEM_SETS.has(setName)) return;    // System set
     DETECTED_STANDARD_SETS.add(setName);     // Everything else = Standard!
   });
+
+  // ---- CORE STALENESS CHECK ----
+  // Core 2026 (Year of the Scarab) has exactly 283 collectible cards.
+  // HearthstoneJSON may include CORE cards from multiple years.
+  // We detect this and log a warning, but we DON'T exclude ALL CORE
+  // because that would break collection/Builder (legit Core cards need to work).
+  // Instead, we use the CORE_ROTATED_OUT_2026 blacklist for targeted blocking.
+  const coreCards = cards.filter(c => c.set === 'CORE' && c.collectible);
+  const CORE_2026_EXPECTED = 283;
+
+  let markerCount = 0;
+  coreCards.forEach(c => {
+    if (c.name && CORE_2026_MARKERS.has(c.name.toLowerCase())) markerCount++;
+  });
+
+  G_coreIsStale = (coreCards.length > CORE_2026_EXPECTED + 15);
+
+  if (G_coreIsStale) {
+    console.warn('[HS Deck Forge] CORE SET CONTAINS EXTRA CARDS!');
+    console.warn('  CORE cards found: ' + coreCards.length + ' (expected ~' + CORE_2026_EXPECTED + ')');
+    console.warn('  Using CORE_ROTATED_OUT_2026 blacklist to filter known Wild cards.');
+  } else {
+    console.log('[HS Deck Forge] CORE set looks current: ' + coreCards.length + ' cards, ' + markerCount + '/6 markers');
+  }
 
   console.log('[HS Deck Forge] All sets found:', [...allSets].sort().join(', '));
   console.log('[HS Deck Forge] STANDARD sets:', [...DETECTED_STANDARD_SETS].sort().join(', '));
@@ -809,41 +975,82 @@ function encodeVarint(n) {
   return bytes;
 }
 
-// Re-enrich every card in G.deck with fresh dbfId from loaded cards
+// Resolve a card name to the correct version for the current format
+// In Standard: ALWAYS returns Standard/Core DBF ID
+// In Wild: returns any version
+function resolveCard(name) {
+  if (!name || !G.loaded) return null;
+  const key = name.toLowerCase().trim();
+  // In Standard mode, try Standard-only map FIRST
+  if (G.fmt === 'Standard' && G.stdNameToCard[key]) {
+    return G.stdNameToCard[key];
+  }
+  // General lookup (already has Standard priority)
+  return G.nameToCard[key] || null;
+}
+
+// Re-enrich every card in G.deck with correct dbfId for current format
+// Also merges duplicates (e.g. Wild + Standard versions of same card)
 function reEnrichDeck() {
   if (!G.loaded) return;
-  G.deck = G.deck.map(c => {
-    // Always prefer the name lookup (which prioritizes Standard/Core versions)
-    const byName = G.nameToCard[c.name?.toLowerCase()];
-    const byId = G.idToCard[c.id];
 
-    // In Standard mode, ALWAYS prefer the Standard version found by name
-    if (G.fmt === 'Standard' && byName && G.standardCardIds.has(byName.id)) {
-      return { ...c, id: byName.id, dbfId: byName.dbfId, rarity: byName.rarity || c.rarity, type: byName.type || c.type };
-    }
-    const found = byName || byId;
-    if (found) {
-      return { ...c, id: found.id, dbfId: found.dbfId, rarity: found.rarity || c.rarity, type: found.type || c.type };
+  // Step 1: Resolve each card to correct version
+  const resolved = G.deck.map(c => {
+    const r = resolveCard(c.name);
+    if (r) {
+      return { ...c, id: r.id, dbfId: r.dbfId, rarity: r.rarity || c.rarity, type: r.type || c.type, name: r.name || c.name };
     }
     return c;
   });
+
+  // Step 2: Merge duplicates by ID (same card resolved from different sources)
+  const merged = {};
+  resolved.forEach(c => {
+    const key = c.id || c.name?.toLowerCase();
+    if (!key) return;
+    if (merged[key]) {
+      merged[key].count = Math.min(2, merged[key].count + c.count);
+      // Cap legendaries at 1
+      if ((merged[key].rarity||'').toUpperCase() === 'LEGENDARY') merged[key].count = 1;
+    } else {
+      merged[key] = { ...c };
+    }
+  });
+
+  G.deck = Object.values(merged);
 }
 
 function buildDeckCode(deck, cls, fmt) {
-  // Step 1: Look up dbfId for every card - prefer Standard/Core versions
-  const enriched = deck.map(c => {
-    let dbfId = c.dbfId;
-    // Always try name lookup first (prefers Standard versions)
-    const byName = G.nameToCard[c.name?.toLowerCase()];
-    if (byName && (fmt !== 'Standard' || G.standardCardIds.has(byName.id))) {
-      dbfId = byName.dbfId;
+  // Step 1: Resolve every card to the correct DBF ID for the format
+  const resolvedCards = deck.map(c => {
+    const key = c.name?.toLowerCase()?.trim();
+    let resolved = null;
+
+    // In Standard: ALWAYS use stdNameToCard for correct Standard DBF ID
+    if (fmt === 'Standard' && key && G.stdNameToCard?.[key]) {
+      resolved = G.stdNameToCard[key];
     }
-    if (!dbfId) {
-      const byId = G.idToCard[c.id];
-      dbfId = byId?.dbfId || byName?.dbfId || null;
-    }
-    return { ...c, dbfId };
+    // Fallback: general lookup
+    if (!resolved && key) resolved = G.nameToCard?.[key];
+    // Fallback: ID lookup
+    if (!resolved) resolved = G.idToCard?.[c.id];
+
+    return { ...c, dbfId: resolved?.dbfId || c.dbfId || null, id: resolved?.id || c.id };
   });
+
+  // Step 2: Merge duplicates by dbfId (same card from different sources)
+  const mergedMap = {};
+  resolvedCards.forEach(c => {
+    if (!c.dbfId) return;
+    const key = c.dbfId;
+    if (mergedMap[key]) {
+      mergedMap[key].count = Math.min(2, mergedMap[key].count + c.count);
+      if ((mergedMap[key].rarity||'').toUpperCase() === 'LEGENDARY') mergedMap[key].count = 1;
+    } else {
+      mergedMap[key] = { ...c };
+    }
+  });
+  const enriched = Object.values(mergedMap);
 
   const valid = enriched.filter(c => c.dbfId && c.dbfId > 0);
   const missing = enriched.filter(c => !c.dbfId || c.dbfId <= 0);
@@ -977,6 +1184,50 @@ async function loadCards() {
     G.cards = allCards.filter(c => c.collectible);
     G.allCardsForLookup = allCards;
 
+    // ============================================================
+    // CORE SET DIAGNOSTIC - Find what distinguishes active vs reserve
+    // ============================================================
+    const coreAll = allCards.filter(c => c.set === 'CORE');
+    const coreColl = coreAll.filter(c => c.collectible);
+    const coreNonColl = coreAll.filter(c => !c.collectible);
+    console.log('[CORE DIAGNOSTIC] Total CORE cards: ' + coreAll.length);
+    console.log('[CORE DIAGNOSTIC] Collectible CORE: ' + coreColl.length);
+    console.log('[CORE DIAGNOSTIC] Non-collectible CORE: ' + coreNonColl.length);
+
+    // Check ALL fields on CORE collectible cards to find distinguishing attributes
+    const fieldValues = {};
+    coreColl.forEach(c => {
+      Object.keys(c).forEach(k => {
+        if (!fieldValues[k]) fieldValues[k] = new Set();
+        fieldValues[k].add(JSON.stringify(c[k]));
+      });
+    });
+    // Log fields that have multiple unique values (potential distinguishers)
+    console.log('[CORE DIAGNOSTIC] Fields with variation:');
+    Object.keys(fieldValues).forEach(k => {
+      if (fieldValues[k].size > 1 && fieldValues[k].size < 10) {
+        console.log('  ' + k + ': ' + [...fieldValues[k]].join(', '));
+      }
+    });
+
+    // Check for specific patterns - look at a known reserve card (Lothraxion)
+    const lothraxion = coreAll.find(c => c.name && c.name.toLowerCase().includes('lothraxion'));
+    const rehgar = coreAll.find(c => c.name && c.name.toLowerCase().includes('rehgar'));
+    if (lothraxion) console.log('[CORE DIAGNOSTIC] Lothraxion (reserve):', JSON.stringify(lothraxion, null, 2));
+    if (rehgar) console.log('[CORE DIAGNOSTIC] Rehgar (active):', JSON.stringify(rehgar, null, 2));
+
+    // Compare all keys between Lothraxion and Rehgar to find the difference
+    if (lothraxion && rehgar) {
+      const lKeys = new Set(Object.keys(lothraxion));
+      const rKeys = new Set(Object.keys(rehgar));
+      const onlyInReserve = [...lKeys].filter(k => !rKeys.has(k));
+      const onlyInActive = [...rKeys].filter(k => !lKeys.has(k));
+      const diffValues = [...lKeys].filter(k => rKeys.has(k) && JSON.stringify(lothraxion[k]) !== JSON.stringify(rehgar[k]));
+      console.log('[CORE DIAGNOSTIC] Keys only in RESERVE (Lothraxion):', onlyInReserve);
+      console.log('[CORE DIAGNOSTIC] Keys only in ACTIVE (Rehgar):', onlyInActive);
+      console.log('[CORE DIAGNOSTIC] Keys with DIFFERENT values:', diffValues.map(k => k + ': ' + JSON.stringify(lothraxion[k]) + ' vs ' + JSON.stringify(rehgar[k])));
+    }
+
     // Detect Standard sets FIRST (needed for name lookup priority)
     detectStandardSets(G.cards);
 
@@ -988,6 +1239,11 @@ async function loadCards() {
     // Also tag Fabled/companion cards from Standard sets as Standard
     allCards.forEach(c => {
       if (c.set && !ROTATED_SETS.has(c.set) && !SYSTEM_SETS.has(c.set)) {
+        // Block known rotated CORE cards
+        if (c.set === 'CORE' && c.name &&
+            CORE_ROTATED_OUT_2026.has(c.name.toLowerCase())) {
+          return;
+        }
         G.standardCardIds.add(c.id);
       }
     });
@@ -1004,9 +1260,21 @@ async function loadCards() {
 
     // Second pass: build nameToCard with priority:
     // 1. Collectible + Standard > 2. Collectible + Wild > 3. Uncollectible (Fabled etc)
+    G.nameToCard = {};
+    G.stdNameToCard = {}; // Standard-ONLY name lookup for deckstring generation
+
     allCards.forEach(c => {
       if (!c.name) return;
       const key = c.name.toLowerCase();
+
+      // Build Standard-only map: only collectible Standard cards
+      if (c.collectible && G.standardCardIds.has(c.id)) {
+        if (!G.stdNameToCard[key]) {
+          G.stdNameToCard[key] = c;
+        }
+      }
+
+      // Build general map with priority scoring
       const existing = G.nameToCard[key];
       if (!existing) {
         G.nameToCard[key] = c;
@@ -1015,8 +1283,6 @@ async function loadCards() {
         const oldIsCollectible = !!existing.collectible;
         const newIsStd = G.standardCardIds.has(c.id);
         const oldIsStd = G.standardCardIds.has(existing.id);
-
-        // Prefer: collectible+standard > collectible+wild > uncollectible+standard > uncollectible
         const newScore = (newIsCollectible ? 100 : 0) + (newIsStd ? 10 : 0);
         const oldScore = (oldIsCollectible ? 100 : 0) + (oldIsStd ? 10 : 0);
         if (newScore > oldScore) {
@@ -1024,6 +1290,8 @@ async function loadCards() {
         }
       }
     });
+
+    console.log('[HS Deck Forge] Standard name map: ' + Object.keys(G.stdNameToCard).length + ' cards');
 
     const stdCount = G.standardCardIds.size;
     const wildCount = G.cards.length - stdCount;
@@ -1049,7 +1317,13 @@ async function loadCards() {
     renderFormatToggle();
     renderBuilder();
     renderSetsPanel();
-    toast(G.cards.length + ' cards loaded (' + stdCount + ' Standard)!', 'success');
+
+    if (G_coreIsStale) {
+      const coreCount = G.cards.filter(c => c.set === 'CORE' && c.collectible).length;
+      toast(G.cards.length + ' cards loaded (' + stdCount + ' Standard). CORE has ' + coreCount + ' cards (expected ~283) - ' + CORE_ROTATED_OUT_2026.size + ' known Wild blocked.', 'success');
+    } else {
+      toast(G.cards.length + ' cards loaded (' + stdCount + ' Standard)!', 'success');
+    }
   } catch(e) {
     document.getElementById('hsDot').className = 'dot dot-off';
     document.getElementById('hsTxt').textContent = 'Error';
@@ -1060,14 +1334,35 @@ async function loadCards() {
 function tileUrl(id) { return 'https://art.hearthstonejson.com/v1/tiles/' + id + '.png'; }
 
 function getOwned(card) {
+  // 1. Try by card ID (most reliable when collection was mapped)
   if (G.coll[card.id] != null) return G.coll[card.id];
-  return G.collByName[card.name?.toLowerCase()] ?? (G.collRaw.length > 0 ? 0 : 2);
+  // 2. Try exact name match
+  const byName = G.collByName[card.name?.toLowerCase()];
+  if (byName != null) return byName;
+  // 3. Try normalized name match (handles special chars, apostrophes, etc.)
+  const byNorm = G.collByNameNorm?.[normName(card.name)];
+  if (byNorm != null) return byNorm;
+  // 4. No collection = assume owned; collection loaded but not found = 0
+  return G.collRaw.length > 0 ? 0 : 2;
 }
 
 function cardOwnedByName(name, real) {
+  // 1. Try by card ID if we have a real card object
   if (real && G.coll[real.id] != null) return G.coll[real.id];
-  const n = G.collByName[name?.toLowerCase()];
-  if (n != null) return n;
+  // 2. Try exact name
+  const byName = G.collByName[name?.toLowerCase()];
+  if (byName != null) return byName;
+  // 3. Try normalized name
+  const byNorm = G.collByNameNorm?.[normName(name)];
+  if (byNorm != null) return byNorm;
+  // 4. Try the real card's name (might differ from deck list name)
+  if (real?.name) {
+    const byRealName = G.collByName[real.name.toLowerCase()];
+    if (byRealName != null) return byRealName;
+    const byRealNorm = G.collByNameNorm?.[normName(real.name)];
+    if (byRealNorm != null) return byRealNorm;
+  }
+  // 5. Fallback
   return G.collRaw.length > 0 ? 0 : 2;
 }
 
@@ -1113,15 +1408,8 @@ function loadDeck(id) {
   const d = getDecks().find(x => x.id === id); if (!d) return;
   G.cls = d.cls; G.fmt = d.fmt || 'Standard';
   G.deck = d.cards.map(c => {
-    // Prefer name lookup (Standard/Core priority)
-    const byName = G.nameToCard[c.name?.toLowerCase()];
-    const byId = G.idToCard[c.id];
-    // In Standard, prefer Standard version
-    if (G.fmt === 'Standard' && byName && G.standardCardIds.has(byName.id)) {
-      return { ...c, id: byName.id, dbfId: byName.dbfId, rarity: byName.rarity || c.rarity, type: byName.type || c.type };
-    }
-    const found = byName || byId;
-    return found ? { ...c, id: found.id, dbfId: found.dbfId, rarity: found.rarity || c.rarity, type: found.type || c.type } : c;
+    const resolved = resolveCard(c.name);
+    return resolved ? { ...c, id: resolved.id, dbfId: resolved.dbfId, rarity: resolved.rarity || c.rarity, type: resolved.type || c.type } : c;
   });
   lsSet(LS.FMT, G.fmt);
   document.getElementById('deckName').value = d.name;
@@ -1185,6 +1473,28 @@ function removeWildCards() {
   if (removed > 0) {
     renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
     toast(removed + ' Wild-only card' + (removed>1?'s':'') + ' removed!', 'success');
+  }
+}
+
+function removeRotatedCoreCards() {
+  if (!G.loaded || G.fmt !== 'Standard') return;
+  const before = G.deck.reduce((s,c) => s+c.count, 0);
+  G.deck = G.deck.filter(c => {
+    if (!c.name) return true;
+    // Remove known rotated cards
+    if (CORE_ROTATED_OUT_2026.has(c.name.toLowerCase())) return false;
+    // Remove cards not in standardCardIds
+    if (c.id && !G.standardCardIds.has(c.id)) return false;
+    return true;
+  });
+  const after = G.deck.reduce((s,c) => s+c.count, 0);
+  const removed = before - after;
+  if (removed > 0) {
+    renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
+    renderExport();
+    toast(removed + ' invalid card' + (removed>1?'s':'') + ' removed!', 'success');
+  } else {
+    toast('No invalid cards found in deck', 'success');
   }
 }
 
@@ -1252,31 +1562,82 @@ function renderSaved() {
 // ============================================================
 // COLLECTION
 // ============================================================
-const DEMO_COLL_TEXT = '# HS Deck Forge - My Collection\n# Format: Card Name | Copies (0, 1 or 2)\n\n# PALADIN\nKnight of Anointment | 2\nAldor Attendant | 2\nHand of A\'dal | 2\nConsecration | 2\nLibram of Wisdom | 2\nOrder in the Court | 1\nLibram of Justice | 1\nLightforged Cariel | 1\nTirion Fordring | 1\nThe Countess | 0\nLibram of Hope | 0\n\n# MAGE\nArcane Intellect | 2\nFrost Nova | 2\nFireball | 2\nPolymorph | 2\nBlizzard | 1\nFlamestrike | 2\nArchmage Antonidas | 0\nRagnaros the Firelord | 1\n\n# WARRIOR\nShield Block | 2\nExecute | 2\nSlam | 2\nAcolyte of Pain | 2\nFiery War Axe | 2\nBrawl | 1\nGrommash Hellscream | 1\n\n# NEUTRAL\nLeeroy Jenkins | 1\nSylvanas Windrunner | 1\nRagnaros the Firelord | 1\nYsera | 1\nAlexstrasza | 0';
+const DEMO_COLL_TEXT = '# HS Deck Forge - Demo Collection\n# Format: Card Name | Copies\n# [Trial] = Dream City trial card (temporary)\n\n##################################################\n# STANDARD CARDS (30 unique)\n##################################################\n\n# PALADIN\nRighteous Protector | 2\nAcceleration Aura | 2\nHardlight Protector | 2\nInspiring Maul | 2\nViolet Treasuregill | 1\nGnomish Aura | 1\nManifested Timeways | 2\nSpearheart Sentry | 2\nChronological Aura | 2\n\n# SHAMAN\nStatic Shock | 2\nWitch\'s Apprentice | 2\nTwilight Egg | 2\nWailing Vapor | 2\nRitual of Power | 2\nSkywall Sentinel | 2\nFlight of the Firehawk | 2\nHex | 2\nLightning Storm | 2\n\n# WARRIOR\nCarrier Whelp | 2\nDarkrider | 2\nTorch | 2\nBrood Keeper | 2\nPetal Peddler | 2\nShadowflame Suffusion | 2\nCataclysmic War Axe | 1\nDarkscale Broodmother | 2\nWindpeak Wyrm | 2\n\n# NEUTRAL\nEnvoy of the End | 2\nNightmare Lord Xavius | 1\nTwilight Drake | 2\n\n##################################################\n# WILD CARDS (5 unique)\n##################################################\n\n# NEUTRAL\nSire Denathrius | 1\nDefender of Argus | 2\nCairne Bloodhoof | 1\nSylvanas Windrunner | 1\nRagnaros the Firelord | 1';
 
 function downloadTemplate() { download(DEMO_COLL_TEXT, 'my_collection_hsdforge.txt'); toast('Template downloaded!'); }
 
 function parseTxtColl(txt) {
-  const lines = txt.split('\n'); const res = []; let p = 0, sk = 0;
+  // Strip BOM if present
+  if (txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
+  // Handle CR+LF
+  const lines = txt.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const merged = {}; // name -> max count
+  let p = 0, sk = 0, trials = 0;
+
   lines.forEach(l => {
     const t = l.trim(); if (!t || t.startsWith('#')) return;
     const sep = t.lastIndexOf('|'); if (sep === -1) { sk++; return; }
-    const name = t.substring(0, sep).trim(); const count = parseInt(t.substring(sep+1).trim());
-    if (!name || isNaN(count)) { sk++; return; }
-    res.push({ n: name, c: Math.max(0, Math.min(2, count)) }); p++;
+    let rawName = t.substring(0, sep).trim();
+    const count = parseInt(t.substring(sep+1).trim());
+    if (!rawName || isNaN(count)) { sk++; return; }
+
+    // Track trial cards
+    const isTrial = rawName.includes('[Trial]');
+    if (isTrial) trials++;
+
+    // Strip tags: [Golden], [Trial], [Golden] [Trial]
+    const cleanName = rawName
+      .replace(/\s*\[Golden\]\s*/gi, '')
+      .replace(/\s*\[Trial\]\s*/gi, '')
+      .trim();
+
+    if (!cleanName) { sk++; return; }
+
+    // Merge: keep the MAX count for each unique clean card name
+    const key = cleanName.toLowerCase();
+    const existing = merged[key];
+    if (!existing) {
+      merged[key] = { n: cleanName, c: Math.max(0, Math.min(2, count)) };
+    } else {
+      // Take the higher count (normal + golden = still max 2)
+      existing.c = Math.max(existing.c, Math.min(2, count));
+    }
+    p++;
   });
-  return { res, parsed: p, skipped: sk };
+
+  const res = Object.values(merged);
+  return { res, parsed: p, merged: res.length, skipped: sk, trials };
+}
+
+function normName(s) {
+  // Normalize card names for fuzzy matching: lowercase, strip non-alphanumeric
+  return (s||'').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function applyColl(entries) {
-  G.collByName = {}; G.collRaw = entries;
-  entries.forEach(e => { G.collByName[e.n.toLowerCase()] = e.c; });
+  G.collByName = {};
+  G.collByNameNorm = {}; // normalized name lookup (strips special chars)
+  G.collRaw = entries;
+
+  entries.forEach(e => {
+    G.collByName[e.n.toLowerCase()] = e.c;
+    G.collByNameNorm[normName(e.n)] = e.c;
+  });
+
   if (G.loaded) {
     G.coll = {};
-    G.cards.forEach(c => {
-      const own = G.collByName[c.name?.toLowerCase()];
+    // Map ALL card IDs (collectible AND uncollectible) to ownership counts
+    // This ensures Fabled companions and any card version get mapped
+    const allCards = G.allCardsForLookup || G.cards;
+    allCards.forEach(c => {
+      if (!c.name) return;
+      const key = c.name.toLowerCase();
+      const norm = normName(c.name);
+      // Try exact name match first, then normalized
+      const own = G.collByName[key] ?? G.collByNameNorm[norm];
       if (own != null) G.coll[c.id] = own;
     });
+    console.log('[HS Deck Forge] Collection mapped: ' + Object.keys(G.coll).length + ' card IDs from ' + entries.length + ' entries');
   }
   lsSet(LS.COLL, entries);
 }
@@ -1290,30 +1651,31 @@ function onFileSelect(input) {
 }
 
 function doImportColl(txt, fname) {
-  const { res, parsed, skipped } = parseTxtColl(txt);
+  const { res, parsed, merged, skipped, trials } = parseTxtColl(txt);
   applyColl(res);
   const owned = res.filter(e => e.c > 0).length;
-  const pct = parsed > 0 ? Math.round((owned/parsed)*100) : 0;
+  const pct = merged > 0 ? Math.round((owned/merged)*100) : 0;
   document.getElementById('importResultCard').style.display = 'block';
   document.getElementById('importResultContent').innerHTML =
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">' +
-      '<div style="background:var(--navy2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--txt)">' + parsed + '</div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Read</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">' +
+      '<div style="background:var(--navy2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--txt)">' + parsed + '</div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Lines Read</div></div>' +
+      '<div style="background:var(--navy2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--blue-l)">' + merged + '</div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Unique Cards</div></div>' +
       '<div style="background:var(--navy2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--green)">' + owned + '</div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Owned</div></div>' +
-      '<div style="background:var(--navy2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--blue-l)">' + pct + '%</div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Complete</div></div>' +
+      '<div style="background:var(--navy2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--purple)">' + trials + '</div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Trial Tags</div></div>' +
     '</div>' +
     '<div class="progress"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
-    '<div style="margin-top:8px;font-size:11px;color:var(--green)">Collection saved - persists between sessions</div>';
+    '<div style="margin-top:8px;font-size:11px;color:var(--green)">Collection saved (' + merged + ' unique cards, ' + pct + '% owned) - [Golden] and [Trial] tags merged</div>';
   updateCollBadge(owned);
   document.getElementById('collBrowserCard').style.display = 'block';
-  document.getElementById('collTotalCount').textContent = '(' + res.length + ')';
+  document.getElementById('collTotalCount').textContent = '(' + merged + ')';
   filterColl('');
-  toast(parsed + ' cards imported from ' + fname, 'success');
+  toast(merged + ' unique cards from ' + parsed + ' entries (' + fname + ')', 'success');
 }
 
 function loadDemo() { doImportColl(DEMO_COLL_TEXT, 'demo_collection.txt'); }
 
 function resetColl() {
-  G.coll = {}; G.collByName = {}; G.collRaw = [];
+  G.coll = {}; G.collByName = {}; G.collByNameNorm = {}; G.collRaw = [];
   lsSet(LS.COLL, []);
   document.getElementById('importResultCard').style.display = 'none';
   document.getElementById('collBrowserCard').style.display = 'none';
@@ -1322,9 +1684,64 @@ function resetColl() {
 
 function exportColl() {
   if (!G.collRaw.length) { toast('Collection is empty'); return; }
-  download('# HS Deck Forge - My Collection\n# Format: Card Name | Copies\n\n' +
-    G.collRaw.map(e => e.n + ' | ' + e.c).join('\n'), 'my_collection_hsdforge.txt');
-  toast('Collection exported!', 'success');
+  const now = new Date();
+  const ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') +
+    ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+
+  // Classify each card as Standard or Wild, and find its class
+  const stdCards = {}; // class -> [{n, c}]
+  const wildCards = {};
+  let stdUnique = 0, stdTotal = 0, wildUnique = 0, wildTotal = 0;
+
+  G.collRaw.forEach(e => {
+    const card = G.nameToCard[e.n.toLowerCase()] || G.nameToCard[normName(e.n)];
+    const isStd = card ? G.standardCardIds.has(card.id) : false;
+    const cls = card?.cardClass || 'NEUTRAL';
+    const bucket = isStd ? stdCards : wildCards;
+    if (!bucket[cls]) bucket[cls] = [];
+    bucket[cls].push(e);
+    if (isStd) { stdUnique++; stdTotal += e.c; }
+    else { wildUnique++; wildTotal += e.c; }
+  });
+
+  const classOrder = ['DEATHKNIGHT','DEMONHUNTER','DRUID','HUNTER','MAGE','NEUTRAL','PALADIN','PRIEST','ROGUE','SHAMAN','WARLOCK','WARRIOR'];
+
+  function formatSection(cards) {
+    let out = '';
+    classOrder.forEach(cls => {
+      if (!cards[cls] || !cards[cls].length) return;
+      out += '\n# ' + cls + '\n';
+      cards[cls].sort((a,b) => a.n.localeCompare(b.n)).forEach(e => {
+        out += e.n + ' | ' + e.c + '\n';
+      });
+    });
+    // Any remaining classes not in classOrder
+    Object.keys(cards).forEach(cls => {
+      if (classOrder.includes(cls)) return;
+      if (!cards[cls].length) return;
+      out += '\n# ' + cls + '\n';
+      cards[cls].sort((a,b) => a.n.localeCompare(b.n)).forEach(e => {
+        out += e.n + ' | ' + e.c + '\n';
+      });
+    });
+    return out;
+  }
+
+  let output = '# HS Deck Forge - My Collection\n';
+  output += '# Exported: ' + ts + '\n';
+  output += '# Format: Card Name | Copies\n';
+  output += '# [Trial] = Dream City trial card (temporary)\n\n';
+  output += '##################################################\n';
+  output += '# STANDARD CARDS (' + stdUnique + ' unique, ' + stdTotal + ' total)\n';
+  output += '##################################################\n';
+  output += formatSection(stdCards);
+  output += '\n##################################################\n';
+  output += '# WILD CARDS (' + wildUnique + ' unique, ' + wildTotal + ' total)\n';
+  output += '##################################################\n';
+  output += formatSection(wildCards);
+
+  download(output, 'collection_' + ts.replace(/[: ]/g, '-') + '.txt');
+  toast('Collection exported (' + stdUnique + ' Standard, ' + wildUnique + ' Wild)!', 'success');
 }
 
 function updateCollBadge(count) {
@@ -1404,25 +1821,33 @@ function parseDeckList(raw) {
 
 function lookupCard(name) {
   const n = name.toLowerCase().trim();
-  // Exact match first (preferred - uses Standard priority)
-  if (G.nameToCard[n]) return G.nameToCard[n];
-  // Try without special characters (apostrophes, commas, etc.)
+  // 1. Try resolveCard (Standard-aware)
+  const resolved = resolveCard(name);
+  if (resolved) return resolved;
+  // 2. Try without special characters
   const clean = n.replace(/[^a-z0-9 ]/g, '').trim();
   const cleanMatch = Object.keys(G.nameToCard).find(k =>
     k.replace(/[^a-z0-9 ]/g, '').trim() === clean
   );
-  if (cleanMatch) return G.nameToCard[cleanMatch];
-  // Partial match: find cards that contain the search term
-  const partial = G.cards.find(c => c.name && c.name.toLowerCase().includes(n));
-  if (partial) return partial;
-  // Reverse partial: search term contains the card name
-  const reverse = G.cards.find(c => c.name && n.includes(c.name.toLowerCase()));
-  if (reverse) return reverse;
-  // Last resort: match first 10+ chars
-  if (n.length >= 6) {
-    const prefix = G.cards.find(c => c.name && c.name.toLowerCase().startsWith(n.slice(0, Math.min(n.length, 12))));
-    if (prefix) return prefix;
+  if (cleanMatch) {
+    // If Standard mode, check if there's a Standard version
+    if (G.fmt === 'Standard') {
+      const stdClean = Object.keys(G.stdNameToCard || {}).find(k =>
+        k.replace(/[^a-z0-9 ]/g, '').trim() === clean
+      );
+      if (stdClean) return G.stdNameToCard[stdClean];
+    }
+    return G.nameToCard[cleanMatch];
   }
+  // 3. Partial match on collectible cards only
+  const pool = G.fmt === 'Standard'
+    ? G.cards.filter(c => c.collectible && G.standardCardIds.has(c.id))
+    : G.cards.filter(c => c.collectible);
+  const partial = pool.find(c => c.name && c.name.toLowerCase().includes(n));
+  if (partial) return partial;
+  // 4. Reverse partial
+  const reverse = pool.find(c => c.name && n.includes(c.name.toLowerCase()));
+  if (reverse) return reverse;
   return null;
 }
 
@@ -1758,6 +2183,15 @@ function renderExport() {
   const wildOnlyCards = G.fmt === 'Standard' && G.loaded
     ? G.deck.filter(c => c.id && !G.standardCardIds.has(c.id)) : [];
 
+  // Check for known rotated CORE cards or Wild cards in Standard deck
+  const rotatedCoreCards = G.fmt === 'Standard' && G.loaded
+    ? G.deck.filter(c => {
+        if (!c.name) return false;
+        if (CORE_ROTATED_OUT_2026.has(c.name.toLowerCase())) return true;
+        if (c.id && !G.standardCardIds.has(c.id)) return true;
+        return false;
+      }) : [];
+
   document.getElementById('exportSummary').innerHTML =
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
       '<span style="font-size:28px">' + cls.icon + '</span>' +
@@ -1766,6 +2200,13 @@ function renderExport() {
         '<div style="font-size:11px;color:var(--txt3)">' + cls.lbl + ' - ' + total + ' cards - ' + G.fmt + '</div>' +
       '</div>' +
     '</div>' +
+    (rotatedCoreCards.length > 0 ?
+      '<div style="padding:8px 10px;margin-bottom:10px;background:rgba(245,101,101,.1);border:1px solid rgba(245,101,101,.35);border-radius:6px;font-size:11px;color:var(--red)">' +
+        '<strong>\u26A0 ' + rotatedCoreCards.length + ' ROTATED CORE card' + (rotatedCoreCards.length>1?'s':'') + ' detected!</strong> ' +
+        rotatedCoreCards.map(c => c.name).join(', ') +
+        '<br><span style="font-size:10px;color:var(--txt3)">These cards left Core Set 2026. Their DBF IDs will NOT work in Hearthstone Standard. Remove them and replace with current Standard cards.</span>' +
+        '<br><button class="btn btn-danger btn-sm" style="margin-top:6px" onclick="removeRotatedCoreCards()">\u2715 Remove ' + rotatedCoreCards.length + ' Rotated Card' + (rotatedCoreCards.length>1?'s':'') + '</button>' +
+      '</div>' : '') +
     (wildOnlyCards.length > 0 ?
       '<div style="padding:8px 10px;margin-bottom:10px;background:rgba(183,148,244,.07);border:1px solid rgba(183,148,244,.25);border-radius:6px;font-size:11px;color:var(--purple)">' +
         '<strong>\u26A0 ' + wildOnlyCards.length + ' Wild-only card' + (wildOnlyCards.length>1?'s':'') + ' in Standard deck:</strong> ' +
@@ -1908,16 +2349,34 @@ function exportCurrentTxt() {
 // AI COACH with DECK MODIFICATION
 // ============================================================
 function buildContext() {
-  const coll = G.collRaw.length > 0
-    ? 'COLLECTION: ' + G.collRaw.length + ' entries (' + G.collRaw.filter(e=>e.c>0).length + ' owned)'
-    : 'No collection imported.';
+  const hasColl = G.collRaw.length > 0;
+  const coll = hasColl
+    ? 'COLLECTION IMPORTED: ' + G.collRaw.length + ' entries (' + G.collRaw.filter(e=>e.c>0).length + ' owned)'
+    : 'No collection imported (ownership unknown).';
   const saved = getDecks();
   const sv = saved.length ? 'SAVED DECKS: ' + saved.map(d=>d.name + ' (' + d.fmt + ')').join(', ') : 'No saved decks.';
 
+  // Build deck list with ownership status for EACH card
+  const missingCards = [];
   const deckCards = G.deck.length > 0
     ? G.deck.map(c => {
         const isStd = G.standardCardIds.has(c.id);
-        return c.count + 'x (' + c.cost + ') ' + c.name + (c.dbfId ? ' [dbf:' + c.dbfId + ']' : '') + (!isStd ? ' [WILD-ONLY]' : '');
+        let status = '';
+        if (!isStd && G.fmt === 'Standard') status = ' [WILD-ONLY!]';
+
+        if (hasColl) {
+          const owned = getOwned(c);
+          const needed = c.count;
+          const miss = Math.max(0, needed - owned);
+          if (miss > 0) {
+            status += ' [MISSING: own ' + owned + ', need ' + needed + ']';
+            missingCards.push(c.name + ' (own ' + owned + ', need ' + needed + ', missing ' + miss + ')');
+          } else {
+            status += ' [OWNED]';
+          }
+        }
+
+        return c.count + 'x (' + c.cost + ') ' + c.name + status;
       }).join('\n')
     : 'No active deck.';
   const cls = CLASSES.find(c => c.id === G.cls) || CLASSES[0];
@@ -1928,9 +2387,18 @@ function buildContext() {
     ? '\nWARNING: ' + wildOnlyCount + ' Wild-only card(s) detected in a Standard deck! These must be removed.'
     : '';
 
-  let ctx = 'FORMAT: ' + G.fmt.toUpperCase() + ' (deck format ID: ' + (FORMATS[G.fmt]||2) + ')' + fmtWarning +
+  let ctx = 'FORMAT: ' + G.fmt.toUpperCase() + fmtWarning +
     '\n' + coll + '\n' + sv +
     '\n\nACTIVE DECK: ' + cls.lbl + ' (' + G.fmt + ') - ' + G.deck.reduce((s,c) => s+c.count, 0) + '/30 cards\n' + deckCards;
+
+  // Explicit missing cards summary
+  if (hasColl && missingCards.length > 0) {
+    ctx += '\n\n*** MISSING CARDS (' + missingCards.length + ' cards the player does NOT own) ***\n' +
+      missingCards.join('\n') +
+      '\nThe player NEEDS replacements for these cards! Suggest owned alternatives from the AVAILABLE lists below.';
+  } else if (hasColl && missingCards.length === 0) {
+    ctx += '\n\nAll cards in this deck are OWNED by the player. No missing cards.';
+  }
 
   if (G.optResult) {
     const repls = G.optResult.repls.map(rp => rp.missing.name + ' -> ' + (rp.best?.name||'NONE') + ' [' + rp.impact + ']: ' + rp.why.join(', ')).join('\n');
@@ -1941,16 +2409,13 @@ function buildContext() {
   // Filtered by: format (Standard/Wild) + collection (owned) + class
   if (G.loaded) {
     const deckIds = new Set(G.deck.map(c => c.id));
-    const hasColl = G.collRaw.length > 0;
 
     const available = G.cards
       .filter(c => {
         if (!c.collectible) return false;
         if (deckIds.has(c.id)) return false;
         if (c.cardClass !== G.cls && c.cardClass !== 'NEUTRAL') return false;
-        // Format filter
         if (G.fmt === 'Standard' && !G.standardCardIds.has(c.id)) return false;
-        // Collection filter: only show owned cards
         if (hasColl) {
           const owned = getOwned(c);
           if (owned <= 0) return false;
@@ -1959,10 +2424,16 @@ function buildContext() {
       })
       .sort((a,b) => a.cost - b.cost || a.name.localeCompare(b.name));
 
-    // Class cards (all of them)
     const classCards = available.filter(c => c.cardClass === G.cls);
-    // Neutral cards (limit to keep context manageable)
     const neutralCards = available.filter(c => c.cardClass === 'NEUTRAL').slice(0, 60);
+
+    // Store the EXACT available pool for strict DECKMOD validation
+    // This is the SOURCE OF TRUTH - if a card isn't here, it can't be added
+    G.availableCardNames = new Set();
+    available.forEach(c => {
+      if (c.name) G.availableCardNames.add(c.name.toLowerCase());
+    });
+    console.log('[HS Deck Forge] Available pool for AI: ' + G.availableCardNames.size + ' cards (' + G.fmt + ')');
 
     const fmtLabel = G.fmt === 'Standard' ? 'Standard' : 'Wild';
     const ownLabel = hasColl ? ', OWNED' : '';
@@ -2059,56 +2530,113 @@ function applyAIDeckMods(mods) {
   let applied = 0;
   let errors = [];
 
+  // ---- TRANSACTIONAL APPROACH ----
+  // Pair REMOVE/ADD operations. If an ADD fails validation,
+  // skip the paired REMOVE so the deck doesn't lose cards.
+
+  // Step 1: Group into swap pairs (REMOVE + ADD) and solo ops
+  const ops = [];
+  let pendingRemove = null;
   mods.forEach(mod => {
     if (mod.action === 'remove') {
-      const idx = G.deck.findIndex(c => c.name.toLowerCase() === mod.name.toLowerCase());
+      // Flush any unpaired pending remove as solo
+      if (pendingRemove) ops.push({ remove: pendingRemove, add: null });
+      pendingRemove = mod;
+    } else if (mod.action === 'add') {
+      if (pendingRemove) {
+        ops.push({ remove: pendingRemove, add: mod });
+        pendingRemove = null;
+      } else {
+        ops.push({ remove: null, add: mod });
+      }
+    }
+  });
+  if (pendingRemove) ops.push({ remove: pendingRemove, add: null });
+
+  // Step 2: Validate each ADD first, then apply the full pair
+  ops.forEach(op => {
+    // --- Validate ADD (if present) ---
+    let addCard = null;
+    let addValid = false;
+    if (op.add) {
+      const total = G.deck.reduce((s,c) => s+c.count, 0) - (op.remove ? 1 : 0); // account for pending remove
+      if (total >= 30) { errors.push('"' + op.add.name + '" skipped (deck full)'); }
+      else {
+        addCard = resolveCard(op.add.name) || lookupCard(op.add.name);
+        if (!addCard) {
+          errors.push('"' + op.add.name + '" NOT FOUND (may be uncollectible/token)');
+        } else if (addCard.cardClass !== G.cls && addCard.cardClass !== 'NEUTRAL') {
+          errors.push('"' + addCard.name + '" is ' + addCard.cardClass + ' (wrong class)');
+          addCard = null;
+        } else if (G.fmt === 'Standard') {
+          // STRICT VALIDATION: card must be in the EXACT available pool sent to the AI
+          // This is the ultimate gate - catches Wild cards, rotated CORE, hallucinations
+          const cardKey = (addCard.name || '').toLowerCase();
+          if (G.availableCardNames.size > 0 && !G.availableCardNames.has(cardKey)) {
+            errors.push('"' + addCard.name + '" is NOT in the Standard available pool - blocked');
+            addCard = null;
+          } else if (!G.standardCardIds.has(addCard.id)) {
+            errors.push('"' + addCard.name + '" is Wild-only, blocked in Standard');
+            addCard = null;
+          }
+        }
+
+        // Collection enforcement
+        if (addCard && G.collRaw.length > 0) {
+          const owned = getOwned(addCard);
+          if (owned <= 0) {
+            errors.push('"' + addCard.name + '" not in your collection');
+            addCard = null;
+          }
+        }
+
+        // Check max copies
+        if (addCard) {
+          const existing = G.deck.find(c => c.id === addCard.id || c.name?.toLowerCase() === addCard.name?.toLowerCase());
+          const isLeg = (addCard.rarity||'').toUpperCase() === 'LEGENDARY';
+          if (existing && (isLeg || existing.count >= 2)) {
+            errors.push('"' + addCard.name + '" already at max copies');
+            addCard = null;
+          }
+        }
+
+        if (addCard) addValid = true;
+      }
+    }
+
+    // --- If ADD failed and this is a paired swap, SKIP the remove ---
+    if (op.add && !addValid && op.remove) {
+      errors.push('Skipped removing "' + op.remove.name + '" because replacement "' + op.add.name + '" was blocked');
+      return; // Skip this entire pair
+    }
+
+    // --- Apply REMOVE ---
+    if (op.remove) {
+      const idx = G.deck.findIndex(c => c.name.toLowerCase() === op.remove.name.toLowerCase());
       if (idx >= 0) {
         if (G.deck[idx].count > 1) G.deck[idx].count--;
         else G.deck.splice(idx, 1);
         applied++;
       } else {
-        errors.push('Cannot remove "' + mod.name + '" (not in deck)');
-      }
-    } else if (mod.action === 'add') {
-      const total = G.deck.reduce((s,c) => s+c.count, 0);
-      if (total >= 30) { errors.push('"' + mod.name + '" skipped (deck full)'); return; }
-
-      // Use improved lookupCard for better matching
-      const card = G.nameToCard[mod.name.toLowerCase()] || lookupCard(mod.name);
-      if (!card) {
-        errors.push('"' + mod.name + '" NOT FOUND (may be uncollectible/token)');
+        errors.push('Cannot remove "' + op.remove.name + '" (not in deck)');
+        // If we can't remove, don't add either (keep deck balanced)
         return;
       }
-      if (card.cardClass !== G.cls && card.cardClass !== 'NEUTRAL') {
-        errors.push('"' + card.name + '" is ' + card.cardClass + ' (wrong class)');
-        return;
-      }
+    }
 
-      // Format enforcement
-      if (G.fmt === 'Standard' && !G.standardCardIds.has(card.id)) {
-        errors.push('"' + card.name + '" is Wild-only, blocked in Standard');
-        return;
-      }
-
-      // Collection enforcement: if collection imported, check ownership
-      if (G.collRaw.length > 0) {
-        const owned = getOwned(card);
-        if (owned <= 0) {
-          errors.push('"' + card.name + '" not in your collection');
-          return;
-        }
-      }
-
-      const existing = G.deck.find(c => c.id === card.id);
-      const isLeg = (card.rarity||'').toUpperCase() === 'LEGENDARY';
+    // --- Apply ADD ---
+    if (addCard && addValid) {
+      const existing = G.deck.find(c => c.id === addCard.id || c.name?.toLowerCase() === addCard.name?.toLowerCase());
       if (existing) {
-        if (isLeg || existing.count >= 2) { errors.push('"' + card.name + '" already at max copies'); return; }
+        existing.id = addCard.id;
+        existing.dbfId = addCard.dbfId;
+        existing.name = addCard.name;
         existing.count++;
       } else {
         G.deck.push({
-          id: card.id, name: card.name, cost: card.cost||0,
-          rarity: card.rarity||'COMMON', type: card.type||'MINION',
-          dbfId: card.dbfId, count: 1
+          id: addCard.id, name: addCard.name, cost: addCard.cost||0,
+          rarity: addCard.rarity||'COMMON', type: addCard.type||'MINION',
+          dbfId: addCard.dbfId, count: 1
         });
       }
       applied++;
@@ -2496,7 +3024,7 @@ function addCardToDeck(id) {
 
   // Format enforcement: block Wild-only cards in Standard mode
   if (G.fmt === 'Standard' && !G.standardCardIds.has(c.id)) {
-    toast(c.name + ' is Wild-only! Switch to Wild format to use it.', 'error');
+    toast(c.name + ' is not Standard-legal! Switch to Wild format to use it.', 'error');
     return;
   }
 
