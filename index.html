@@ -1182,9 +1182,14 @@ function buildDeckCode(deck, cls, fmt) {
   }
 
   const clsObj = CLASSES.find(c => c.id === cls);
-  if (!clsObj) return { code: null, ok: false, reason: 'Unknown class' };
+  if (!clsObj) return { code: null, ok: false, reason: 'Unknown class: ' + cls };
 
   const fmtId = FORMATS[fmt] || 2;
+
+  console.log('[buildDeckCode] Class: ' + cls + ', Hero DBF: ' + clsObj.dbfId + ', Format: ' + fmt + '(' + fmtId + ')');
+  console.log('[buildDeckCode] Valid cards: ' + valid.length + ', Missing: ' + missing.length);
+  if (missing.length > 0) console.warn('[buildDeckCode] Missing cards:', missing.map(c => c.name));
+  valid.forEach(c => console.log('  [' + c.count + 'x] ' + c.name + ' (DBF:' + c.dbfId + ', set:' + (G.idToCard?.[c.id]?.set || '?') + ')'));
 
   // Step 2: Split by COPY COUNT (not rarity!)
   // Singles = exactly 1 copy, Doubles = exactly 2 copies
@@ -1223,6 +1228,15 @@ function buildDeckCode(deck, cls, fmt) {
 
   // Step 4: Base64 encode
   const code = btoa(String.fromCharCode(...bytes));
+
+  // Step 5: Self-verify by decoding
+  const verify = decodeDeckCode(code);
+  if (verify.ok) {
+    console.log('[buildDeckCode] Verify OK: hero=' + verify.heroes[0] + ' singles=' + verify.singles.length + ' doubles=' + verify.doubles.length + ' format=' + verify.format);
+    if (verify.heroes[0] !== clsObj.dbfId) console.error('[buildDeckCode] HERO MISMATCH! Encoded ' + clsObj.dbfId + ' but decoded ' + verify.heroes[0]);
+  } else {
+    console.error('[buildDeckCode] VERIFY FAILED:', verify.error);
+  }
 
   return {
     code,
@@ -1542,6 +1556,38 @@ function cardOwnedByName(name, real) {
 // CLASS GRID
 // ============================================================
 function setClass(id) { G.cls = id; lsSet(LS.CLS, id); renderClsGrid(); renderBuilder(); }
+
+// Auto-detect deck class from the class cards in the deck
+// If all class-specific cards belong to one class, switch to it
+function autoDetectClass() {
+  if (!G.loaded || G.deck.length === 0) return;
+
+  const classCounts = {};
+  G.deck.forEach(c => {
+    // Look up the full card to get its class
+    const full = G.idToCard?.[c.id] || G.nameToCard?.[c.name?.toLowerCase()];
+    const cls = full?.cardClass || 'NEUTRAL';
+    if (cls !== 'NEUTRAL') {
+      classCounts[cls] = (classCounts[cls] || 0) + c.count;
+    }
+  });
+
+  const classes = Object.keys(classCounts);
+  if (classes.length === 1 && classes[0] !== G.cls) {
+    const detected = classes[0];
+    // Only switch if the detected class is valid
+    if (CLASSES.find(c => c.id === detected)) {
+      console.log('[HS Deck Forge] Auto-detected class: ' + G.cls + ' -> ' + detected);
+      G.cls = detected;
+      lsSet(LS.CLS, detected);
+      renderClsGrid();
+      toast('Class auto-switched to ' + (CLASSES.find(c => c.id === detected)?.lbl || detected), 'success');
+    }
+  } else if (classes.length > 1) {
+    // Mixed classes - warn but don't change
+    console.warn('[HS Deck Forge] Mixed class cards in deck:', classCounts);
+  }
+}
 function renderClsGrid() {
   const g = document.getElementById('clsGrid'); if (!g) return;
   g.innerHTML = CLASSES.map(c =>
@@ -1555,6 +1601,7 @@ function renderClsGrid() {
 // ============================================================
 function saveDeck() {
   reEnrichDeck();
+  autoDetectClass();
   const name = (document.getElementById('deckName')?.value || '').trim() || 'Unnamed Deck';
   if (!G.deck.length) { toast('Deck is empty'); return; }
   const res = buildDeckCode(G.deck, G.cls, G.fmt);
@@ -2333,6 +2380,7 @@ function renderSideDeck(cards) {
 // ============================================================
 function renderExport() {
   reEnrichDeck();
+  autoDetectClass();
   const total = G.deck.reduce((s,d) => s+d.count, 0);
   const cls = CLASSES.find(c => c.id === G.cls) || CLASSES[0];
   const name = document.getElementById('deckName')?.value || 'My Deck';
@@ -2474,22 +2522,15 @@ function doCopy(text) {
 function fallbackCopy(text) {
   let ok = false;
 
-  // Try execCommand with textarea
+  // Try execCommand with a visible textarea (hidden ones fail on file://)
   try {
     const ta = document.createElement('textarea');
     ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+    ta.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);width:80%;max-width:400px;height:40px;z-index:99999;font-size:12px;padding:8px;background:var(--navy1);color:var(--txt);border:2px solid var(--gold);border-radius:8px;font-family:monospace';
     document.body.appendChild(ta);
-
-    // iOS needs special handling
-    const range = document.createRange();
-    range.selectNodeContents(ta);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    ta.focus();
+    ta.select();
     ta.setSelectionRange(0, text.length);
-
     ok = document.execCommand('copy');
     document.body.removeChild(ta);
   } catch(e) {
@@ -2499,9 +2540,36 @@ function fallbackCopy(text) {
   if (ok) {
     toast('Code copied! Open Hearthstone > My Collection > New Deck', 'success');
   } else {
-    // Last resort: show a prompt so user can manually copy
-    prompt('Auto-copy failed. Select all text below and copy (Ctrl+C):', text);
+    // Last resort: show a copy modal
+    showCopyModal(text);
   }
+}
+
+function showCopyModal(text) {
+  // Remove existing modal
+  const old = document.getElementById('copyModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'copyModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML =
+    '<div style="background:var(--navy1);border:2px solid var(--gold);border-radius:12px;padding:20px;max-width:500px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.5)">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--gold-l);margin-bottom:10px">Copy Deck Code</div>' +
+      '<div style="font-size:11px;color:var(--txt2);margin-bottom:10px">Select all text below and copy (Ctrl+C or Cmd+C):</div>' +
+      '<textarea id="copyModalText" readonly style="width:100%;height:60px;background:var(--navy2);color:var(--txt);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:monospace;font-size:11px;resize:none;user-select:all">' + text + '</textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:10px">' +
+        '<button onclick="document.getElementById(\'copyModalText\').select();document.execCommand(\'copy\');toast(\'Copied!\',\'success\');document.getElementById(\'copyModal\').remove()" class="btn btn-gold" style="flex:1;justify-content:center">Select & Copy</button>' +
+        '<button onclick="document.getElementById(\'copyModal\').remove()" class="btn btn-ghost" style="justify-content:center">Close</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+
+  // Auto-select the text
+  setTimeout(() => {
+    const ta = document.getElementById('copyModalText');
+    if (ta) { ta.focus(); ta.select(); }
+  }, 100);
 }
 
 function copyTextList() {
@@ -2624,7 +2692,9 @@ function buildContext() {
     ctx += '- Any card NOT in these lists will FAIL (wrong format, not owned, or wrong class).\n';
     if (hasColl) ctx += '- The lists above are filtered by the player\'s COLLECTION. Do NOT suggest cards they don\'t own.\n';
     ctx += '- Format is ' + fmtLabel + '. Do NOT suggest ' + (G.fmt==='Standard'?'Wild':'') + ' cards.\n';
-    ctx += '- Always pair each REMOVE with an ADD to keep 30 cards.';
+    ctx += '- Always pair each REMOVE with an ADD to keep 30 cards.\n';
+    ctx += '- NEVER send a solo ADD without a REMOVE - the deck must stay at exactly 30 cards.\n';
+    ctx += '- The number of REMOVE commands must EQUAL the number of ADD commands.';
   }
 
   return ctx;
@@ -2732,7 +2802,14 @@ function applyAIDeckMods(mods) {
     let addValid = false;
     if (op.add) {
       const total = G.deck.reduce((s,c) => s+c.count, 0) - (op.remove ? 1 : 0); // account for pending remove
-      if (total >= 30) { errors.push('"' + op.add.name + '" skipped (deck full)'); }
+      if (total >= 30) {
+        // Solo ADD on a full deck - skip silently (AI sent extra ADD without REMOVE)
+        if (!op.remove) {
+          console.log('[DECKMOD] Ignored unpaired ADD "' + op.add.name + '" - deck already full');
+        } else {
+          errors.push('"' + op.add.name + '" skipped (deck full even after remove)');
+        }
+      }
       else {
         addCard = resolveCard(op.add.name) || lookupCard(op.add.name);
         if (!addCard) {
@@ -2822,6 +2899,7 @@ function applyAIDeckMods(mods) {
 
   if (applied > 0) {
     reEnrichDeck();
+    autoDetectClass();
     renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
   }
   return applied;
