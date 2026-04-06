@@ -1125,10 +1125,17 @@ function reEnrichDeck() {
     return c;
   });
 
-  // Step 2: Merge duplicates by ID (same card resolved from different sources)
+  // Step 2: Merge duplicates by ID then by name (Fabled cards can have same name, different IDs)
   const merged = {};
   resolved.forEach(c => {
-    const key = c.id || c.name?.toLowerCase();
+    // Primary key: id. Secondary: name (catches Fabled companion ID mismatches)
+    const idKey = c.id;
+    const nameKey = c.name ? c.name.toLowerCase() : null;
+    // Check if we already have this card by id or by name
+    const existingKey = idKey && merged[idKey] ? idKey
+      : nameKey && Object.keys(merged).find(k => merged[k].name && merged[k].name.toLowerCase() === nameKey)
+      || null;
+    const key = existingKey || idKey || nameKey;
     if (!key) return;
     if (merged[key]) {
       merged[key].count = Math.min(2, merged[key].count + c.count);
@@ -2629,8 +2636,7 @@ function buildContext() {
 
   let ctx = 'FORMAT: ' + G.fmt.toUpperCase() + fmtWarning +
     '\n' + coll + '\n' + sv +
-    '\n\nACTIVE DECK: ' + cls.lbl + ' (' + G.fmt + ') - ' + G.deck.reduce((s,c) => s+c.count, 0) + '/30 cards\n' + deckCards +
-    (G.deck.length === 0 ? '\n\n[DECK IS EMPTY - Use the NEWDECK protocol to build a full 30-card deck from scratch]' : '');
+    '\n\nACTIVE DECK: ' + cls.lbl + ' (' + G.fmt + ') - ' + G.deck.reduce((s,c) => s+c.count, 0) + '/30 cards\n' + deckCards;
 
   // Explicit missing cards summary
   if (hasColl && missingCards.length > 0) {
@@ -2752,72 +2758,6 @@ function fmtAIResponse(txt) {
     .replace(/^### (.+)$/gm, '<div style="font-weight:700;font-size:12px;color:var(--blue-l);margin:10px 0 4px">$1</div>')
     .replace(/^- (.+)$/gm, '<div style="padding-left:14px;margin:2px 0;color:var(--txt2)">$1</div>')
     .replace(/\n/g, '<br>');
-}
-
-// Parse a full deck built from scratch via NEWDECK: protocol
-function parseNewDeck(text) {
-  const lines = text.split('\n');
-  const cards = [];
-  let active = false;
-  let deckName = '';
-  for (const line of lines) {
-    const startM = line.match(/^NEWDECK:START:?(.*)$/i);
-    if (startM) { active = true; deckName = startM[1].trim() || 'AI Generated Deck'; continue; }
-    if (/^NEWDECK:END$/i.test(line)) { active = false; continue; }
-    if (active) {
-      const m = line.match(/^NEWDECK:(\d+):(.+)$/i);
-      if (m) cards.push({ count: parseInt(m[1]), name: m[2].trim() });
-    }
-  }
-  return cards.length > 0 ? { name: deckName, cards } : null;
-}
-
-// Apply a full deck from scratch (NEWDECK protocol)
-function applyNewDeck(deckData) {
-  if (!G.loaded || !deckData) return 0;
-  const newDeck = [];
-  const errors = [];
-  let total = 0;
-
-  for (const entry of deckData.cards) {
-    if (total >= 30) break;
-    const card = resolveCard(entry.name) || lookupCard(entry.name);
-    if (!card) { errors.push('Not found: ' + entry.name); continue; }
-    if (card.cardClass !== G.cls && card.cardClass !== 'NEUTRAL') {
-      errors.push('Wrong class: ' + card.name); continue;
-    }
-    if (G.fmt === 'Standard' && !G.standardCardIds.has(card.id)) {
-      errors.push('Not Standard: ' + card.name); continue;
-    }
-    if (G.collRaw.length > 0 && getOwned(card) <= 0) {
-      errors.push('Not owned: ' + card.name); continue;
-    }
-    const isLeg = (card.rarity || '').toUpperCase() === 'LEGENDARY';
-    const count = Math.min(entry.count, isLeg ? 1 : 2, 30 - total);
-    newDeck.push({
-      id: card.id, name: card.name, cost: card.cost || 0,
-      rarity: card.rarity || 'COMMON', type: card.type || 'MINION',
-      dbfId: card.dbfId, count
-    });
-    total += count;
-  }
-
-  if (newDeck.length === 0) { toast('No valid cards found in new deck', 'error'); return 0; }
-
-  G.deck = newDeck;
-  const nameEl = document.getElementById('deckName');
-  if (nameEl) nameEl.value = deckData.name || 'AI Deck';
-  reEnrichDeck();
-  autoDetectClass();
-  renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
-
-  if (errors.length > 0) {
-    console.warn('[HS Deck Forge] NEWDECK errors:', errors);
-    toast(total + '/30 cards loaded - ' + errors.length + ' card(s) skipped.', errors.length > 3 ? 'error' : 'success');
-  } else {
-    toast('New deck loaded: ' + total + '/30 cards!', 'success');
-  }
-  return total;
 }
 
 // Parse AI deck modification commands from response
@@ -3001,7 +2941,7 @@ async function callAI(msg) {
     '- If format is STANDARD: ONLY suggest cards from Core 2026, Into the Emerald Dream, The Lost City of Un\'Goro, Across the Timeways, or CATACLYSM.\n' +
     '- If format is WILD: You can suggest ANY collectible card from any expansion.\n' +
     '- Cards marked [WILD-ONLY] in the deck list are NOT legal in Standard.\n\n' +
-    'DECK MODIFICATION (swapping cards in an existing deck):\n' +
+    'DECK MODIFICATION:\n' +
     'When the user asks you to modify, swap, or change their deck, output modification commands on separate lines using this EXACT format:\n' +
     'DECKMOD:REMOVE:Card Name\n' +
     'DECKMOD:ADD:Card Name\n\n' +
@@ -3012,21 +2952,8 @@ async function callAI(msg) {
     '- Use EXACT collectible card names (check spelling)\n' +
     '- Respect the current format (' + G.fmt + ')\n' +
     '- NEVER add tokens or uncollectible cards\n' +
-    '- Always pair a REMOVE with an ADD to keep the deck at 30 cards\n\n' +
-    'BUILDING A FULL DECK FROM SCRATCH:\n' +
-    'When the user asks you to build a brand new deck (empty or near-empty), use the NEWDECK protocol INSTEAD of DECKMOD.\n' +
-    'Output the full decklist using this EXACT format:\n' +
-    'NEWDECK:START:Deck Name\n' +
-    'NEWDECK:2:Card Name   (for 2 copies)\n' +
-    'NEWDECK:1:Card Name   (for 1 copy - Legendaries)\n' +
-    'NEWDECK:END\n\n' +
-    'RULES for NEWDECK:\n' +
-    '- Total copies must equal exactly 30.\n' +
-    '- Use 2 copies for non-Legendaries, 1 copy for Legendaries.\n' +
-    '- ONLY use card names from the AVAILABLE lists provided above.\n' +
-    '- Respect the current format (' + G.fmt + '): NO Wild cards in Standard.\n' +
-    '- The app will show a "Load New Deck" button - explain your strategy before the NEWDECK block.\n' +
-    '- Do NOT mix DECKMOD and NEWDECK in the same response.';
+    '- Always pair a REMOVE with an ADD to keep the deck at 30 cards\n' +
+    'The app will detect these commands and offer the user an "Apply Changes" button. Always explain your reasoning before the DECKMOD commands.';
 
   try {
     const r = await fetch(proxy, {
@@ -3048,43 +2975,12 @@ async function callAI(msg) {
     const reply = data.content?.[0]?.text || 'No response.';
     G.chatHist.push({ role: 'user', content: msg }, { role: 'assistant', content: reply });
 
-    // Check for full deck build (NEWDECK protocol) - takes priority over DECKMOD
-    const newDeckData = parseNewDeck(reply);
-
     // Check for deck modification commands
-    const mods = newDeckData ? [] : parseAIDeckMods(reply);
+    const mods = parseAIDeckMods(reply);
 
-    // Format the response, removing DECKMOD/NEWDECK lines from display
-    const cleanReply = reply
-      .replace(/^DECKMOD:(REMOVE|ADD):.+$/gm, '')
-      .replace(/^NEWDECK:(START|END|[0-9]+).*$/gm, '')
-      .trim();
+    // Format the response, removing DECKMOD lines from display
+    const cleanReply = reply.replace(/^DECKMOD:(REMOVE|ADD):.+$/gm, '').trim();
     addChatMsg('ai', fmtAIResponse(cleanReply));
-
-    // If there's a new full deck, show a "Load New Deck" button
-    if (newDeckData) {
-      const ndId = 'nd_' + Date.now();
-      const cardCount = newDeckData.cards.reduce((s, c) => s + c.count, 0);
-      const previewCards = newDeckData.cards.slice(0, 5).map(c =>
-        '<span style="color:var(--gold-l)">' + c.count + 'x ' + c.name + '</span>'
-      ).join(', ') + (newDeckData.cards.length > 5 ? ', ...' : '');
-
-      const ndEl = document.createElement('div');
-      ndEl.className = 'chat-msg chat-msg-ai';
-      ndEl.innerHTML =
-        '<div class="chat-avatar avatar-ai">\uD83C\uDCCF</div>' +
-        '<div class="chat-bubble bubble-ai">' +
-          '<div class="ai-mod-card">' +
-            '<div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">New Deck Ready - ' + cardCount + ' cards</div>' +
-            '<div style="font-size:11px;line-height:1.6;color:var(--txt2);margin-bottom:8px">' + previewCards + '</div>' +
-            '<button id="' + ndId + '" class="btn btn-gold btn-sm" style="width:100%;justify-content:center" onclick="handleNewDeck(this)">Load New Deck into Builder</button>' +
-          '</div>' +
-        '</div>';
-      ndEl._newDeckData = newDeckData;
-      const msgs = document.getElementById('chatMessages');
-      msgs.appendChild(ndEl);
-      msgs.scrollTop = 99999;
-    }
 
     // If there are deck mods, show an apply button
     if (mods.length > 0) {
@@ -3115,15 +3011,6 @@ async function callAI(msg) {
     addChatMsg('ai', 'Connection error: ' + e.message + '<br><small style="color:var(--txt3)">Verify your Worker URL in Settings.</small>');
   }
   G.typing = false;
-}
-
-function handleNewDeck(btn) {
-  const ndEl = btn.closest('.chat-msg');
-  if (!ndEl?._newDeckData) return;
-  const total = applyNewDeck(ndEl._newDeckData);
-  btn.textContent = total + ' cards loaded!';
-  btn.disabled = true;
-  btn.style.opacity = '0.6';
 }
 
 function handleAIMod(btn) {
@@ -3360,6 +3247,18 @@ function runBuilderFilter(q) {
   if (rar  !== 'ALL') cards = cards.filter(c => (c.rarity||'').toUpperCase() === rar);
   cards.sort((a,b) => a.cost-b.cost || a.name.localeCompare(b.name));
 
+  // Deduplicate by name: keep only the first (best-priority) version per card name.
+  // Fabled cards can appear as both a main collectible card AND a companion card,
+  // both with collectible:true but different IDs. Only show one row per name.
+  const seenNames = new Map();
+  cards = cards.filter(c => {
+    const key = c.name ? c.name.toLowerCase() : null;
+    if (!key) return true;
+    if (seenNames.has(key)) return false;
+    seenNames.set(key, true);
+    return true;
+  });
+
   const g = document.getElementById('builderGrid'); if (!g) return;
   if (!q && mana==='ALL' && type==='ALL' && rar==='ALL') {
     g.innerHTML = '<div class="empty-state" style="padding:20px"><p class="empty-text">Use filters or search to browse ' + G.fmt + ' cards.<br>Click any card to add it to your active deck.</p></div>';
@@ -3369,7 +3268,9 @@ function runBuilderFilter(q) {
   const hasColl = G.collRaw.length > 0;
   const isWild = G.fmt === 'Wild';
   g.innerHTML = cards.slice(0, 100).map(c => {
-    const cur = G.deck.find(d => d.id === c.id)?.count || 0;
+    // Check by name AND id to handle Fabled cards with multiple IDs for same card name
+    const nameLow = c.name ? c.name.toLowerCase() : null;
+    const cur = G.deck.find(d => d.id === c.id || (nameLow && d.name && d.name.toLowerCase() === nameLow)) ? G.deck.find(d => d.id === c.id || (nameLow && d.name && d.name.toLowerCase() === nameLow)).count : 0;
     const max = (c.rarity||'').toUpperCase() === 'LEGENDARY' ? 1 : 2;
     const ok = cur < max;
     const owned = getOwned(c);
@@ -3401,9 +3302,13 @@ function addCardToDeck(id) {
   const total = G.deck.reduce((s,d) => s+d.count, 0);
   if (total >= 30) { toast('Deck is full (30 cards)', 'error'); return; }
   const isLeg = (c.rarity||'').toUpperCase() === 'LEGENDARY';
-  const ex = G.deck.find(d => d.id === id);
+  // Check existing by ID OR name (Fabled cards can share names across different IDs)
+  const nameLow = c.name ? c.name.toLowerCase() : null;
+  const ex = G.deck.find(d => d.id === id || (nameLow && d.name && d.name.toLowerCase() === nameLow));
   if (ex) {
     if (isLeg || ex.count >= 2) { toast(isLeg ? 'Only 1 Legendary copy allowed' : 'Max 2 copies per card', 'error'); return; }
+    // Normalize the id/dbfId to the clicked card's version
+    ex.id = c.id; ex.dbfId = c.dbfId;
     ex.count++;
   } else {
     G.deck.push({ id:c.id, name:c.name, cost:c.cost||0, rarity:c.rarity||'COMMON', type:c.type, dbfId:c.dbfId, count:1 });
