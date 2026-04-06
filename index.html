@@ -1241,6 +1241,7 @@ function buildDeckCode(deck, cls, fmt) {
   const verify = decodeDeckCode(code);
   if (verify.ok) {
     console.log('[buildDeckCode] Verify OK: hero=' + verify.heroes[0] + ' singles=' + verify.singles.length + ' doubles=' + verify.doubles.length + ' format=' + verify.format);
+    console.log('[buildDeckCode] DECKSTRING: ' + code);
     if (verify.heroes[0] !== clsObj.dbfId) console.error('[buildDeckCode] HERO MISMATCH! Encoded ' + clsObj.dbfId + ' but decoded ' + verify.heroes[0]);
   } else {
     console.error('[buildDeckCode] VERIFY FAILED:', verify.error);
