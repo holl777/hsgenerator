@@ -1508,40 +1508,57 @@ async function loadCards() {
     // ============================================================
     G.fabledCompanions = {}; // fabledId -> [{card}, {card}]
     G.companionToFabled = {}; // companionId -> fabledId
+    G.fabledPlusIds = new Set(); // Track Fabled+ cards (Rafaam)
     const isFabledCard = c => {
       if (!c.collectible || !c.id) return false;
-      // Check mechanics array
       if (c.mechanics && c.mechanics.includes('FABLED')) return true;
-      // Check card text for "Fabled" keyword
       if (c.text && /\bFabled\b/i.test(c.text.replace(/<[^>]+>/g, ''))) return true;
-      // Check rarity field
       if ((c.rarity||'').toUpperCase() === 'FABLED') return true;
       return false;
     };
+    const isFabledPlus = c => {
+      if (!c.text) return false;
+      const clean = c.text.replace(/<[^>]+>/g, '');
+      return /Fabled\+/i.test(clean);
+    };
     allCards.forEach(c => {
       if (!isFabledCard(c)) return;
+      const isPlus = isFabledPlus(c);
+      if (isPlus) G.fabledPlusIds.add(c.id);
       // Find companions: uncollectible cards whose ID starts with this card's ID + "t"
-      const companions = allCards.filter(x =>
+      let companions = allCards.filter(x =>
         !x.collectible && x.id && x.id !== c.id &&
         x.id.startsWith(c.id + 't') &&
-        /^t\d{0,2}$/.test(x.id.substring(c.id.length)) && // only t, t1, t2, t3 etc. not t1t
+        /^t\d{0,2}$/.test(x.id.substring(c.id.length)) &&
         x.type && x.type !== 'ENCHANTMENT'
       );
+      // Standard Fabled = exactly 2 companions; Fabled+ = all
+      if (!isPlus && companions.length > 2) {
+        // Sort by token suffix: t < t1 < t2 < t3 (first 2 tokens are the real companions)
+        companions.sort((a, b) => {
+          const sa = a.id.substring(c.id.length); // e.g. "t", "t1", "t2"
+          const sb = b.id.substring(c.id.length);
+          const na = sa === 't' ? 0 : parseInt(sa.substring(1)) || 0;
+          const nb = sb === 't' ? 0 : parseInt(sb.substring(1)) || 0;
+          return na - nb;
+        });
+        companions = companions.slice(0, 2);
+      }
       if (companions.length >= 2) {
-        G.fabledCompanions[c.id] = companions.slice(0, 2);
-        companions.slice(0, 2).forEach(comp => { G.companionToFabled[comp.id] = c.id; });
+        G.fabledCompanions[c.id] = companions;
+        companions.forEach(comp => { G.companionToFabled[comp.id] = c.id; });
       } else {
         // Fallback: search by same set, same class, uncollectible, legendary
-        const sameSetComps = allCards.filter(x =>
+        let sameSetComps = allCards.filter(x =>
           !x.collectible && x.set === c.set && x.cardClass === c.cardClass &&
           x.id !== c.id && x.rarity === 'LEGENDARY' &&
           x.type && x.type !== 'ENCHANTMENT' && x.type !== 'HERO_POWER'
         );
         if (sameSetComps.length >= 2) {
-          // Use dbfId proximity: companions usually have consecutive dbfIds
           sameSetComps.sort((a,b) => Math.abs((a.dbfId||0) - (c.dbfId||0)) - Math.abs((b.dbfId||0) - (c.dbfId||0)));
-          G.fabledCompanions[c.id] = sameSetComps.slice(0, 2);
-          sameSetComps.slice(0, 2).forEach(comp => { G.companionToFabled[comp.id] = c.id; });
+          if (!isPlus) sameSetComps = sameSetComps.slice(0, 2);
+          G.fabledCompanions[c.id] = sameSetComps;
+          sameSetComps.forEach(comp => { G.companionToFabled[comp.id] = c.id; });
         }
       }
     });
@@ -1550,7 +1567,8 @@ async function loadCards() {
       console.log('[HS Deck Forge] Fabled companion map: ' + fabledCount + ' Fabled cards with auto-add companions');
       Object.entries(G.fabledCompanions).forEach(([fid, comps]) => {
         const fc = G.idToCard[fid];
-        console.log('  ' + (fc?.name||fid) + ' -> ' + comps.map(x => x.name + ' (' + x.id + ', dbf=' + x.dbfId + ')').join(', '));
+        const plusTag = G.fabledPlusIds.has(fid) ? ' [FABLED+]' : '';
+        console.log('  ' + (fc?.name||fid) + plusTag + ' -> ' + comps.map(x => x.name + ' (' + x.id + ', dbf=' + x.dbfId + ')').join(', '));
       });
     } else {
       // Debug: log what TIME_TRAVEL collectible legendaries look like
@@ -1807,6 +1825,15 @@ function removeRotatedCoreCards() {
 }
 
 // Remove orphaned Fabled companions (whose parent Fabled card is no longer in deck)
+// Get max deck size (40 if Timethief Rafaam / Fabled+ is in deck, 30 otherwise)
+function deckMaxSize() {
+  if (!G.fabledPlusIds || G.fabledPlusIds.size === 0) return 30;
+  for (const d of G.deck) {
+    if (G.fabledPlusIds.has(d.id)) return 40;
+  }
+  return 30;
+}
+
 function cleanupFabledCompanions() {
   if (!G.fabledCompanions) return;
   const fabledIdsInDeck = new Set(G.deck.map(d => d.id).filter(id => G.fabledCompanions[id]));
@@ -1833,7 +1860,7 @@ function ensureFabledCompanions() {
         const exists = G.deck.find(x => x.id === comp.id || x.name?.toLowerCase() === comp.name?.toLowerCase());
         if (!exists) {
           const total = G.deck.reduce((s,x) => s+x.count, 0);
-          if (total < 30) {
+          if (total < deckMaxSize()) {
             G.deck.push({
               id: comp.id, name: comp.name, cost: comp.cost||0,
               rarity: comp.rarity||'LEGENDARY', type: comp.type||'SPELL',
@@ -2445,7 +2472,7 @@ function applyVariant() {
 // ============================================================
 function renderSideDeck(cards) {
   const total = cards.reduce((s, c) => s + c.count, 0);
-  document.getElementById('deckCount').textContent = '(' + total + '/30)';
+  document.getElementById('deckCount').textContent = '(' + total + '/' + deckMaxSize() + ')';
   const sorted = [...cards].sort((a,b) => a.cost-b.cost || a.name.localeCompare(b.name));
   document.getElementById('deckEmpty').style.display = sorted.length ? 'none' : 'block';
 
@@ -2575,11 +2602,11 @@ function renderExport() {
     // Store code globally for reliable copy
     G.lastCode = res.code;
 
-    const isComplete = res.totalCards === 30 && res.missingDbf === 0;
+    const isComplete = res.totalCards === deckMaxSize() && res.missingDbf === 0;
     const statusColor = isComplete ? 'rgba(104,211,145' : 'rgba(246,173,85';
     const statusLabel = isComplete
-      ? 'VALID DECKSTRING - ' + res.singles + ' singles, ' + res.doubles + ' doubles - 30/30 cards'
-      : 'INCOMPLETE - ' + res.totalCards + '/30 cards encoded (' + res.missingDbf + ' not found)';
+      ? 'VALID DECKSTRING - ' + res.singles + ' singles, ' + res.doubles + ' doubles - ' + deckMaxSize() + '/' + deckMaxSize() + ' cards'
+      : 'INCOMPLETE - ' + res.totalCards + '/' + deckMaxSize() + ' cards encoded (' + res.missingDbf + ' not found)';
     const codeClass = isComplete ? 'valid-code' : 'invalid-code';
     const codeLabelColor = isComplete ? 'var(--green)' : 'var(--orange)';
 
@@ -2597,16 +2624,16 @@ function renderExport() {
         (!isComplete ?
           '<div style="margin-top:7px;padding:8px 10px;background:rgba(246,173,85,.07);border:1px solid rgba(246,173,85,.25);border-radius:6px;font-size:11px;color:var(--orange)">' +
             '<strong>\u26A0 This deckstring will NOT import correctly in Hearthstone.</strong><br>' +
-            '<span style="font-size:10px;color:var(--txt3)">A valid deck needs exactly 30 cards. Add the missing cards via Builder or fix card names.</span>' +
+            '<span style="font-size:10px;color:var(--txt3)">A valid deck needs exactly ' + deckMaxSize() + ' cards. Add the missing cards via Builder or fix card names.</span>' +
           '</div>' : '') +
       '</div>' +
       '<div class="code-display ' + codeClass + '" onclick="copyDeckCode()" title="Click to copy" style="cursor:pointer">' +
-        '<div class="code-label" style="color:' + codeLabelColor + '">HEARTHSTONE DECKSTRING (' + G.fmt.toUpperCase() + ' - ' + res.totalCards + '/30 cards)</div>' +
+        '<div class="code-label" style="color:' + codeLabelColor + '">HEARTHSTONE DECKSTRING (' + G.fmt.toUpperCase() + ' - ' + res.totalCards + '/' + deckMaxSize() + ' cards)</div>' +
         '<span class="deckcode-text">' + res.code + '</span>' +
       '</div>';
     document.getElementById('exportCopyBtn').innerHTML =
       '<button class="btn btn-gold" style="width:100%;justify-content:center;font-size:13px;padding:10px" onclick="copyDeckCode()">' +
-        (isComplete ? 'Copy Deck Code - Paste into Hearthstone' : 'Copy Code (' + res.totalCards + '/30 cards - may not import)') +
+        (isComplete ? 'Copy Deck Code - Paste into Hearthstone' : 'Copy Code (' + res.totalCards + '/' + deckMaxSize() + ' cards - may not import)') +
       '</button>';
   } else {
     document.getElementById('exportCodeArea').innerHTML =
@@ -2766,7 +2793,7 @@ function buildContext() {
 
   let ctx = 'FORMAT: ' + G.fmt.toUpperCase() + fmtWarning +
     '\n' + coll + '\n' + sv +
-    '\n\nACTIVE DECK: ' + cls.lbl + ' (' + G.fmt + ') - ' + G.deck.reduce((s,c) => s+c.count, 0) + '/30 cards\n' + deckCards;
+    '\n\nACTIVE DECK: ' + cls.lbl + ' (' + G.fmt + ') - ' + G.deck.reduce((s,c) => s+c.count, 0) + '/' + deckMaxSize() + ' cards\n' + deckCards;
 
   // Explicit missing cards summary
   if (hasColl && missingCards.length > 0) {
@@ -2829,8 +2856,8 @@ function buildContext() {
     ctx += '- Any card NOT in these lists will FAIL (wrong format, not owned, or wrong class).\n';
     if (hasColl) ctx += '- The lists above are filtered by the player\'s COLLECTION. Do NOT suggest cards they don\'t own.\n';
     ctx += '- Format is ' + fmtLabel + '. Do NOT suggest ' + (G.fmt==='Standard'?'Wild':'') + ' cards.\n';
-    ctx += '- Always pair each REMOVE with an ADD to keep 30 cards.\n';
-    ctx += '- NEVER send a solo ADD without a REMOVE - the deck must stay at exactly 30 cards.\n';
+    ctx += '- Always pair each REMOVE with an ADD to keep ' + deckMaxSize() + ' cards.\n';
+    ctx += '- NEVER send a solo ADD without a REMOVE - the deck must stay at exactly ' + deckMaxSize() + ' cards.\n';
     ctx += '- The number of REMOVE commands must EQUAL the number of ADD commands.';
   }
 
@@ -2939,7 +2966,7 @@ function applyAIDeckMods(mods) {
     let addValid = false;
     if (op.add) {
       const total = G.deck.reduce((s,c) => s+c.count, 0) - (op.remove ? 1 : 0); // account for pending remove
-      if (total >= 30) {
+      if (total >= deckMaxSize()) {
         // Solo ADD on a full deck - skip silently (AI sent extra ADD without REMOVE)
         if (!op.remove) {
           console.log('[DECKMOD] Ignored unpaired ADD "' + op.add.name + '" - deck already full');
@@ -3038,8 +3065,9 @@ function applyAIDeckMods(mods) {
           // Auto-add Fabled companions
           if (G.fabledCompanions && G.fabledCompanions[addCard.id]) {
             const total = G.deck.reduce((s,d) => s+d.count, 0);
-            if (total + 2 <= 30) {
-              G.fabledCompanions[addCard.id].forEach(comp => {
+            const fabledComps = G.fabledCompanions[addCard.id];
+            if (total + fabledComps.length <= deckMaxSize()) {
+              fabledComps.forEach(comp => {
                 G.deck.push({
                   id: comp.id, name: comp.name, cost: comp.cost||0,
                   rarity: comp.rarity||'LEGENDARY', type: comp.type||'SPELL',
@@ -3066,6 +3094,7 @@ function applyAIDeckMods(mods) {
     reEnrichDeck();
     autoDetectClass();
     renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
+    renderExport();
   }
   return applied;
 }
@@ -3092,7 +3121,7 @@ async function callAI(msg) {
     '- ONLY suggest COLLECTIBLE cards that can be put in a deck.\n' +
     '- NEVER suggest tokens, generated cards, hero powers, or uncollectible cards.\n' +
     '- NEVER suggest Fabled companion cards directly (e.g. Gnomish Aura, Mekkatorque\'s Aura, Ranger Captain Alleria, etc.). They are auto-added when you add the Fabled card itself.\n' +
-    '- A Fabled card takes 3 deck slots (itself + 2 companions). When building a new deck with a Fabled card, only generate 28 DECKMOD:ADD lines (27 regular + 1 Fabled = 30 total).\n' +
+    '- A Fabled card takes 3 deck slots (itself + 2 companions). Timethief Rafaam is Fabled+ and takes 10 slots (deck expands to 40). Adjust your DECKMOD:ADD count accordingly.\n' +
     '- Examples of INVALID cards: Avatar Form (token), Whelp (token), Hero Power cards, Choose One options.\n' +
     '- If unsure whether a card is collectible, do NOT suggest it.\n' +
     '- Use EXACT card names as they appear in-game. Misspelled names will fail.\n\n' +
@@ -3112,7 +3141,7 @@ async function callAI(msg) {
     '- Use EXACT collectible card names (check spelling)\n' +
     '- Respect the current format (' + G.fmt + ')\n' +
     '- NEVER add tokens or uncollectible cards\n' +
-    '- Always pair a REMOVE with an ADD to keep the deck at 30 cards\n' +
+    '- Always pair a REMOVE with an ADD to keep the deck at ' + deckMaxSize() + ' cards\n' +
     'The app will detect these commands and offer the user an "Apply Changes" button. Always explain your reasoning before the DECKMOD commands.';
 
   try {
@@ -3474,12 +3503,12 @@ function addCardToDeck(id) {
 
   const total = G.deck.reduce((s,d) => s+d.count, 0);
   const isFabled = G.fabledCompanions && G.fabledCompanions[c.id];
-  const slotsNeeded = isFabled ? 3 : 1;
+  const slotsNeeded = isFabled ? (G.fabledCompanions[c.id].length + 1) : 1;
 
-  if (total + slotsNeeded > 30) {
+  if (total + slotsNeeded > deckMaxSize()) {
     toast(isFabled
       ? 'Need 3 free slots for Fabled package (' + c.name + ' + 2 companions). Only ' + (30 - total) + ' left.'
-      : 'Deck is full (30 cards)', 'error');
+      : 'Deck is full (' + deckMaxSize() + ' cards)', 'error');
     return;
   }
 
@@ -3501,7 +3530,11 @@ function addCardToDeck(id) {
           dbfId: comp.dbfId, count: 1, _fabledParent: c.id
         });
       });
-      toast(c.name + ' + ' + G.fabledCompanions[c.id].map(x=>x.name).join(' + ') + ' added!', 'success');
+      const compNames = G.fabledCompanions[c.id].map(x=>x.name);
+      const toastMsg = compNames.length <= 3
+        ? c.name + ' + ' + compNames.join(' + ') + ' added!'
+        : c.name + ' + ' + compNames.length + ' companions added! (Fabled+)';
+      toast(toastMsg, 'success');
     }
   }
   renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
