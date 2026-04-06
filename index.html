@@ -120,7 +120,7 @@ textarea{resize:vertical;min-height:60px;font-size:11px;line-height:1.4}
 .card-art{width:32px;height:32px;border-radius:4px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;background:var(--navy3)}
 .rarity-strip{width:3px;height:100%;position:absolute;left:0;top:0;border-radius:5px 0 0 5px}
 .r-FREE{background:#707070}.r-COMMON{background:#aaa}
-.r-RARE{background:#4299E1}.r-EPIC{background:#B794F4}.r-LEGENDARY{background:#E6B450}
+.r-RARE{background:#4299E1}.r-EPIC{background:#B794F4}.r-LEGENDARY{background:#E6B450}.r-FABLED{background:#FF6B35}
 .card-name-col{flex:1;font-size:12px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px}
 .card-qty-badge{font-size:10px;font-weight:700;color:var(--gold);min-width:16px;text-align:right}
 .missing-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(245,101,101,.15);border:1px solid rgba(245,101,101,.3);color:var(--red);flex-shrink:0}
@@ -529,6 +529,7 @@ textarea{resize:vertical;min-height:60px;font-size:11px;line-height:1.4}
               <option value="RARE">Rare</option>
               <option value="EPIC">Epic</option>
               <option value="LEGENDARY">Legendary</option>
+              <option value="FABLED">Fabled</option>
             </select>
             <select id="patchType" style="width:75px">
               <option value="MINION">Minion</option>
@@ -1140,7 +1141,7 @@ function reEnrichDeck() {
     if (merged[key]) {
       merged[key].count = Math.min(2, merged[key].count + c.count);
       // Cap legendaries at 1
-      if ((merged[key].rarity||'').toUpperCase() === 'LEGENDARY') merged[key].count = 1;
+      if ((merged[key].rarity||'').toUpperCase() === 'LEGENDARY' || (merged[key].rarity||'').toUpperCase() === 'FABLED') merged[key].count = 1;
     } else {
       merged[key] = { ...c };
     }
@@ -1174,7 +1175,7 @@ function buildDeckCode(deck, cls, fmt) {
     const key = c.dbfId;
     if (mergedMap[key]) {
       mergedMap[key].count = Math.min(2, mergedMap[key].count + c.count);
-      if ((mergedMap[key].rarity||'').toUpperCase() === 'LEGENDARY') mergedMap[key].count = 1;
+      if ((mergedMap[key].rarity||'').toUpperCase() === 'LEGENDARY' || (mergedMap[key].rarity||'').toUpperCase() === 'FABLED') mergedMap[key].count = 1;
     } else {
       mergedMap[key] = { ...c };
     }
@@ -1498,6 +1499,68 @@ async function loadCards() {
       }
     });
 
+    // ============================================================
+    // FABLED COMPANION MAP
+    // Fabled cards have "Fabled" in their card text (not always in mechanics).
+    // Their 2 companion tokens follow the ID pattern: {mainId}t1 and {mainId}t2.
+    // We detect by: collectible + TIME_TRAVEL set + text contains "Fabled"
+    // OR mechanics includes "FABLED", whichever works.
+    // ============================================================
+    G.fabledCompanions = {}; // fabledId -> [{card}, {card}]
+    G.companionToFabled = {}; // companionId -> fabledId
+    const isFabledCard = c => {
+      if (!c.collectible || !c.id) return false;
+      // Check mechanics array
+      if (c.mechanics && c.mechanics.includes('FABLED')) return true;
+      // Check card text for "Fabled" keyword
+      if (c.text && /\bFabled\b/i.test(c.text.replace(/<[^>]+>/g, ''))) return true;
+      // Check rarity field
+      if ((c.rarity||'').toUpperCase() === 'FABLED') return true;
+      return false;
+    };
+    allCards.forEach(c => {
+      if (!isFabledCard(c)) return;
+      // Find companions: uncollectible cards whose ID starts with this card's ID + "t"
+      const companions = allCards.filter(x =>
+        !x.collectible && x.id && x.id !== c.id &&
+        x.id.startsWith(c.id + 't') &&
+        /^t\d{0,2}$/.test(x.id.substring(c.id.length)) && // only t, t1, t2, t3 etc. not t1t
+        x.type && x.type !== 'ENCHANTMENT'
+      );
+      if (companions.length >= 2) {
+        G.fabledCompanions[c.id] = companions.slice(0, 2);
+        companions.slice(0, 2).forEach(comp => { G.companionToFabled[comp.id] = c.id; });
+      } else {
+        // Fallback: search by same set, same class, uncollectible, legendary
+        const sameSetComps = allCards.filter(x =>
+          !x.collectible && x.set === c.set && x.cardClass === c.cardClass &&
+          x.id !== c.id && x.rarity === 'LEGENDARY' &&
+          x.type && x.type !== 'ENCHANTMENT' && x.type !== 'HERO_POWER'
+        );
+        if (sameSetComps.length >= 2) {
+          // Use dbfId proximity: companions usually have consecutive dbfIds
+          sameSetComps.sort((a,b) => Math.abs((a.dbfId||0) - (c.dbfId||0)) - Math.abs((b.dbfId||0) - (c.dbfId||0)));
+          G.fabledCompanions[c.id] = sameSetComps.slice(0, 2);
+          sameSetComps.slice(0, 2).forEach(comp => { G.companionToFabled[comp.id] = c.id; });
+        }
+      }
+    });
+    const fabledCount = Object.keys(G.fabledCompanions).length;
+    if (fabledCount > 0) {
+      console.log('[HS Deck Forge] Fabled companion map: ' + fabledCount + ' Fabled cards with auto-add companions');
+      Object.entries(G.fabledCompanions).forEach(([fid, comps]) => {
+        const fc = G.idToCard[fid];
+        console.log('  ' + (fc?.name||fid) + ' -> ' + comps.map(x => x.name + ' (' + x.id + ', dbf=' + x.dbfId + ')').join(', '));
+      });
+    } else {
+      // Debug: log what TIME_TRAVEL collectible legendaries look like
+      const timeLeg = allCards.filter(c => c.set === 'TIME_TRAVEL' && c.collectible && c.elite);
+      console.log('[HS Deck Forge] No Fabled detected. TIME_TRAVEL elite cards (' + timeLeg.length + '):');
+      timeLeg.slice(0, 5).forEach(c => {
+        console.log('  ' + c.name + ' id=' + c.id + ' rarity=' + c.rarity + ' mechanics=' + JSON.stringify(c.mechanics||[]) + ' text=' + (c.text||'').substring(0,60));
+      });
+    }
+
     G.loaded = true;
     document.getElementById('hsDot').className = 'dot dot-on';
     document.getElementById('hsTxt').textContent = G.cards.length + ' cards';
@@ -1527,6 +1590,15 @@ async function loadCards() {
 function tileUrl(id) { return 'https://art.hearthstonejson.com/v1/tiles/' + id + '.png'; }
 
 function getOwned(card) {
+  // Fabled companions are auto-owned if their parent Fabled card is owned
+  if (G.companionToFabled && G.companionToFabled[card.id]) {
+    const parentId = G.companionToFabled[card.id];
+    const parent = G.idToCard[parentId];
+    if (parent) {
+      const parentOwned = G.coll[parent.id] ?? G.collByName[parent.name?.toLowerCase()] ?? (G.collRaw.length > 0 ? 0 : 2);
+      if (parentOwned > 0) return 1;
+    }
+  }
   // 1. Try by card ID (most reliable when collection was mapped)
   if (G.coll[card.id] != null) return G.coll[card.id];
   // 2. Try exact name match
@@ -1540,6 +1612,15 @@ function getOwned(card) {
 }
 
 function cardOwnedByName(name, real) {
+  // Fabled companions are auto-owned if their parent Fabled card is owned
+  if (real && G.companionToFabled && G.companionToFabled[real.id]) {
+    const parentId = G.companionToFabled[real.id];
+    const parent = G.idToCard[parentId];
+    if (parent) {
+      const parentOwned = G.coll[parent.id] ?? G.collByName[parent.name?.toLowerCase()] ?? (G.collRaw.length > 0 ? 0 : 2);
+      if (parentOwned > 0) return 1;
+    }
+  }
   // 1. Try by card ID if we have a real card object
   if (real && G.coll[real.id] != null) return G.coll[real.id];
   // 2. Try exact name
@@ -1695,6 +1776,7 @@ function removeWildCards() {
   if (!G.loaded || G.fmt !== 'Standard') return;
   const before = G.deck.length;
   G.deck = G.deck.filter(c => G.standardCardIds.has(c.id));
+  cleanupFabledCompanions();
   const removed = before - G.deck.length;
   if (removed > 0) {
     renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
@@ -1724,15 +1806,59 @@ function removeRotatedCoreCards() {
   }
 }
 
+// Remove orphaned Fabled companions (whose parent Fabled card is no longer in deck)
+function cleanupFabledCompanions() {
+  if (!G.fabledCompanions) return;
+  const fabledIdsInDeck = new Set(G.deck.map(d => d.id).filter(id => G.fabledCompanions[id]));
+  const before = G.deck.length;
+  G.deck = G.deck.filter(d => {
+    // If this card is a companion, check its parent is still in deck
+    if (G.companionToFabled && G.companionToFabled[d.id]) {
+      return fabledIdsInDeck.has(G.companionToFabled[d.id]);
+    }
+    return true;
+  });
+  if (G.deck.length < before) {
+    console.log('[HS Deck Forge] Cleaned up ' + (before - G.deck.length) + ' orphaned Fabled companions');
+  }
+}
+
+// Ensure all Fabled cards in deck have their companions present
+function ensureFabledCompanions() {
+  if (!G.fabledCompanions) return;
+  let added = 0;
+  G.deck.forEach(d => {
+    if (G.fabledCompanions[d.id]) {
+      G.fabledCompanions[d.id].forEach(comp => {
+        const exists = G.deck.find(x => x.id === comp.id || x.name?.toLowerCase() === comp.name?.toLowerCase());
+        if (!exists) {
+          const total = G.deck.reduce((s,x) => s+x.count, 0);
+          if (total < 30) {
+            G.deck.push({
+              id: comp.id, name: comp.name, cost: comp.cost||0,
+              rarity: comp.rarity||'LEGENDARY', type: comp.type||'SPELL',
+              dbfId: comp.dbfId, count: 1, _fabledParent: d.id
+            });
+            added++;
+          }
+        }
+      });
+    }
+  });
+  if (added > 0) {
+    console.log('[HS Deck Forge] Auto-added ' + added + ' Fabled companions');
+  }
+}
+
 function calcScores(cards) {
   const total = cards.reduce((s, c) => s + c.count, 0);
   if (!total) return { power: 0, consistency: 0, curve: 0 };
   const b = [0,0,0,0,0,0,0,0];
   cards.forEach(c => { b[Math.min(c.cost||0, 7)] += c.count; });
   const curve = Math.min(100, Math.round(((b[1]+b[2]+b[3])/total)*155));
-  const legs = cards.filter(c => (c.rarity||'').toUpperCase()==='LEGENDARY').reduce((s,c)=>s+c.count,0);
+  const legs = cards.filter(c => ['LEGENDARY','FABLED'].includes((c.rarity||'').toUpperCase())).reduce((s,c)=>s+c.count,0);
   const power = Math.min(100, 45 + legs*7 + cards.filter(c=>(c.rarity||'').toUpperCase()==='EPIC').reduce((s,c)=>s+c.count,0)*3);
-  const x2 = cards.filter(c=>c.count===2&&(c.rarity||'').toUpperCase()!=='LEGENDARY').length;
+  const x2 = cards.filter(c=>c.count===2&&!['LEGENDARY','FABLED'].includes((c.rarity||'').toUpperCase())).length;
   const consistency = Math.min(100, Math.round(50 + (x2/Math.max(cards.length,1))*55));
   return { power: Math.round(power), consistency, curve };
 }
@@ -1754,7 +1880,7 @@ function renderSaved() {
     const cls = CLASSES.find(c => c.id === d.cls) || CLASSES[0];
     const sc = d.scores || {};
     const avg = Math.round(((sc.power||0)+(sc.consistency||0)+(sc.curve||0))/3);
-    const rc = {LEGENDARY:0,EPIC:0,RARE:0,COMMON:0};
+    const rc = {FABLED:0,LEGENDARY:0,EPIC:0,RARE:0,COMMON:0};
     (d.cards||[]).forEach(c => { const k=(c.rarity||'COMMON').toUpperCase(); rc[k]=(rc[k]||0)+c.count; });
     const fmtBadge = (d.fmt||'Standard') === 'Wild'
       ? '<span class="fmt-badge-wild">\u221E WILD</span>'
@@ -1766,6 +1892,7 @@ function renderSaved() {
           '<div style="font-size:15px;font-weight:700;color:var(--txt);margin-bottom:3px">' + d.name + ' ' + fmtBadge + '</div>' +
           '<div style="font-size:10px;color:var(--txt3);margin-bottom:7px">' + cls.lbl + ' - ' + d.total + ' cards - ' + d.saved + '</div>' +
           '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">' +
+            (rc.FABLED ? '<span class="tag" style="background:#FF6B35;color:#fff">' + rc.FABLED + ' Fab</span>' : '') +
             (rc.LEGENDARY ? '<span class="tag tag-gold">' + rc.LEGENDARY + ' Leg</span>' : '') +
             (rc.EPIC ? '<span class="tag tag-purple">' + rc.EPIC + ' Epic</span>' : '') +
             (rc.RARE ? '<span class="tag tag-blue">' + rc.RARE + ' Rare</span>' : '') +
@@ -1986,7 +2113,7 @@ function filterColl(q) {
   el.innerHTML = entries.map(e => {
     const real = G.loaded ? G.nameToCard[e.n.toLowerCase()] : null;
     const nm = e.n.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    const rarColors = {'FREE':'#aaa','COMMON':'#aaa','RARE':'var(--blue-l)','EPIC':'var(--purple)','LEGENDARY':'var(--gold)'};
+    const rarColors = {'FREE':'#aaa','COMMON':'#aaa','RARE':'var(--blue-l)','EPIC':'var(--purple)','LEGENDARY':'var(--gold)','FABLED':'#FF6B35'};
     const rarCol = real ? (e.c===0?'var(--red)': (rarColors[(real.rarity||'').toUpperCase()] || '#aaa')) : '#444';
     return '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--navy2);border:1px solid ' + (e.c===0?'rgba(245,101,101,.2)':'var(--border)') + ';border-radius:5px">' +
       (real ? '<img src="' + tileUrl(real.id) + '" onerror="this.style.display=\'none\'" style="width:24px;height:24px;border-radius:4px;object-fit:cover" loading="lazy">' : '') +
@@ -2117,6 +2244,7 @@ function runAnalyze() {
     id: c.id, name: c.name, cost: c.cost, rarity: c.rarity || 'COMMON',
     type: c.type || 'MINION', dbfId: c.dbfId, count: c.count
   }));
+  ensureFabledCompanions();
   document.getElementById('deckName').value = raw.match(/^###\s*(.+)/m)?.[1]?.trim() || 'Imported Deck';
 
   const n = G.optResult.missing.length;
@@ -2139,7 +2267,7 @@ function findReplacement(missing, ctx, cls) {
     s -= Math.abs((c.cost||0) - missing.cost) * 18;
     if (c.type === missing.type) s += 22;
     if ((c.rarity||'').toUpperCase() === (missing.rarity||'').toUpperCase()) s += 8;
-    if ((c.rarity||'').toUpperCase() === 'LEGENDARY' && (missing.rarity||'').toUpperCase() !== 'LEGENDARY') s -= 12;
+    if (['LEGENDARY','FABLED'].includes((c.rarity||'').toUpperCase()) && !['LEGENDARY','FABLED'].includes((missing.rarity||'').toUpperCase())) s -= 12;
     s += getOwned(c) * 5;
     return s;
   };
@@ -2264,7 +2392,7 @@ function buildVariant(type) {
       const pwr = G.cards
         .filter(c =>
           (c.cardClass === G.cls || c.cardClass === 'NEUTRAL') &&
-          ['LEGENDARY','EPIC'].includes((c.rarity||'').toUpperCase()) &&
+          ['LEGENDARY','EPIC','FABLED'].includes((c.rarity||'').toUpperCase()) &&
           getOwned(c) > 0 && c.id !== orig.id &&
           (G.fmt === 'Wild' || G.standardCardIds.has(c.id))
         ).sort((a,b) => Math.abs((a.cost||0)-orig.cost) - Math.abs((b.cost||0)-orig.cost))[0];
@@ -2333,13 +2461,15 @@ function renderSideDeck(cards) {
 
   listHtml += sorted.map(c => {
     const isWildOnly = G.fmt === 'Standard' && G.loaded && c.id && !G.standardCardIds.has(c.id);
-    const borderCol = c.missing ? 'rgba(245,101,101,.2)' : isWildOnly ? 'rgba(183,148,244,.3)' : 'transparent';
+    const isCompanion = G.companionToFabled && G.companionToFabled[c.id];
+    const borderCol = c.missing ? 'rgba(245,101,101,.2)' : isWildOnly ? 'rgba(183,148,244,.3)' : isCompanion ? 'rgba(255,107,53,.15)' : 'transparent';
     const nameCol = c.missing ? 'var(--red)' : isWildOnly ? 'var(--purple)' : 'var(--txt)';
     return '<div class="card-row" style="border:1px solid ' + borderCol + ';border-radius:5px;cursor:default;margin-bottom:1px">' +
       '<div class="mana-crystal" style="background:' + MC[Math.min(c.cost||0,9)] + ';font-size:8px">' + (c.cost||0) + '</div>' +
       '<img src="' + tileUrl(c.id||'') + '" onerror="this.style.display=\'none\'" class="card-art" style="width:24px;height:24px">' +
       '<div class="rarity-strip r-' + (c.rarity||'COMMON').toUpperCase() + '"></div>' +
       '<div class="card-name-col" style="font-size:10px;color:' + nameCol + '">' + c.name + '</div>' +
+      (isCompanion ? '<span style="font-size:7px;color:#FF6B35;font-weight:700;margin-right:2px">FAB</span>' : '') +
       (isWildOnly ? '<span class="wild-indicator">WILD</span>' : '') +
       '<div class="card-qty-badge">' + (c.count > 1 ? '\xD7'+c.count : '') + '</div>' +
     '</div>';
@@ -2849,7 +2979,7 @@ function applyAIDeckMods(mods) {
         // Check max copies
         if (addCard) {
           const existing = G.deck.find(c => c.id === addCard.id || c.name?.toLowerCase() === addCard.name?.toLowerCase());
-          const isLeg = (addCard.rarity||'').toUpperCase() === 'LEGENDARY';
+          const isLeg = ['LEGENDARY','FABLED'].includes((addCard.rarity||'').toUpperCase());
           if (existing && (isLeg || existing.count >= 2)) {
             errors.push('"' + addCard.name + '" already at max copies');
             addCard = null;
@@ -2870,32 +3000,58 @@ function applyAIDeckMods(mods) {
     if (op.remove) {
       const idx = G.deck.findIndex(c => c.name.toLowerCase() === op.remove.name.toLowerCase());
       if (idx >= 0) {
-        if (G.deck[idx].count > 1) G.deck[idx].count--;
+        const removedCard = G.deck[idx];
+        if (removedCard.count > 1) removedCard.count--;
         else G.deck.splice(idx, 1);
+        // Auto-remove Fabled companions if we removed a Fabled card
+        if (G.fabledCompanions && G.fabledCompanions[removedCard.id]) {
+          G.fabledCompanions[removedCard.id].forEach(comp => {
+            const ci = G.deck.findIndex(d => d.id === comp.id || d.name?.toLowerCase() === comp.name?.toLowerCase());
+            if (ci >= 0) G.deck.splice(ci, 1);
+          });
+        }
         applied++;
       } else {
         errors.push('Cannot remove "' + op.remove.name + '" (not in deck)');
-        // If we can't remove, don't add either (keep deck balanced)
         return;
       }
     }
 
     // --- Apply ADD ---
     if (addCard && addValid) {
-      const existing = G.deck.find(c => c.id === addCard.id || c.name?.toLowerCase() === addCard.name?.toLowerCase());
-      if (existing) {
-        existing.id = addCard.id;
-        existing.dbfId = addCard.dbfId;
-        existing.name = addCard.name;
-        existing.count++;
+      // Block companion cards - they come automatically with their Fabled parent
+      if (G.companionToFabled && G.companionToFabled[addCard.id]) {
+        console.log('[DECKMOD] Skipped companion "' + addCard.name + '" - comes with Fabled parent');
       } else {
-        G.deck.push({
-          id: addCard.id, name: addCard.name, cost: addCard.cost||0,
-          rarity: addCard.rarity||'COMMON', type: addCard.type||'MINION',
-          dbfId: addCard.dbfId, count: 1
-        });
+        const existing = G.deck.find(c => c.id === addCard.id || c.name?.toLowerCase() === addCard.name?.toLowerCase());
+        if (existing) {
+          existing.id = addCard.id;
+          existing.dbfId = addCard.dbfId;
+          existing.name = addCard.name;
+          existing.count++;
+        } else {
+          G.deck.push({
+            id: addCard.id, name: addCard.name, cost: addCard.cost||0,
+            rarity: addCard.rarity||'COMMON', type: addCard.type||'MINION',
+            dbfId: addCard.dbfId, count: 1
+          });
+          // Auto-add Fabled companions
+          if (G.fabledCompanions && G.fabledCompanions[addCard.id]) {
+            const total = G.deck.reduce((s,d) => s+d.count, 0);
+            if (total + 2 <= 30) {
+              G.fabledCompanions[addCard.id].forEach(comp => {
+                G.deck.push({
+                  id: comp.id, name: comp.name, cost: comp.cost||0,
+                  rarity: comp.rarity||'LEGENDARY', type: comp.type||'SPELL',
+                  dbfId: comp.dbfId, count: 1, _fabledParent: addCard.id
+                });
+              });
+              console.log('[DECKMOD] Auto-added Fabled companions for ' + addCard.name);
+            }
+          }
+        }
+        applied++;
       }
-      applied++;
     }
   });
 
@@ -2905,6 +3061,8 @@ function applyAIDeckMods(mods) {
   }
 
   if (applied > 0) {
+    cleanupFabledCompanions();
+    ensureFabledCompanions();
     reEnrichDeck();
     autoDetectClass();
     renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
@@ -2933,6 +3091,8 @@ async function callAI(msg) {
     'CRITICAL CARD RULES:\n' +
     '- ONLY suggest COLLECTIBLE cards that can be put in a deck.\n' +
     '- NEVER suggest tokens, generated cards, hero powers, or uncollectible cards.\n' +
+    '- NEVER suggest Fabled companion cards directly (e.g. Gnomish Aura, Mekkatorque\'s Aura, Ranger Captain Alleria, etc.). They are auto-added when you add the Fabled card itself.\n' +
+    '- A Fabled card takes 3 deck slots (itself + 2 companions). When building a new deck with a Fabled card, only generate 28 DECKMOD:ADD lines (27 regular + 1 Fabled = 30 total).\n' +
     '- Examples of INVALID cards: Avatar Form (token), Whelp (token), Hero Power cards, Choose One options.\n' +
     '- If unsure whether a card is collectible, do NOT suggest it.\n' +
     '- Use EXACT card names as they appear in-game. Misspelled names will fail.\n\n' +
@@ -3220,7 +3380,7 @@ function renderBuilder() {
         '<option value="ALL">All types</option><option value="MINION">Minions</option><option value="SPELL">Spells</option><option value="WEAPON">Weapons</option>' +
       '</select>' +
       '<select id="bRarity" onchange="runBuilderFilter()" style="width:105px">' +
-        '<option value="ALL">All rarities</option><option value="FREE">Basic</option><option value="COMMON">Common</option><option value="RARE">Rare</option><option value="EPIC">Epic</option><option value="LEGENDARY">Legendary</option>' +
+        '<option value="ALL">All rarities</option><option value="FREE">Basic</option><option value="COMMON">Common</option><option value="RARE">Rare</option><option value="EPIC">Epic</option><option value="LEGENDARY">Legendary</option><option value="FABLED">Fabled</option>' +
       '</select>' +
     '</div>' +
     '<div id="builderGrid" style="display:grid;gap:2px"></div>';
@@ -3235,6 +3395,11 @@ function runBuilderFilter(q) {
   const rar  = document.getElementById('bRarity')?.value || 'ALL';
 
   let cards = G.cards.filter(c => c.cardClass === G.cls || c.cardClass === 'NEUTRAL');
+
+  // Hide Fabled companion cards - they auto-add with their Fabled parent
+  if (G.companionToFabled) {
+    cards = cards.filter(c => !G.companionToFabled[c.id]);
+  }
 
   // Format filter: in Standard mode, only show Standard-legal cards
   if (G.fmt === 'Standard') {
@@ -3271,7 +3436,7 @@ function runBuilderFilter(q) {
     // Check by name AND id to handle Fabled cards with multiple IDs for same card name
     const nameLow = c.name ? c.name.toLowerCase() : null;
     const cur = G.deck.find(d => d.id === c.id || (nameLow && d.name && d.name.toLowerCase() === nameLow)) ? G.deck.find(d => d.id === c.id || (nameLow && d.name && d.name.toLowerCase() === nameLow)).count : 0;
-    const max = (c.rarity||'').toUpperCase() === 'LEGENDARY' ? 1 : 2;
+    const max = ['LEGENDARY','FABLED'].includes((c.rarity||'').toUpperCase()) ? 1 : 2;
     const ok = cur < max;
     const owned = getOwned(c);
     const cid = c.id.replace(/'/g, "\\'");
@@ -3291,7 +3456,15 @@ function runBuilderFilter(q) {
 }
 
 function addCardToDeck(id) {
-  const c = G.cards.find(x => x.id === id); if (!c) return;
+  const c = G.cards.find(x => x.id === id) || G.idToCard[id]; if (!c) return;
+
+  // Block companion cards from being added directly - they come with their Fabled
+  if (G.companionToFabled && G.companionToFabled[id]) {
+    const fabledId = G.companionToFabled[id];
+    const fc = G.idToCard[fabledId];
+    toast((c.name||id) + ' is a Fabled companion. Add ' + (fc?.name||'the Fabled card') + ' instead!', 'error');
+    return;
+  }
 
   // Format enforcement: block Wild-only cards in Standard mode
   if (G.fmt === 'Standard' && !G.standardCardIds.has(c.id)) {
@@ -3300,18 +3473,36 @@ function addCardToDeck(id) {
   }
 
   const total = G.deck.reduce((s,d) => s+d.count, 0);
-  if (total >= 30) { toast('Deck is full (30 cards)', 'error'); return; }
-  const isLeg = (c.rarity||'').toUpperCase() === 'LEGENDARY';
-  // Check existing by ID OR name (Fabled cards can share names across different IDs)
+  const isFabled = G.fabledCompanions && G.fabledCompanions[c.id];
+  const slotsNeeded = isFabled ? 3 : 1;
+
+  if (total + slotsNeeded > 30) {
+    toast(isFabled
+      ? 'Need 3 free slots for Fabled package (' + c.name + ' + 2 companions). Only ' + (30 - total) + ' left.'
+      : 'Deck is full (30 cards)', 'error');
+    return;
+  }
+
+  const isLeg = ['LEGENDARY','FABLED'].includes((c.rarity||'').toUpperCase());
   const nameLow = c.name ? c.name.toLowerCase() : null;
   const ex = G.deck.find(d => d.id === id || (nameLow && d.name && d.name.toLowerCase() === nameLow));
   if (ex) {
-    if (isLeg || ex.count >= 2) { toast(isLeg ? 'Only 1 Legendary copy allowed' : 'Max 2 copies per card', 'error'); return; }
-    // Normalize the id/dbfId to the clicked card's version
+    if (isLeg || ex.count >= 2) { toast(isLeg ? 'Only 1 copy allowed (Legendary/Fabled)' : 'Max 2 copies per card', 'error'); return; }
     ex.id = c.id; ex.dbfId = c.dbfId;
     ex.count++;
   } else {
     G.deck.push({ id:c.id, name:c.name, cost:c.cost||0, rarity:c.rarity||'COMMON', type:c.type, dbfId:c.dbfId, count:1 });
+    // Auto-add Fabled companions
+    if (isFabled) {
+      G.fabledCompanions[c.id].forEach(comp => {
+        G.deck.push({
+          id: comp.id, name: comp.name, cost: comp.cost||0,
+          rarity: comp.rarity||'LEGENDARY', type: comp.type||'SPELL',
+          dbfId: comp.dbfId, count: 1, _fabledParent: c.id
+        });
+      });
+      toast(c.name + ' + ' + G.fabledCompanions[c.id].map(x=>x.name).join(' + ') + ' added!', 'success');
+    }
   }
   renderSideDeck(G.deck.map(d => ({ ...d, missing: 0 })));
   runBuilderFilter(document.getElementById('bSearch')?.value || '');
