@@ -647,15 +647,15 @@ textarea{resize:vertical;min-height:60px;font-size:11px;line-height:1.4}
 const CLASSES = [
   {id:'PALADIN',   lbl:'Paladin',  icon:'\u2694\uFE0F', dbfId:671},
   {id:'WARRIOR',   lbl:'Warrior',  icon:'\uD83D\uDEE1\uFE0F', dbfId:7},
-  {id:'MAGE',      lbl:'Mage',     icon:'\uD83D\uDD2E', dbfId:637},
+  {id:'MAGE',      lbl:'Mage',     icon:'\uD83D\uDD2E', dbfId:110808},
   {id:'HUNTER',    lbl:'Hunter',   icon:'\uD83C\uDFF9', dbfId:31},
-  {id:'ROGUE',     lbl:'Rogue',    icon:'\uD83D\uDDE1\uFE0F', dbfId:684},
+  {id:'ROGUE',     lbl:'Rogue',    icon:'\uD83D\uDDE1\uFE0F', dbfId:101699},
   {id:'PRIEST',    lbl:'Priest',   icon:'\u2728', dbfId:813},
   {id:'DRUID',     lbl:'Druid',    icon:'\uD83C\uDF3F', dbfId:274},
   {id:'SHAMAN',    lbl:'Shaman',   icon:'\u26A1', dbfId:1066},
   {id:'WARLOCK',   lbl:'Warlock',  icon:'\uD83D\uDC80', dbfId:893},
   {id:'DEMONHUNTER',lbl:'D.Hunter',icon:'\uD83E\uDE93', dbfId:56550},
-  {id:'DEATHKNIGHT',lbl:'D.Knight',icon:'\u2620\uFE0F', dbfId:78065}
+  {id:'DEATHKNIGHT',lbl:'D.Knight',icon:'\u2620\uFE0F', dbfId:112708}
 ];
 
 // Format IDs: 1=Wild, 2=Standard, 3=Classic, 4=Twist
@@ -1407,7 +1407,10 @@ async function loadCards() {
     const heroCards = allCards.filter(c => c.type === 'HERO' && c.cardClass && !c.cost);
     const heroMap = {}; // cardClass -> best hero dbfId
 
-    // Priority: 1) CORE set hero, 2) id starts with HERO_
+    // Priority: 1) CORE set hero with highest DBF ID, 2) id starts with HERO_
+    // CRITICAL: The game requires CORE hero DBF IDs for deckstrings.
+    // CORE heroes have higher DBF IDs than legacy heroes, so among equal
+    // priority we prefer the highest DBF ID.
     heroCards.forEach(c => {
       if (!c.cardClass || c.cardClass === 'NEUTRAL') return;
       const cls = c.cardClass;
@@ -1424,21 +1427,28 @@ async function loadCards() {
       else if (isCoreHero) priority = 2;   // CORE set hero
       else if (isBaseHero) priority = 1;    // Base hero (HERO_01 etc)
 
-      if (priority > heroMap[cls].priority) {
+      // Prefer higher priority; at same priority prefer higher DBF ID (newer CORE version)
+      if (priority > heroMap[cls].priority ||
+          (priority === heroMap[cls].priority && c.dbfId > heroMap[cls].dbfId)) {
         heroMap[cls] = { dbfId: c.dbfId, priority, id: c.id };
       }
     });
 
     // Update CLASSES with resolved hero DBF IDs
+    // SAFEGUARD: Only update if the resolved DBF ID is HIGHER than the current one.
+    // CORE heroes always have higher DBF IDs than legacy ones, so this prevents
+    // downgrading from a correct hardcoded value to a legacy one.
     let heroUpdates = [];
     CLASSES.forEach(cls => {
       if (heroMap[cls.id]) {
         const oldDbf = cls.dbfId;
         const newDbf = heroMap[cls.id].dbfId;
-        if (oldDbf !== newDbf) {
+        if (newDbf > oldDbf) {
           heroUpdates.push(cls.id + ': ' + oldDbf + ' -> ' + newDbf + ' (' + heroMap[cls.id].id + ')');
+          cls.dbfId = newDbf;
+        } else if (newDbf !== oldDbf) {
+          console.log('[HS Deck Forge] Keeping hardcoded hero for ' + cls.id + ': ' + oldDbf + ' (API returned lower: ' + newDbf + ')');
         }
-        cls.dbfId = newDbf;
       }
     });
     if (heroUpdates.length > 0) {
