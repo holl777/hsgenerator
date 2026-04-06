@@ -2877,8 +2877,8 @@ function buildContext() {
       })
       .sort((a,b) => a.cost - b.cost || a.name.localeCompare(b.name));
 
-    const classCards = available.filter(c => c.cardClass === G.cls);
-    const neutralCards = available.filter(c => c.cardClass === 'NEUTRAL').slice(0, 60);
+    const classCards = available.filter(c => c.cardClass === G.cls).slice(0, 80);
+    const neutralCards = available.filter(c => c.cardClass === 'NEUTRAL').slice(0, 50);
 
     // Store the EXACT available pool for strict DECKMOD validation
     // This is the SOURCE OF TRUTH - if a card isn't here, it can't be added
@@ -2909,9 +2909,9 @@ function buildContext() {
     ctx += '- Any card NOT in these lists will FAIL (wrong format, not owned, or wrong class).\n';
     if (hasColl) ctx += '- The lists above are filtered by the player\'s COLLECTION. Do NOT suggest cards they don\'t own.\n';
     ctx += '- Format is ' + fmtLabel + '. Do NOT suggest ' + (G.fmt==='Standard'?'Wild':'') + ' cards.\n';
-    ctx += '- Always pair each REMOVE with an ADD to keep ' + deckMaxSize() + ' cards.\n';
-    ctx += '- NEVER send a solo ADD without a REMOVE - the deck must stay at exactly ' + deckMaxSize() + ' cards.\n';
-    ctx += '- The number of REMOVE commands must EQUAL the number of ADD commands.';
+    ctx += '- If the deck has ' + deckMaxSize() + ' cards, pair each REMOVE with an ADD.\n';
+    ctx += '- If the deck has FEWER than ' + deckMaxSize() + ' cards, use solo DECKMOD:ADD lines to fill it up to ' + deckMaxSize() + '. Output ALL needed ADD lines.\n';
+    ctx += '- When building from scratch, output DECKMOD commands FIRST, explanation AFTER.';
   }
 
   return ctx;
@@ -3213,8 +3213,11 @@ async function callAI(msg) {
     '- Use EXACT collectible card names (check spelling)\n' +
     '- Respect the current format (' + G.fmt + ')\n' +
     '- NEVER add tokens or uncollectible cards\n' +
-    '- Always pair a REMOVE with an ADD to keep the deck at ' + deckMaxSize() + ' cards\n' +
-    'The app will detect these commands and offer the user an "Apply Changes" button. Always explain your reasoning before the DECKMOD commands.';
+    '- Always pair a REMOVE with an ADD when the deck is already at ' + deckMaxSize() + ' cards\n' +
+    '- If the deck has FEWER than ' + deckMaxSize() + ' cards, use solo DECKMOD:ADD lines (no REMOVE needed) to fill it to exactly ' + deckMaxSize() + '\n' +
+    '- When building a full deck from scratch, output ALL ' + deckMaxSize() + ' DECKMOD:ADD lines. Count them carefully - you MUST reach exactly ' + deckMaxSize() + ' total cards. Put DECKMOD commands FIRST, then your explanation AFTER so commands are never cut off.\n' +
+    '- DOUBLE-CHECK: count your DECKMOD:ADD lines + existing deck cards. The total MUST equal ' + deckMaxSize() + '.\n' +
+    'The app will detect these commands and offer the user an "Apply Changes" button.';
 
   try {
     const r = await fetch(proxy, {
@@ -3222,7 +3225,7 @@ async function callAI(msg) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 3000,
         system,
         messages: [...G.chatHist.slice(-8), { role: 'user', content: msg }]
       })
@@ -3281,7 +3284,56 @@ function handleAIMod(btn) {
   btn.textContent = applied + ' change' + (applied!==1?'s':'') + ' applied!';
   btn.disabled = true;
   btn.style.opacity = '0.6';
-  toast(applied + ' deck modification' + (applied!==1?'s':'') + ' applied!', 'success');
+  const total = G.deck.reduce((s,c) => s+c.count, 0);
+  const max = deckMaxSize();
+  if (total < max) {
+    toast(applied + ' applied (' + total + '/' + max + '). Auto-filling remaining slots...', 'success');
+    autoFillDeck(0);
+  } else {
+    toast(applied + ' deck modification' + (applied!==1?'s':'') + ' applied!', 'success');
+  }
+}
+
+async function autoFillDeck(attempt) {
+  const total = G.deck.reduce((s,c) => s+c.count, 0);
+  const max = deckMaxSize();
+  if (total >= max || attempt >= 3) {
+    if (total < max) toast('Deck at ' + total + '/' + max + ' after ' + attempt + ' attempts. Add remaining cards manually.', 'error');
+    return;
+  }
+  const missing = max - total;
+  const proxy = G.proxyUrl || localStorage.getItem('hs_proxy_url');
+  if (!proxy) return;
+  addChatMsg('ai', 'Filling ' + missing + ' remaining slot' + (missing>1?'s':'') + '...');
+  try {
+    const r = await fetch(proxy, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: 'You are a Hearthstone deck builder. Output ONLY DECKMOD:ADD lines, nothing else. No explanation, no preamble.',
+        messages: [{ role: 'user', content: buildContext() + '\n\nThe deck needs exactly ' + missing + ' more card(s). Output exactly ' + missing + ' DECKMOD:ADD lines from the AVAILABLE lists above. NOTHING ELSE.' }]
+      })
+    });
+    const data = await r.json();
+    const reply = data.content?.[0]?.text || '';
+    const mods = parseAIDeckMods(reply);
+    if (mods.length > 0) {
+      const applied = applyAIDeckMods(mods);
+      const newTotal = G.deck.reduce((s,c) => s+c.count, 0);
+      addChatMsg('ai', 'Added ' + applied + ' card' + (applied!==1?'s':'') + '. Deck now at ' + newTotal + '/' + max + '.');
+      if (newTotal < max) {
+        setTimeout(() => autoFillDeck(attempt + 1), 300);
+      } else {
+        toast('Deck complete! ' + max + '/' + max, 'success');
+      }
+    } else {
+      addChatMsg('ai', 'No cards returned. Try adding the last ' + missing + ' card(s) manually.');
+    }
+  } catch(e) {
+    addChatMsg('ai', 'Auto-fill error: ' + e.message);
+  }
 }
 
 // ============================================================
