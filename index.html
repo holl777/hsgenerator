@@ -655,7 +655,7 @@ const CLASSES = [
   {id:'SHAMAN',    lbl:'Shaman',   icon:'\u26A1', dbfId:1066},
   {id:'WARLOCK',   lbl:'Warlock',  icon:'\uD83D\uDC80', dbfId:893},
   {id:'DEMONHUNTER',lbl:'D.Hunter',icon:'\uD83E\uDE93', dbfId:56550},
-  {id:'DEATHKNIGHT',lbl:'D.Knight',icon:'\u2620\uFE0F', dbfId:112708}
+  {id:'DEATHKNIGHT',lbl:'D.Knight',icon:'\u2620\uFE0F', dbfId:78065}
 ];
 
 // Format IDs: 1=Wild, 2=Standard, 3=Classic, 4=Twist
@@ -1434,20 +1434,18 @@ async function loadCards() {
       }
     });
 
-    // Update CLASSES with resolved hero DBF IDs
-    // SAFEGUARD: Only update if the resolved DBF ID is HIGHER than the current one.
-    // CORE heroes always have higher DBF IDs than legacy ones, so this prevents
-    // downgrading from a correct hardcoded value to a legacy one.
+    // Update CLASSES with resolved hero DBF IDs from HearthstoneJSON
+    // The priority-based resolution above already picks the best hero,
+    // so we always accept its result over hardcoded values.
+    // Update hero DBF IDs from API resolution (priority-based, not just highest DBF ID)
     let heroUpdates = [];
     CLASSES.forEach(cls => {
       if (heroMap[cls.id]) {
         const oldDbf = cls.dbfId;
         const newDbf = heroMap[cls.id].dbfId;
-        if (newDbf > oldDbf) {
+        if (newDbf !== oldDbf) {
           heroUpdates.push(cls.id + ': ' + oldDbf + ' -> ' + newDbf + ' (' + heroMap[cls.id].id + ')');
           cls.dbfId = newDbf;
-        } else if (newDbf !== oldDbf) {
-          console.log('[HS Deck Forge] Keeping hardcoded hero for ' + cls.id + ': ' + oldDbf + ' (API returned lower: ' + newDbf + ')');
         }
       }
     });
@@ -1509,6 +1507,31 @@ async function loadCards() {
         G.allSets[c.set]++;
       }
     });
+
+    // ============================================================
+    // DEATH KNIGHT RUNE SYSTEM
+    // HearthstoneJSON stores rune costs in a 'runeCost' object:
+    // { blood: N, frost: N, unholy: N }
+    // ============================================================
+    G.runeMap = {}; // cardId -> {blood:N, frost:N, unholy:N}
+
+    allCards.forEach(c => {
+      if (!c.id || !c.runeCost) return;
+      const r = c.runeCost;
+      if (r.blood || r.frost || r.unholy) {
+        G.runeMap[c.id] = { blood: r.blood || 0, frost: r.frost || 0, unholy: r.unholy || 0 };
+      }
+    });
+
+    const runeCardCount = Object.keys(G.runeMap).length;
+    console.log('[HS Deck Forge] Rune map: ' + runeCardCount + ' cards with rune costs');
+    if (runeCardCount > 0) {
+      const examples = Object.entries(G.runeMap).slice(0, 5);
+      examples.forEach(([id, r]) => {
+        const card = G.idToCard[id];
+        console.log('  ' + (card?.name || id) + ': B=' + r.blood + ' F=' + r.frost + ' U=' + r.unholy);
+      });
+    }
 
     // ============================================================
     // FABLED COMPANION MAP
@@ -2806,6 +2829,16 @@ function buildContext() {
     '\n' + coll + '\n' + sv +
     '\n\nACTIVE DECK: ' + cls.lbl + ' (' + G.fmt + ') - ' + G.deck.reduce((s,c) => s+c.count, 0) + '/' + deckMaxSize() + ' cards\n' + deckCards;
 
+  // Add rune info for Death Knight decks
+  if (G.cls === 'DEATHKNIGHT' && G.runeMap && Object.keys(G.runeMap).length > 0) {
+    const runeReq = getDeckRuneRequirements(G.deck);
+    ctx += '\n\nDEATH KNIGHT RUNES: Current deck requires ' + runeReq.blood + ' Blood, ' + runeReq.frost + ' Frost, ' + runeReq.unholy + ' Unholy (' + runeReq.total + '/3 rune slots used).';
+    if (runeReq.total >= 3) {
+      ctx += ' NO MORE RUNE TYPES CAN BE ADDED.';
+      ctx += ' Only add cards with 0 runes OR cards matching the current rune config (' + runeReq.blood + 'B/' + runeReq.frost + 'F/' + runeReq.unholy + 'U).';
+    }
+  }
+
   // Explicit missing cards summary
   if (hasColl && missingCards.length > 0) {
     ctx += '\n\n*** MISSING CARDS (' + missingCards.length + ' cards the player does NOT own) ***\n' +
@@ -2835,6 +2868,11 @@ function buildContext() {
           const owned = getOwned(c);
           if (owned <= 0) return false;
         }
+        // Filter by rune compatibility for Death Knight
+        if (G.cls === 'DEATHKNIGHT' && G.runeMap && Object.keys(G.runeMap).length > 0) {
+          const runeCheck = checkRuneCompatibility(G.deck, c);
+          if (!runeCheck.valid) return false;
+        }
         return true;
       })
       .sort((a,b) => a.cost - b.cost || a.name.localeCompare(b.name));
@@ -2855,7 +2893,11 @@ function buildContext() {
 
     if (classCards.length > 0) {
       ctx += '\n\nAVAILABLE ' + cls.lbl.toUpperCase() + ' CARDS (' + fmtLabel + ownLabel + ', not in deck):\n' +
-        classCards.map(c => '(' + (c.cost||0) + ') ' + c.name).join('\n');
+        classCards.map(c => {
+          const r = G.runeMap && G.runeMap[c.id];
+          const runeTag = r ? ' [' + (r.blood?r.blood+'B':'') + (r.frost?r.frost+'F':'') + (r.unholy?r.unholy+'U':'') + ']' : '';
+          return '(' + (c.cost||0) + ') ' + c.name + runeTag;
+        }).join('\n');
     }
     if (neutralCards.length > 0) {
       ctx += '\n\nAVAILABLE NEUTRAL CARDS (' + fmtLabel + ownLabel + ', partial list):\n' +
@@ -3024,6 +3066,17 @@ function applyAIDeckMods(mods) {
           }
         }
 
+        // Rune validation for Death Knight
+        if (addCard && G.cls === 'DEATHKNIGHT' && G.runeMap && Object.keys(G.runeMap).length > 0) {
+          // Simulate deck after potential remove
+          const simDeck = G.deck.filter(d => !(op.remove && d.name.toLowerCase() === op.remove.name.toLowerCase()));
+          const runeCheck = checkRuneCompatibility(simDeck, addCard);
+          if (!runeCheck.valid) {
+            errors.push('"' + addCard.name + '" blocked: needs ' + runeCheck.needed + ', deck runes: ' + runeCheck.current);
+            addCard = null;
+          }
+        }
+
         if (addCard) addValid = true;
       }
     }
@@ -3141,6 +3194,14 @@ async function callAI(msg) {
     '- If format is STANDARD: ONLY suggest cards from Core 2026, Into the Emerald Dream, The Lost City of Un\'Goro, Across the Timeways, or CATACLYSM.\n' +
     '- If format is WILD: You can suggest ANY collectible card from any expansion.\n' +
     '- Cards marked [WILD-ONLY] in the deck list are NOT legal in Standard.\n\n' +
+    'DEATH KNIGHT RUNE RULES (CRITICAL for DK decks):\n' +
+    '- Death Knight decks have exactly 3 rune slots (Blood, Frost, Unholy).\n' +
+    '- Cards with rune costs (shown as [1B], [2F], [3U] etc.) require those rune slots.\n' +
+    '- The deck\'s rune config is determined by the MAX requirement per type across ALL cards.\n' +
+    '- Example: if any card needs 2 Frost and any card needs 1 Blood, the deck uses 2F+1B = 3 slots (full).\n' +
+    '- NEVER suggest a card whose runes would push the total past 3.\n' +
+    '- Cards with NO rune tag are always safe to add.\n' +
+    '- When building a DK deck from scratch, pick ONE rune focus (e.g. triple Frost, or 2 Blood + 1 Unholy).\n\n' +
     'DECK MODIFICATION:\n' +
     'When the user asks you to modify, swap, or change their deck, output modification commands on separate lines using this EXACT format:\n' +
     'DECKMOD:REMOVE:Card Name\n' +
@@ -3495,6 +3556,53 @@ function runBuilderFilter(q) {
   }).join('');
 }
 
+// ============================================================
+// RUNE VALIDATION - Death Knight deck-building restriction
+// Each DK deck has 3 rune slots. Cards require 0-3 runes of
+// specific types (Blood/Frost/Unholy). The deck's max requirement
+// per type across all cards must sum to <= 3.
+// ============================================================
+function getDeckRuneRequirements(deck) {
+  let maxB = 0, maxF = 0, maxU = 0;
+  deck.forEach(d => {
+    const r = G.runeMap[d.id];
+    if (r) {
+      maxB = Math.max(maxB, r.blood);
+      maxF = Math.max(maxF, r.frost);
+      maxU = Math.max(maxU, r.unholy);
+    }
+  });
+  return { blood: maxB, frost: maxF, unholy: maxU, total: maxB + maxF + maxU };
+}
+
+function checkRuneCompatibility(deck, newCard) {
+  const cardRunes = G.runeMap[newCard.id];
+  if (!cardRunes) return { valid: true }; // No rune requirement = always OK
+
+  const cur = getDeckRuneRequirements(deck);
+  const newB = Math.max(cur.blood, cardRunes.blood);
+  const newF = Math.max(cur.frost, cardRunes.frost);
+  const newU = Math.max(cur.unholy, cardRunes.unholy);
+  const newTotal = newB + newF + newU;
+
+  if (newTotal <= 3) return { valid: true };
+
+  const parts = [];
+  if (cardRunes.blood) parts.push(cardRunes.blood + ' Blood');
+  if (cardRunes.frost) parts.push(cardRunes.frost + ' Frost');
+  if (cardRunes.unholy) parts.push(cardRunes.unholy + ' Unholy');
+  const curParts = [];
+  if (cur.blood) curParts.push(cur.blood + 'B');
+  if (cur.frost) curParts.push(cur.frost + 'F');
+  if (cur.unholy) curParts.push(cur.unholy + 'U');
+
+  return {
+    valid: false,
+    needed: parts.join('+'),
+    current: (curParts.join('+') || '0') + '=' + cur.total + '/3'
+  };
+}
+
 function addCardToDeck(id) {
   const c = G.cards.find(x => x.id === id) || G.idToCard[id]; if (!c) return;
 
@@ -3510,6 +3618,15 @@ function addCardToDeck(id) {
   if (G.fmt === 'Standard' && !G.standardCardIds.has(c.id)) {
     toast(c.name + ' is not Standard-legal! Switch to Wild format to use it.', 'error');
     return;
+  }
+
+  // RUNE VALIDATION for Death Knight decks
+  if (G.cls === 'DEATHKNIGHT' && G.runeMap && Object.keys(G.runeMap).length > 0) {
+    const runeCheck = checkRuneCompatibility(G.deck, c);
+    if (!runeCheck.valid) {
+      toast(c.name + ' needs ' + runeCheck.needed + ' but deck requires ' + runeCheck.current + ' (max 3 runes)', 'error');
+      return;
+    }
   }
 
   const total = G.deck.reduce((s,d) => s+d.count, 0);
